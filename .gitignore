@@ -48,6 +48,9 @@ CMakeUserPresets.json
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
 
+.idea/
+.scripts/
+
 # Gradle
 .idea/**/gradle.xml
 .idea/**/libraries
