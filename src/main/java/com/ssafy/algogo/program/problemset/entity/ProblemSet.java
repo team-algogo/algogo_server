@@ -1,10 +1,11 @@
 package com.ssafy.algogo.program.problemset.entity;
 
 import com.ssafy.algogo.program.entity.Program;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 public class ProblemSet extends Program {
 }
