@@ -13,8 +13,8 @@ public abstract class BaseTime {
 
     // -> LocalDateTime vs Timestamp
     @CreatedDate
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 
     @LastModifiedDate
-    private LocalDateTime modified_at;
+    private LocalDateTime modifiedAt;
 }
