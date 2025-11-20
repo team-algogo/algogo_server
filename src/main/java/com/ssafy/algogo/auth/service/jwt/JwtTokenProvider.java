@@ -1,6 +1,6 @@
-package com.ssafy.algogo.auth.jwt;
+package com.ssafy.algogo.auth.service.jwt;
 
-import com.ssafy.algogo.auth.service.CustomUserDetailsService;
+import com.ssafy.algogo.auth.service.security.CustomUserDetailsService;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
 import io.jsonwebtoken.Jwts;

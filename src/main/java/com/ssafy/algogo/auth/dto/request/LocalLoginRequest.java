@@ -1,4 +1,4 @@
-package com.ssafy.algogo.user.dto.request;
+package com.ssafy.algogo.auth.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

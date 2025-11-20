@@ -4,5 +4,4 @@ import com.ssafy.algogo.user.entity.User;
 
 public interface UserService {
 
-    User login();
 }

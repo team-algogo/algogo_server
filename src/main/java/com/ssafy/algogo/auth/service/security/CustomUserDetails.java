@@ -1,4 +1,4 @@
-package com.ssafy.algogo.auth.service;
+package com.ssafy.algogo.auth.service.security;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

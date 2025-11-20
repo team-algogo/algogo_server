@@ -5,7 +5,6 @@ import lombok.*;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Builder
-@AllArgsConstructor
 public class ProblemSet extends Program {
+
 }

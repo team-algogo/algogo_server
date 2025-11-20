@@ -1,4 +1,4 @@
-package com.ssafy.algogo.auth.service;
+package com.ssafy.algogo.auth.service.security;
 
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
