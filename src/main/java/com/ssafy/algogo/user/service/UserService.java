@@ -1,7 +1,11 @@
 package com.ssafy.algogo.user.service;
 
+
+import com.ssafy.algogo.user.dto.request.SignupRequestDto;
 import com.ssafy.algogo.user.entity.User;
 
 public interface UserService {
+
+    User signup(SignupRequestDto dto);
 
 }

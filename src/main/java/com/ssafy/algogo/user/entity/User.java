@@ -24,10 +24,9 @@ public class User extends BaseTime {
     private String password;
 
     @NotNull
-    @ColumnDefault("'안녕하세요'") // 기본 값 설정
-    private String description;
+    @Builder.Default
+    private String description = "안녕하세요";
 
-    @NotNull
     @Column(name = "profile_image")
     private String profileImage;
 
