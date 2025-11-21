@@ -4,12 +4,13 @@ import com.ssafy.algogo.common.utils.BaseTime;
 import com.ssafy.algogo.problem.entity.Problem;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
 public class Program extends BaseTime {
 

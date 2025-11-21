@@ -3,12 +3,12 @@ package com.ssafy.algogo.program.group.entity;
 import com.ssafy.algogo.program.entity.Program;
 import jakarta.persistence.Entity;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class GroupRoom extends Program {
 
     @NotNull
