@@ -5,12 +5,13 @@ import com.ssafy.algogo.program.group.entity.ProgramStatus;
 import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
 public class ProgramUser extends BaseTime {
 

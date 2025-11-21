@@ -1,16 +1,16 @@
 package com.ssafy.algogo.user.entity;
 
-import com.ssafy.algogo.alarm.entity.Alarm;
 import com.ssafy.algogo.common.utils.BaseTime;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 public class User extends BaseTime {
 
     @Id
@@ -24,10 +24,9 @@ public class User extends BaseTime {
     private String password;
 
     @NotNull
-    @ColumnDefault("'안녕하세요'") // 기본 값 설정
-    private String description;
+    @Builder.Default
+    private String description = "안녕하세요";
 
-    @NotNull
     @Column(name = "profile_image")
     private String profileImage;
 
