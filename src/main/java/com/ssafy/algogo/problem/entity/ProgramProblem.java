@@ -42,6 +42,14 @@ public class ProgramProblem {
     @Column(name = "end_date")
     private LocalDateTime endDate; // 이거 Timestamp로 해야하나? LocalDateTime은 불변시간이라 음 음 되나?
 
+    @Column(name = "user_difficulty_type")
+    @Enumerated(EnumType.STRING)
+    private UserDifficultyType userDifficultyType;
+
+    @Column(name = "difficulty_view_type")
+    @Enumerated(EnumType.STRING)
+    private DifficultyViewType difficultyViewType = DifficultyViewType.PROBLEM_DIFFICULTY;
+
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "program_id")
