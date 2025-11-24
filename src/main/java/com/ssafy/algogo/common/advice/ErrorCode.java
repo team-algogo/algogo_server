@@ -60,13 +60,13 @@ public enum ErrorCode {
      * ============================================================ */
 
     /** 유저 ID로 조회했을 때 해당 유저가 존재하지 않을 때 */
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND"),
+    USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "USER_NOT_FOUND"),
 
     /** 로그인 시 잘못된 이메일/비번 입력 */
     INVALID_LOGIN_CREDENTIALS(HttpStatus.UNAUTHORIZED, "INVALID_LOGIN_CREDENTIALS"),
 
     /** 프로필 이미지가 없는 경우 (수정·삭제 시 사용) */
-    PROFILE_IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "PROFILE_IMAGE_NOT_FOUND"),
+    PROFILE_IMAGE_NOT_FOUND(HttpStatus.BAD_REQUEST, "PROFILE_IMAGE_NOT_FOUND"),
 
     /* ============================================================
      * GROUP (그룹 / 그룹방)
@@ -74,19 +74,19 @@ public enum ErrorCode {
      * ============================================================ */
 
     /** 그룹 ID로 조회 시 해당 그룹이 존재하지 않음 */
-    GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "GROUP_NOT_FOUND"),
+    GROUP_NOT_FOUND(HttpStatus.BAD_REQUEST, "GROUP_NOT_FOUND"),
 
     /** 그룹에 대한 접근 권한 없음 (방장/매니저 제한 기능) */
     GROUP_ACCESS_DENIED(HttpStatus.FORBIDDEN, "GROUP_ACCESS_DENIED"),
 
     /** 그룹 내 특정 사용자 정보가 없음 (ex: program_user_id 잘못됨) */
-    GROUP_USER_NOT_FOUND(HttpStatus.NOT_FOUND, "GROUP_USER_NOT_FOUND"),
+    GROUP_USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "GROUP_USER_NOT_FOUND"),
 
     /** 초대 엔티티가 존재하지 않음 (invite_id 잘못된 경우) */
-    GROUP_INVITE_NOT_FOUND(HttpStatus.NOT_FOUND, "GROUP_INVITE_NOT_FOUND"),
+    GROUP_INVITE_NOT_FOUND(HttpStatus.BAD_REQUEST, "GROUP_INVITE_NOT_FOUND"),
 
     /** 참여 신청 엔티티가 존재하지 않음 (join_id 잘못된 경우) */
-    GROUP_JOIN_NOT_FOUND(HttpStatus.NOT_FOUND, "GROUP_JOIN_NOT_FOUND"),
+    GROUP_JOIN_NOT_FOUND(HttpStatus.BAD_REQUEST, "GROUP_JOIN_NOT_FOUND"),
 
     /* ============================================================
      * PROBLEM SET (문제집)
@@ -94,16 +94,16 @@ public enum ErrorCode {
      * ============================================================ */
 
     /** problem_set 또는 program_id 기반 조회 실패 */
-    PROBLEM_SET_NOT_FOUND(HttpStatus.NOT_FOUND, "PROBLEM_SET_NOT_FOUND"),
+    PROBLEM_SET_NOT_FOUND(HttpStatus.BAD_REQUEST, "PROBLEM_SET_NOT_FOUND"),
 
     /** 이미 존재하는 문제집 제목으로 생성하려는 경우 */
     PROBLEM_SET_ALREADY_EXISTS(HttpStatus.CONFLICT, "PROBLEM_SET_ALREADY_EXISTS"),
 
     /** URL 경로의 program_id가 유효하지 않음 */
-    PROGRAM_ID_NOT_FOUND(HttpStatus.NOT_FOUND, "PROGRAM_ID_NOT_FOUND"),
+    PROGRAM_ID_NOT_FOUND(HttpStatus.BAD_REQUEST, "PROGRAM_ID_NOT_FOUND"),
 
     /** 문제집 내부 문제(program_problem)가 존재하지 않을 때 */
-    PROGRAM_PROBLEM_NOT_FOUND(HttpStatus.NOT_FOUND, "PROGRAM_PROBLEM_NOT_FOUND"),
+    PROGRAM_PROBLEM_NOT_FOUND(HttpStatus.BAD_REQUEST, "PROGRAM_PROBLEM_NOT_FOUND"),
 
     /** 문제집에 동일한 문제가 이미 포함된 경우 */
     PROBLEM_ALREADY_EXISTS_IN_SET(HttpStatus.CONFLICT, "PROBLEM_ALREADY_EXISTS_IN_SET"),
@@ -113,26 +113,26 @@ public enum ErrorCode {
      * ============================================================ */
 
     /** problem_id 기반 조회 실패 */
-    PROBLEM_NOT_FOUND(HttpStatus.NOT_FOUND, "PROBLEM_NOT_FOUND"),
+    PROBLEM_NOT_FOUND(HttpStatus.BAD_REQUEST, "PROBLEM_NOT_FOUND"),
 
     /** 캠페인 ID 기반 조회 실패 */
-    CAMPAIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "CAMPAIGN_NOT_FOUND"),
+    CAMPAIGN_NOT_FOUND(HttpStatus.BAD_REQUEST, "CAMPAIGN_NOT_FOUND"),
 
     /** 이미 존재하는 캠페인 이름/리소스 */
     CAMPAIGN_ALREADY_EXISTS(HttpStatus.CONFLICT, "CAMPAIGN_ALREADY_EXISTS"),
 
     /** 캠페인 문제 조회 실패 */
-    CAMPAIGN_PROBLEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CAMPAIGN_PROBLEM_NOT_FOUND"),
+    CAMPAIGN_PROBLEM_NOT_FOUND(HttpStatus.BAD_REQUEST, "CAMPAIGN_PROBLEM_NOT_FOUND"),
 
     /* ============================================================
      * SUBMISSION (코드 제출)
      * ============================================================ */
 
     /** 제출 ID 기반 조회 실패 */
-    SUBMISSION_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBMISSION_NOT_FOUND"),
+    SUBMISSION_NOT_FOUND(HttpStatus.BAD_REQUEST, "SUBMISSION_NOT_FOUND"),
 
     /** 제출 내역(히스토리) 조회 실패 */
-    SUBMISSION_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBMISSION_HISTORY_NOT_FOUND"),
+    SUBMISSION_HISTORY_NOT_FOUND(HttpStatus.BAD_REQUEST, "SUBMISSION_HISTORY_NOT_FOUND"),
 
     /** 유저가 제출하려는 알고리즘 ID가 잘못된 경우 */
     INVALID_ALGORITHM(HttpStatus.BAD_REQUEST, "INVALID_ALGORITHM"),
@@ -142,7 +142,7 @@ public enum ErrorCode {
      * ============================================================ */
 
     /** 리뷰 ID 기반 조회 실패 */
-    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW_NOT_FOUND"),
+    REVIEW_NOT_FOUND(HttpStatus.BAD_REQUEST, "REVIEW_NOT_FOUND"),
 
     /** 리뷰 좋아요 중복 클릭 */
     REVIEW_LIKE_ALREADY_EXISTS(HttpStatus.CONFLICT, "REVIEW_LIKE_ALREADY_EXISTS"),
@@ -152,7 +152,7 @@ public enum ErrorCode {
      * ============================================================ */
 
     /** 알림 ID 또는 사용자 알림이 존재하지 않을 때 */
-    ALARM_NOT_FOUND(HttpStatus.NOT_FOUND, "ALARM_NOT_FOUND"),
+    ALARM_NOT_FOUND(HttpStatus.BAD_REQUEST, "ALARM_NOT_FOUND"),
 
     /* ============================================================
      * DATABASE / EXTERNAL
