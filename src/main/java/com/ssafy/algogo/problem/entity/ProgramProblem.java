@@ -60,6 +60,4 @@ public class ProgramProblem {
     @JoinColumn(name = "problem_id")
     private Problem problem;
 
-
-
 }
