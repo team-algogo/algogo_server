@@ -48,6 +48,7 @@ public class ProgramProblem {
 
     @Column(name = "difficulty_view_type")
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private DifficultyViewType difficultyViewType = DifficultyViewType.PROBLEM_DIFFICULTY;
 
     @NotNull
