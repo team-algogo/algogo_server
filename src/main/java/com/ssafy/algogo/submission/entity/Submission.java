@@ -1,6 +1,7 @@
-package com.ssafy.algogo.problem.entity;
+package com.ssafy.algogo.submission.entity;
 
 import com.ssafy.algogo.common.utils.BaseTime;
+import com.ssafy.algogo.problem.entity.ProgramProblem;
 import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
