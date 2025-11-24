@@ -16,7 +16,7 @@ public class TestController {
 
     @GetMapping("/error/1")
     public ResponseEntity<?> error_1() throws CustomException {
-        throw new CustomException("커스텀 에러 걸렸습니다.", ErrorCode.BAD_REQUEST_ERROR);
+        throw new CustomException("커스텀 에러 걸렸습니다.", ErrorCode.BAD_REQUEST);
     }
 
     @GetMapping("/error/2")
