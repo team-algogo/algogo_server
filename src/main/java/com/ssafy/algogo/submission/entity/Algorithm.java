@@ -1,4 +1,4 @@
-package com.ssafy.algogo.problem.entity;
+package com.ssafy.algogo.submission.entity;
 
 
 import jakarta.persistence.*;
