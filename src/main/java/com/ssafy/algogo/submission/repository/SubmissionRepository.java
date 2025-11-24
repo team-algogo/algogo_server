@@ -1,6 +1,6 @@
-package com.ssafy.algogo.problem.repository;
+package com.ssafy.algogo.submission.repository;
 
-import com.ssafy.algogo.problem.entity.Submission;
+import com.ssafy.algogo.submission.entity.Submission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
