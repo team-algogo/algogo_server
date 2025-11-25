@@ -13,6 +13,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseTime {
 
+    public static final LocalDateTime MYSQL_TIMESTAMP_MAX = LocalDateTime.of(2038, 1, 19, 3, 14, 7);
 
     // -> LocalDateTime vs Timestamp
     @CreatedDate
