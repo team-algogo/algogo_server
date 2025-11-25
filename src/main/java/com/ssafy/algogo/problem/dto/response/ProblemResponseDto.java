@@ -1,4 +1,4 @@
-package com.ssafy.algogo.problem.dto;
+package com.ssafy.algogo.problem.dto.response;
 
 import com.ssafy.algogo.problem.entity.DifficultyType;
 import com.ssafy.algogo.problem.entity.PlatformType;
@@ -13,7 +13,7 @@ public record ProblemResponseDto (
     String problemLink
 ){
 
-    public static ProblemResponseDto of(Problem problem) {
+    public static ProblemResponseDto from(Problem problem) {
         return new ProblemResponseDto(
                 problem.getId(),
                 problem.getPlatformType(),

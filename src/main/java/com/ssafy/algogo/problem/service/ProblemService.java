@@ -1,7 +1,7 @@
 package com.ssafy.algogo.problem.service;
 
-import com.ssafy.algogo.problem.entity.Problem;
+import com.ssafy.algogo.problem.dto.response.ProblemResponseDto;
 
 public interface ProblemService {
-    Problem getProblem(Long programProblemId);
+    ProblemResponseDto getProblem(Long programProblemId);
 }

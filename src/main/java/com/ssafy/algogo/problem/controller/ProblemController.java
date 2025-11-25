@@ -1,8 +1,6 @@
 package com.ssafy.algogo.problem.controller;
 
 import com.ssafy.algogo.common.advice.SuccessResponse;
-import com.ssafy.algogo.problem.dto.ProblemResponseDto;
-import com.ssafy.algogo.problem.entity.Problem;
 import com.ssafy.algogo.problem.service.ProblemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +17,8 @@ public class ProblemController {
 
     @GetMapping("/{programProblemId}")
     public ResponseEntity<SuccessResponse> getProblem(@PathVariable Long programProblemId){
-        Problem problem = problemService.getProblem(programProblemId);
         return ResponseEntity.ok(
                 SuccessResponse
-                        .success("Problem 조회 성공", ProblemResponseDto.of(problem)));
+                        .success("Problem 조회 성공", problemService.getProblem(programProblemId)));
     }
 }
