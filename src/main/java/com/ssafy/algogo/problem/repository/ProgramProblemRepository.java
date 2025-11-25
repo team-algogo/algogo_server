@@ -4,7 +4,6 @@ import com.ssafy.algogo.problem.entity.ProgramProblem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-@Repository
 public interface ProgramProblemRepository extends JpaRepository<ProgramProblem, Long> {
 
 }
