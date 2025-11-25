@@ -40,5 +40,13 @@ public class ReviewController {
     return new SuccessResponse("리뷰 작성을 성공했습니다.", reviewResponse);
   }
 
+  @GetMapping("")
+  public SuccessResponse getCodeReviewListResponseDto(
+      @RequestParam("submission_id") Long submissionId) {
+
+    CodeReviewListResponseDto codeReviewList = reviewService.getReviewsBySubmissionId(submissionId);
+
+    return new SuccessResponse("리뷰 작성내역 조회를 성공했습니다.", codeReviewList);
+  }
 
 }

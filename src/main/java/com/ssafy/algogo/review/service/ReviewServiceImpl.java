@@ -60,5 +60,58 @@ public class ReviewServiceImpl implements ReviewService {
     return CodeReviewTreeResponseDto.from(saveReview);
   }
 
+  @Override
+  public CodeReviewListResponseDto getReviewsBySubmissionId(Long submissionId) {
+
+    // 제출 코드 여부를 확인
+    boolean exists = submissionRepository.existsById(submissionId);
+    if(!exists) {
+      throw new CustomException("존재하지 않는 submission ID 입니다.", ErrorCode.SUBMISSION_NOT_FOUND);
+    }
+
+    List<Review> reviews = reviewRepository.findAllBySubmission_IdOrderByCreatedAtAsc(submissionId);
+
+    List<CodeReviewTreeResponseDto> reviewTree = new ArrayList<>();
+    if(!reviews.isEmpty()) {
+     reviewTree = buildReviewTree(reviews);
+    }
+
+    return CodeReviewListResponseDto.from(reviewTree);
+  }
+
+  private List<CodeReviewTreeResponseDto> buildReviewTree(List<Review> reviews) {
+
+    Map<Long, CodeReviewTreeResponseDto> dtoMap = new LinkedHashMap<>();
+    List<CodeReviewTreeResponseDto> roots = new ArrayList<>();
+
+    // 1) 엔티티 -> DTO 변환 + 루트 댓글 수집
+    for(Review review : reviews) {
+
+      // 모든 review를 dto화 시켜서 id로 매핑
+      CodeReviewTreeResponseDto reviewDto = CodeReviewTreeResponseDto.from(review);
+      dtoMap.put(reviewDto.reviewId(), reviewDto);
+
+      // 부모가 없음 -> 최상위 댓글
+      if (reviewDto.parentReviewId() == null) {
+        roots.add(reviewDto);
+      }
+    }
+
+    // 2) 부모-자식 연결 (대댓글)
+    for(Review review : reviews) {
+      if(review.getParentReview() != null) {
+        Long parentId = review.getParentReview().getId();
+
+        CodeReviewTreeResponseDto parentDto = dtoMap.get(parentId);
+        CodeReviewTreeResponseDto childDto = dtoMap.get(review.getId());
+
+        if(parentDto != null && childDto != null) {
+          parentDto.children().add(childDto);
+        }
+      }
+    }
+
+    return roots;
+  }
 
 }
