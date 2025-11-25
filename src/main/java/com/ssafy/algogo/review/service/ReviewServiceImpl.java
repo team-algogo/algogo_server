@@ -57,18 +57,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     Review saveReview = reviewRepository.save(newReview);
 
-    return new CodeReviewTreeResponseDto(
-        saveReview.getId(),
-        saveReview.getParentReview() != null ? saveReview.getParentReview().getId() : null,
-        saveReview.getUser().getId(),
-        saveReview.getSubmission().getId(),
-        saveReview.getLikeCount(),
-        saveReview.getCodeLine(),
-        saveReview.getContent(),
-        saveReview.getCreatedAt(),
-        saveReview.getModifiedAt(),
-        new ArrayList<>()
-    );
+    return CodeReviewTreeResponseDto.from(saveReview);
   }
 
 

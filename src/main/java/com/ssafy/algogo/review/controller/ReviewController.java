@@ -1,11 +1,13 @@
 package com.ssafy.algogo.review.controller;
 
+import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.review.dto.CodeReviewCreateRequestDto;
 import com.ssafy.algogo.review.dto.CodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.CodeReviewTreeResponseDto;
 import com.ssafy.algogo.review.service.ReviewService;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,7 +29,7 @@ public class ReviewController {
 
   @PostMapping("")
   @ResponseStatus(HttpStatus.CREATED)
-  public CodeReviewTreeResponseDto CodeReviewCreate(
+  public SuccessResponse CodeReviewCreate(
       //@AuthenticationPrincipal CustomUserDetails customUserDetails,
       @RequestBody @Valid CodeReviewCreateRequestDto reviewRequest) {
 
@@ -35,7 +37,7 @@ public class ReviewController {
 
     CodeReviewTreeResponseDto reviewResponse = reviewService.codeReviewCreate(reviewRequest, 1L);
 
-    return reviewResponse;
+    return new SuccessResponse("리뷰 작성을 성공했습니다.", reviewResponse);
   }
 
 
