@@ -1,4 +1,4 @@
-package com.ssafy.algogo.program.group.dto;
+package com.ssafy.algogo.program.group.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.LocalDateTime;
@@ -11,5 +11,7 @@ public record GroupRoomResponseDto(
     LocalDateTime createdAt,
     LocalDateTime modifiedAt,
     Long capacity,
-    Long memberCount
-) { }
+    Long memberCount,
+    Long programProblemCount
+) {
+}
