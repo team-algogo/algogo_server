@@ -3,6 +3,7 @@ package com.ssafy.algogo.user.service.impl;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.user.dto.request.SignupRequestDto;
+import com.ssafy.algogo.user.dto.response.SignupResponseDto;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.entity.UserRole;
 import com.ssafy.algogo.user.repository.UserRepository;
@@ -23,7 +24,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override
-    public User signup(SignupRequestDto dto) {
+    public SignupResponseDto signup(SignupRequestDto dto) {
 
         if (userRepository.existsByEmail(dto.getEmail())) {
             throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.BAD_REQUEST); // TODO: 추후 커스텀 익셉션으로 변경
@@ -42,9 +43,9 @@ public class UserServiceImpl implements UserService {
                 .userRole(UserRole.USER);
 
         User user = userBuilder.build();
-
         userRepository.save(user);
-        return user;
+
+        return SignupResponseDto.response(user);
     }
 
 }
