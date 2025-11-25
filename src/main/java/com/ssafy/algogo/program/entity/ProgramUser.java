@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Inheritance(strategy = InheritanceType.JOINED)
 public class ProgramUser extends BaseTime {
 
