@@ -3,7 +3,9 @@ package com.ssafy.algogo.program.group.service;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.program.entity.ProgramType;
+import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
+import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.entity.GroupRoom;
@@ -11,6 +13,7 @@ import com.ssafy.algogo.program.group.entity.GroupsUser;
 import com.ssafy.algogo.program.group.entity.ProgramStatus;
 import com.ssafy.algogo.program.group.repository.GroupRepository;
 import com.ssafy.algogo.program.group.repository.GroupUserRepository;
+import com.ssafy.algogo.program.repository.ProgramRepository;
 import com.ssafy.algogo.program.repository.ProgramTypeRepository;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
@@ -29,6 +32,7 @@ public class GroupServiceImpl implements GroupService{
   private final UserRepository userRepository;
   private final ProgramTypeRepository programTypeRepository;
   private final GroupUserRepository groupUserRepository;
+  private final ProgramRepository programRepository;
 
 //  @Override
 //  @Transactional(readOnly = true)
@@ -71,5 +75,10 @@ public class GroupServiceImpl implements GroupService{
     groupUserRepository.save(groupsUser);
 
     return groupRepository.getGroupRoomDetail(groupRoom.getId());
+  }
+
+  @Override
+  public CheckGroupNameResponseDto checkGroupName(CheckGroupNameRequestDto checkGroupNameRequestDto) {
+    return new CheckGroupNameResponseDto(!programRepository.existsByTitle(checkGroupNameRequestDto.getGroupTitle()));
   }
 }
