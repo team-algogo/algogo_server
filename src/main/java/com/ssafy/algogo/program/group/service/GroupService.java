@@ -6,7 +6,7 @@ import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 
 public interface GroupService {
-//  public GroupRoomResponseDto getGroupRoomDetail(Long programId);
+  public GroupRoomResponseDto getGroupRoomDetail(Long programId);
 
   public GroupRoomResponseDto createGroupRoom(Long userId, CreateGroupRoomRequestDto createGroupRoomRequestDto);
 

@@ -2,13 +2,14 @@ package com.ssafy.algogo.program.group.repository.query;
 
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.ssafy.algogo.problem.entity.QProgramProblem;
-import com.ssafy.algogo.program.entity.QProgram;
-import com.ssafy.algogo.program.entity.QProgramUser;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
-import com.ssafy.algogo.program.group.entity.QGroupRoom;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+
+import static com.ssafy.algogo.problem.entity.QProgramProblem.*;
+import static com.ssafy.algogo.program.entity.QProgram.*;
+import static com.ssafy.algogo.program.entity.QProgramUser.*;
+import static com.ssafy.algogo.program.group.entity.QGroupRoom.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -18,10 +19,6 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository{
 
   @Override
   public GroupRoomResponseDto getGroupRoomDetail(Long programId) {
-    QProgram program = QProgram.program;
-    QGroupRoom groupRoom = QGroupRoom.groupRoom;
-    QProgramUser programUser = QProgramUser.programUser;
-    QProgramProblem programProblem = QProgramProblem.programProblem;
 
     return query
         .select(Projections.constructor(

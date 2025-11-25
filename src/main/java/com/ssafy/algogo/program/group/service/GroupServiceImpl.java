@@ -34,20 +34,17 @@ public class GroupServiceImpl implements GroupService{
   private final GroupUserRepository groupUserRepository;
   private final ProgramRepository programRepository;
 
-//  @Override
-//  @Transactional(readOnly = true)
-//  public GroupRoomResponseDto getGroupRoomDetail(Long programId) {
-//    Optional<GroupRoom> groupRoom = groupRepository.findById(programId);
-//    if(groupRoom.isPresent()){
-//      GroupRoom nowRoom = groupRoom.get();
-//      return new GroupRoomResponseDto(nowRoom.getId(), nowRoom.getTitle(), nowRoom.getDescription(), nowRoom.getCreatedAt(), nowRoom.getModifiedAt(),
-//          nowRoom.getCapacity(), 0L);
-//    }else{
-//      // 예외처리 <- 없는 그룹방입니다
-//      return new GroupRoomResponseDto(1L, "temp", "temp", LocalDateTime.now(), LocalDateTime.now(),
-//          0L, 0L);
-//    }
-//  }
+  @Override
+  @Transactional(readOnly = true)
+  public GroupRoomResponseDto getGroupRoomDetail(Long programId) {
+    GroupRoomResponseDto groupRoomResponseDto = groupRepository.getGroupRoomDetail(programId);
+
+    if (groupRoomResponseDto == null) {
+      throw new CustomException("해당 그룹방이 존재하지 않습니다.", ErrorCode.GROUP_NOT_FOUND);
+    }
+
+    return groupRoomResponseDto;
+  }
 
   @Override
   public GroupRoomResponseDto createGroupRoom(Long userId, CreateGroupRoomRequestDto createGroupRoomRequestDto) {
@@ -78,6 +75,7 @@ public class GroupServiceImpl implements GroupService{
   }
 
   @Override
+  @Transactional(readOnly = true)
   public CheckGroupNameResponseDto checkGroupName(CheckGroupNameRequestDto checkGroupNameRequestDto) {
     return new CheckGroupNameResponseDto(!programRepository.existsByTitle(checkGroupNameRequestDto.getGroupTitle()));
   }
