@@ -1,9 +1,10 @@
 package com.ssafy.algogo.review.repository;
 
 import com.ssafy.algogo.review.entity.RequireReview;
+import com.ssafy.algogo.review.repository.query.RequireReviewQueryRepository;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
-public interface RequireReviewRepository extends JpaRepository<RequireReview, Long> {
+public interface RequireReviewRepository extends JpaRepository<RequireReview, Long>,
+    RequireReviewQueryRepository {
 
 }

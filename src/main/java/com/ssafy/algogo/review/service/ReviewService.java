@@ -9,4 +9,5 @@ public interface ReviewService {
 
   public CodeReviewTreeResponseDto codeReviewCreate(CodeReviewCreateRequestDto reviewRequest, Long userId);
   public CodeReviewListResponseDto getReviewsBySubmissionId(Long submissionId);
+  public RequiredCodeReviewListResponseDto getRequiredReviews(Long userId);
 }

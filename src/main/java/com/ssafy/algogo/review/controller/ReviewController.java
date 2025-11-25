@@ -48,4 +48,13 @@ public class ReviewController {
     return new SuccessResponse("리뷰 작성내역 조회를 성공했습니다.", codeReviewList);
   }
 
+  @GetMapping("/lists/require")
+  public SuccessResponse getRequiredCodeReviewResponseDto(
+      //@AuthenticationPrincipal CustomUserDetails customUserDetails
+  ) {
+
+    RequiredCodeReviewListResponseDto requiredCodeReviewList = reviewService.getRequiredReviews(1L);
+
+    return new SuccessResponse("내가 해야할 리뷰 리스트 조회를 성공했습니다.", requiredCodeReviewList);
+  }
 }
