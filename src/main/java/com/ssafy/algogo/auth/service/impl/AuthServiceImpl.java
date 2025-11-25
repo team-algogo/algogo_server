@@ -53,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
         redisJwtService.save(customUserDetails.getUserId(), refreshToken, ip); // redist에 rt저장
 
         User user = userRepository.findById(((CustomUserDetails) authentication.getPrincipal()).getUserId())
-                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다", ErrorCode.BAD_REQUEST_ERROR));
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다", ErrorCode.ACCESS_DENIED));
 
         return LocalLoginResponseDto.response(user);
     }

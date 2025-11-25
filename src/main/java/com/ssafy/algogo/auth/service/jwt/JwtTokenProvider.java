@@ -66,7 +66,7 @@ public class JwtTokenProvider {
     private String createToken(Authentication authentication, String ip, String tokenType, long validTime) {
 
         if (!(authentication.getPrincipal().getClass() == CustomUserDetails.class)) {
-            throw new CustomException("Token 제작 과정에서 발생한 오류 (추후 수정)", ErrorCode.BAD_REQUEST_ERROR);
+            throw new CustomException("Token 제작 과정에서 발생한 오류 (추후 수정)", ErrorCode.ACCESS_DENIED);
         }
 
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal(); // 이미 저장된 CustomUserContext에서 꺼내오기,
