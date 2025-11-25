@@ -6,6 +6,7 @@ import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
@@ -33,4 +34,10 @@ public class ProgramUser extends BaseTime {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    protected ProgramUser(ProgramStatus programStatus, Program program, User user) {
+        this.programStatus = programStatus;
+        this.program = program;
+        this.user = user;
+    }
 }

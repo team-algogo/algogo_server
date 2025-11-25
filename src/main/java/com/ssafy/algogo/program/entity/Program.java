@@ -5,6 +5,7 @@ import com.ssafy.algogo.problem.entity.Problem;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
@@ -12,6 +13,11 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
+@Table(
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_program_title", columnNames = {"title"})
+    }
+)
 public class Program extends BaseTime {
 
     @Id
@@ -24,7 +30,6 @@ public class Program extends BaseTime {
     @NotNull
     private String description;
 
-    @NotNull
     private String thumbnail;
 
     @NotNull
@@ -32,4 +37,10 @@ public class Program extends BaseTime {
     @JoinColumn(name = "program_type_id")
     private ProgramType programType;
 
+    protected Program(String title, String description, String thumbnail, ProgramType programType) {
+        this.title = title;
+        this.description = description;
+        this.thumbnail = thumbnail;
+        this.programType = programType;
+    }
 }

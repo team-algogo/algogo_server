@@ -27,11 +27,11 @@ public class UserServiceImpl implements UserService {
     public SignupResponseDto signup(SignupRequestDto dto) {
 
         if (userRepository.existsByEmail(dto.getEmail())) {
-            throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.BAD_REQUEST_ERROR); // TODO: 추후 커스텀 익셉션으로 변경
+            throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.BAD_REQUEST); // TODO: 추후 커스텀 익셉션으로 변경
         }
 
         if (userRepository.existsByNickname(dto.getNickname())) {
-            throw new CustomException("이미 존재하는 닉네임입니다.", ErrorCode.BAD_REQUEST_ERROR); // TODO: 위와 동일
+            throw new CustomException("이미 존재하는 닉네임입니다.", ErrorCode.BAD_REQUEST); // TODO: 위와 동일
         }
 
         String encodedPassword = passwordEncoder.encode(dto.getPassword()); // 직렬 암호화,
