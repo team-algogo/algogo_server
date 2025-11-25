@@ -1,5 +1,6 @@
 package com.ssafy.algogo.auth.service.jwt;
 
+import ch.qos.logback.core.net.server.Client;
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.auth.service.security.CustomUserDetailsService;
 import com.ssafy.algogo.common.advice.CustomException;
@@ -9,16 +10,20 @@ import com.ssafy.algogo.user.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SecurityException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.net.UnknownServiceException;
 import java.security.Key;
-import java.util.Date;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -28,7 +33,7 @@ public class JwtTokenProvider {
 
     private final UserRepository userRepository;
 
-    @Value("${jwt.secretKey")
+    @Value("${jwt.secretKey}")
     private String secretKey;
 
     @Value("${jwt.accessExpiration}")
@@ -73,12 +78,39 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .setSubject(userId.toString())
+                .claim("userId", userId)
                 .claim("ip", ip)
                 .claim("role", authorities)
                 .claim("tokenType", tokenType)
                 .setExpiration(new Date(System.currentTimeMillis() + validTime))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public String resolveAccessToken(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7).trim();
+            if (extractTokenType(token).equals("access")) {
+                return token;
+            }
+        }
+        return null;
+    }
+
+    public String resolveRefreshToken(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader("RefreshToken");
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7).trim();
+            if (extractTokenType(token).equals("refresh")) {
+                return token;
+            }
+        }
+        return null;
+    }
+
+    public String extractTokenType(String token) {
+        return getClaims(token).get("tokenType", String.class);
     }
 
     public boolean isValidateToken(String token) {
@@ -107,5 +139,46 @@ public class JwtTokenProvider {
                 .getBody();
     }
 
+    public Map<String, String> extractToken(String token, String... includedClaims) throws ExpiredJwtException {
+        HashMap<String, String> claims = new HashMap<>();
+        Claims body = getClaims(token);
+        claims.put("subject", body.getSubject());
+
+        for (String arg : includedClaims) {
+            claims.put(arg, body.get(arg, String.class));
+        }
+
+        return claims;
+    }
+
+    public Long getUserIdFromAuthentication() {
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (userId == null) {
+            throw new RuntimeException(); // CustomException으로 수정
+        }
+        return userId;
+    }
+
+    public String getIpFromRequest(HttpServletRequest request) {
+        String ipAddress = request.getHeader("X-Forwarded-For");
+        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+            ipAddress = request.getHeader("Proxy-Client-IP");
+        }
+        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+            ipAddress = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+            ipAddress = request.getRemoteAddr();
+        }
+        return ipAddress;
+    }
+
+    public long getAccessTokenValidTime() {
+        return this.accessTokenValidTime;
+    }
+
+    public long getRefreshTokenValidTime() {
+        return this.refreshTokenValidTime;
+    }
 
 }

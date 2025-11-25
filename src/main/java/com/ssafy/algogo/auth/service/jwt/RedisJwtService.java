@@ -1,4 +1,4 @@
-package com.ssafy.algogo.auth.service.security;
+package com.ssafy.algogo.auth.service.jwt;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
