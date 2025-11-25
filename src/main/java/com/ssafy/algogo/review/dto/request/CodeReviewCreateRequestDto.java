@@ -1,4 +1,4 @@
-package com.ssafy.algogo.review.dto;
+package com.ssafy.algogo.review.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

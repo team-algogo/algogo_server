@@ -1,9 +1,9 @@
 package com.ssafy.algogo.review.service;
 
-import com.ssafy.algogo.review.dto.CodeReviewCreateRequestDto;
-import com.ssafy.algogo.review.dto.CodeReviewListResponseDto;
-import com.ssafy.algogo.review.dto.CodeReviewTreeResponseDto;
-import java.util.List;
+import com.ssafy.algogo.review.dto.request.CodeReviewCreateRequestDto;
+import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
+import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
+import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 
 public interface ReviewService {
 

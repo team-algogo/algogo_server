@@ -1,4 +1,4 @@
-package com.ssafy.algogo.review.dto;
+package com.ssafy.algogo.review.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;

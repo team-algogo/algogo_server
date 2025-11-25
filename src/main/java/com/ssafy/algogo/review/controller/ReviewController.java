@@ -1,13 +1,12 @@
 package com.ssafy.algogo.review.controller;
 
 import com.ssafy.algogo.common.advice.SuccessResponse;
-import com.ssafy.algogo.review.dto.CodeReviewCreateRequestDto;
-import com.ssafy.algogo.review.dto.CodeReviewListResponseDto;
-import com.ssafy.algogo.review.dto.CodeReviewTreeResponseDto;
+import com.ssafy.algogo.review.dto.request.CodeReviewCreateRequestDto;
+import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
+import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
+import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 import com.ssafy.algogo.review.service.ReviewService;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

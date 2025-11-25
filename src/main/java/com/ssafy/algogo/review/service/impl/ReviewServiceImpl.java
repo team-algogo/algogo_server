@@ -1,12 +1,16 @@
-package com.ssafy.algogo.review.service;
+package com.ssafy.algogo.review.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
-import com.ssafy.algogo.review.dto.CodeReviewCreateRequestDto;
-import com.ssafy.algogo.review.dto.CodeReviewListResponseDto;
-import com.ssafy.algogo.review.dto.CodeReviewTreeResponseDto;
+import com.ssafy.algogo.review.dto.request.CodeReviewCreateRequestDto;
+import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
+import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
+import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
+import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
 import com.ssafy.algogo.review.entity.Review;
+import com.ssafy.algogo.review.repository.RequireReviewRepository;
 import com.ssafy.algogo.review.repository.ReviewRepository;
+import com.ssafy.algogo.review.service.ReviewService;
 import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.repository.SubmissionRepository;
 import com.ssafy.algogo.user.entity.User;
@@ -27,6 +31,7 @@ import org.springframework.stereotype.Service;
 public class ReviewServiceImpl implements ReviewService {
 
   private final ReviewRepository reviewRepository;
+  private final RequireReviewRepository requireReviewRepository;
   private final SubmissionRepository submissionRepository;
   private final UserRepository userRepository;
 
@@ -114,4 +119,9 @@ public class ReviewServiceImpl implements ReviewService {
     return roots;
   }
 
+  public RequiredCodeReviewListResponseDto getRequiredReviews(Long userId) {
+    List<RequiredCodeReviewResponseDto> requiredCodeReviews = requireReviewRepository.getRequiredReviews(userId);
+
+    return RequiredCodeReviewListResponseDto.from(requiredCodeReviews);
+  }
 }

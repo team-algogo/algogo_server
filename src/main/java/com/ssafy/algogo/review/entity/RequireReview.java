@@ -1,5 +1,6 @@
 package com.ssafy.algogo.review.entity;
 
+import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -27,7 +28,7 @@ public class RequireReview {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "review_id")
-    private Review review;
+    @JoinColumn(name = "submission_id")
+    private Submission submission;
 
 }
