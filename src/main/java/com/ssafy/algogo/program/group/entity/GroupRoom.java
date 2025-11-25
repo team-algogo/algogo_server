@@ -23,4 +23,5 @@ public class GroupRoom extends Program {
 
     public static GroupRoom create(String title, String description, ProgramType programType, Long capacity) {
         return new GroupRoom(title, description, programType, capacity);
-    }}
+    }
+}
