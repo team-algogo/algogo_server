@@ -10,6 +10,12 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_user_email", columnNames = {"email"}),
+                @UniqueConstraint(name = "uk_user_nickname", columnNames = {"nickname"})
+        }
+)
 public class User extends BaseTime {
 
     @Id

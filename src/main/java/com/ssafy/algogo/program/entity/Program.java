@@ -14,9 +14,9 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_program_title", columnNames = {"title"})
-    }
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_program_title", columnNames = {"title"})
+        }
 )
 public class Program extends BaseTime {
 
