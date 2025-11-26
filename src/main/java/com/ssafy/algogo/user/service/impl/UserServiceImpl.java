@@ -2,10 +2,8 @@ package com.ssafy.algogo.user.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
-import com.ssafy.algogo.user.dto.request.CheckDuplicateEmailRequestDto;
-import com.ssafy.algogo.user.dto.request.CheckDuplicateNicknameRequestDto;
-import com.ssafy.algogo.user.dto.request.SignupRequestDto;
-import com.ssafy.algogo.user.dto.request.UpdateUserInfoRequestDto;
+import com.ssafy.algogo.common.utils.S3Service;
+import com.ssafy.algogo.user.dto.request.*;
 import com.ssafy.algogo.user.dto.response.*;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.entity.UserRole;
@@ -17,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional
@@ -25,6 +24,7 @@ public class UserServiceImpl implements UserService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final S3Service s3Service;
 
     @Override
     public SignupResponseDto signup(SignupRequestDto dto) {
@@ -103,6 +103,36 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         return UpdateUserInfoResponseDto.from(user);
+    }
+
+    @Override
+    public UpdateUserProfileImageResponseDto updateUserProfileImage(Long userId, MultipartFile image) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
+
+        String oldImageUrl = user.getProfileImage();
+        // TODO : 이부분 만약 얻어왔는데 기본 이미지일경우에는 S3에 없긴해서 삭제는 안될듯 싶습니다,
+        if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+            s3Service.deleteImage(oldImageUrl);
+        }
+
+        String newImageUrl = s3Service.uploadProfileImage(image, userId);
+
+        user.updateProfileImage(newImageUrl);
+        // userRepository.save(user);
+        //// ❌ Before
+        //user.updateProfileImage(newImageUrl);
+        //userRepository.save(user);  // 불필요
+        //
+        //// ✅ After
+        //user.updateProfileImage(newImageUrl);  // 더티체킹으로 자동 저장
+        //```
+        //
+        //**이유:** `@Transactional` 안에서 Entity를 변경하면 트랜잭션 커밋 시 자동으로 UPDATE 쿼리가 날아갑니다.
+        //
+        //---
+        return UpdateUserProfileImageResponseDto.from(newImageUrl);
     }
 
 }

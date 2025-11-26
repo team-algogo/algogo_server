@@ -49,4 +49,8 @@ public class User extends BaseTime {
         this.description = description;
     }
 
+    public void updateProfileImage(String profileImage) {
+        this.profileImage = profileImage;
+    }
+
 }

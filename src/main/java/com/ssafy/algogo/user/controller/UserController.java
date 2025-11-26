@@ -2,10 +2,7 @@ package com.ssafy.algogo.user.controller;
 
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.SuccessResponse;
-import com.ssafy.algogo.user.dto.request.CheckDuplicateEmailRequestDto;
-import com.ssafy.algogo.user.dto.request.CheckDuplicateNicknameRequestDto;
-import com.ssafy.algogo.user.dto.request.SignupRequestDto;
-import com.ssafy.algogo.user.dto.request.UpdateUserInfoRequestDto;
+import com.ssafy.algogo.user.dto.request.*;
 import com.ssafy.algogo.user.dto.response.*;
 import com.ssafy.algogo.user.service.UserService;
 import jakarta.validation.Valid;
@@ -13,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -66,6 +64,17 @@ public class UserController {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
         UpdateUserInfoResponseDto updateUserInfoResponseDto = userService.updateUserInfo(userId, updateUserInfoRequestDto);
         return SuccessResponse.success("사용자 정보 수정에 성공했습니다.", updateUserInfoResponseDto);
+    }
+
+    @PostMapping("/profile-images")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse uploadProfileImage(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @RequestPart("image") MultipartFile image
+    ) {
+        Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
+        UpdateUserProfileImageResponseDto updateUserProfileImageResponseDto = userService.updateUserProfileImage(userId, image);
+        return SuccessResponse.success("프로필 사진 수정에 성공했습니다.", updateUserProfileImageResponseDto);
     }
 
 }
