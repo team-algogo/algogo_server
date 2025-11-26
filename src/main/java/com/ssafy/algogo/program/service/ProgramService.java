@@ -9,4 +9,6 @@ public interface ProgramService {
   GetGroupJoinStateListResponseDto getProgramJoinState(Long programId);
 
     void applyProgramInvite(Long programId, ApplyProgramInviteRequestDto applyProgramInviteRequestDto);
+
+    void deleteProgramInvite(Long programId, Long inviteId);
 }

@@ -270,4 +270,12 @@ public class GroupServiceImpl implements GroupService {
 
     // 방장한테 알람 보내는 로직 나중에 추가
   }
+
+  @Override
+  public void deleteGroupInvite(Long programId, Long inviteId) {
+    GroupRoom groupRoom = groupRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+    programService.deleteProgramInvite(programId, inviteId);
+  }
 }

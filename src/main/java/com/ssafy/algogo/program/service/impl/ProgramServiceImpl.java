@@ -113,4 +113,23 @@ public class ProgramServiceImpl implements ProgramService {
     programInviteRepository.save(programInvite);
   }
 
+  @Override
+  public void deleteProgramInvite(Long programId, Long inviteId) {
+    ProgramInvite programInvite = programInviteRepository.findById(inviteId)
+        .orElseThrow(() -> new CustomException("해당 초대 정보를 찾을 수 없습니다.", ErrorCode.PROGRAM_INVITE_NOT_FOUND));
+
+    // 초대가 해당 programId에 속하는지 확인
+    if (!programInvite.getProgram().getId().equals(programId)) {
+      throw new CustomException("해당 프로그램의 초대가 아닙니다.", ErrorCode.INVALID_PARAMETER);
+    }
+
+    // 이미 처리된 초대는 삭제할 수 없음
+    if (programInvite.getInviteStatus() != InviteStatus.PENDING) {
+      throw new CustomException("이미 처리된 초대는 삭제할 수 없습니다.", ErrorCode.BAD_REQUEST);
+    }
+
+    programInviteRepository.delete(programInvite);
+
+    // 음 알림을 삭제해야 한다면 해당 로직 나중에 추가
+  }
 }

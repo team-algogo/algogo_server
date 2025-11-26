@@ -28,4 +28,6 @@ public interface GroupService {
   void applyGroupInvite(Long programId, ApplyProgramInviteRequestDto applyProgramInviteRequestDto);
 
   void updateGroupInviteState(Long userId, Long programId, Long inviteId, UpdateGroupInviteStateRequestDto updateGroupInviteStateRequestDto);
+
+  void deleteGroupInvite(Long programId, Long inviteId);
 }

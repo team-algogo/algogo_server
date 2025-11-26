@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -148,6 +149,18 @@ public class GroupController {
         updateGroupInviteStateRequestDto);
 
     return new SuccessResponse(" 그룹회원 초대 상태 수정에 성공했습니다.", null);
+  }
+
+  @DeleteMapping("/{programId}/invite/{inviteId}")
+  @ResponseStatus(HttpStatus.OK)
+  @GroupAuthorize(minRole = GroupRole.ADMIN)
+  public SuccessResponse deleteGroupInvite(
+      @PathVariable @GroupId Long programId,
+      @PathVariable Long inviteId
+  ){
+    groupService.deleteGroupInvite(programId, inviteId);
+
+    return new SuccessResponse(" 그룹회원 초대 취소를 성공했습니다.", null);
   }
 
 }
