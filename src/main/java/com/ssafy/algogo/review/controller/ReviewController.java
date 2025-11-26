@@ -53,8 +53,18 @@ public class ReviewController {
     return new SuccessResponse("리뷰 작성내역 조회를 성공했습니다.", codeReviewListResponseDto);
   }
 
+  @ResponseStatus(HttpStatus.OK)
+  @PatchMapping("/{reviewId}")
+  public SuccessResponse editCodeReview(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
+      @RequestBody @Valid UpdateCodeReiewRequestDto reviewRequest,
+      @PathVariable Long reviewId
+  ) {
 
-    return new SuccessResponse("리뷰 작성내역 조회를 성공했습니다.", codeReviewList);
+    CodeReviewTreeResponseDto codeReviewTreeResponseDto = reviewService.editCodeReview(
+        customUserDetails.getUserId(), reviewId, reviewRequest);
+
+    return new SuccessResponse("리뷰 수정을 성공했습니다.", codeReviewTreeResponseDto);
   }
 
   @ResponseStatus(HttpStatus.OK)

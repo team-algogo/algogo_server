@@ -46,4 +46,10 @@ public class Review extends BaseTime {
     @JoinColumn(name = "parent_review_id")
     private Review parentReview;
 
+    public void updateReview(Long codeLine, String content) {
+        this.codeLine = codeLine;
+        this.content = content;
+        this.modifiedAt = LocalDateTime.now();
+    }
+
 }

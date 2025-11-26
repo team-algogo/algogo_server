@@ -85,6 +85,20 @@ public class ReviewServiceImpl implements ReviewService {
     return CodeReviewListResponseDto.from(reviewTree);
   }
 
+  @Override
+  public CodeReviewTreeResponseDto editCodeReview(Long userId, Long reviewId, UpdateCodeReiewRequestDto updateCodeReiewRequestDto) {
+    Review review = reviewRepository.findById(reviewId)
+        .orElseThrow(() -> new CustomException("reviewID에 해당하는 리뷰가 DB에 없습니다.", ErrorCode.REVIEW_NOT_FOUND));
+
+    if(!review.getUser().getId().equals(userId)) {
+      throw new CustomException("리뷰 작성자만 수정할 수 있습니다.", ErrorCode.FORBIDDEN);
+    }
+
+    review.updateReview(updateCodeReiewRequestDto.getCodeLine(), updateCodeReiewRequestDto.getContent());
+
+    return CodeReviewTreeResponseDto.from(review);
+  }
+
   private List<CodeReviewTreeResponseDto> buildReviewTree(List<Review> reviews) {
 
     Map<Long, CodeReviewTreeResponseDto> dtoMap = new LinkedHashMap<>();
