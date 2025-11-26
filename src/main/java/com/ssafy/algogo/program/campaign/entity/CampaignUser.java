@@ -3,6 +3,7 @@ package com.ssafy.algogo.program.campaign.entity;
 import com.ssafy.algogo.program.entity.ProgramUser;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -10,6 +11,9 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(
+    name = "campaigns_users"
+)
 public class CampaignUser extends ProgramUser {
 
     @NotNull

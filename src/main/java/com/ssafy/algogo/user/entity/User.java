@@ -11,6 +11,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
+        name = "users",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_user_email", columnNames = {"email"}),
                 @UniqueConstraint(name = "uk_user_nickname", columnNames = {"nickname"})

@@ -9,6 +9,9 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "submissions_algorithms"
+)
 public class SubmissionAlgorithm {
 
     @Id

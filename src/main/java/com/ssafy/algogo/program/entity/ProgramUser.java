@@ -14,6 +14,9 @@ import lombok.experimental.SuperBuilder;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Inheritance(strategy = InheritanceType.JOINED)
+@Table(
+    name = "programs_users"
+)
 public class ProgramUser extends BaseTime {
 
     @Id
