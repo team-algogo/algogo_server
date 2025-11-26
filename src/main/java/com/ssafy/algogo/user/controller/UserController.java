@@ -1,7 +1,10 @@
 package com.ssafy.algogo.user.controller;
 
+import com.ssafy.algogo.common.advice.ErrorCode;
+import com.ssafy.algogo.common.advice.ErrorResponse;
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.user.dto.request.SignupRequestDto;
+import com.ssafy.algogo.user.dto.response.SignupResponseDto;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.service.UserService;
 import jakarta.validation.Valid;
@@ -22,8 +25,8 @@ public class UserController {
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
     public SuccessResponse signup(@RequestBody @Valid SignupRequestDto dto) {
-        User user = userService.signup(dto);
-        return SuccessResponse.success("회원가입에 성공했습니다.", user);
+        SignupResponseDto responseDto = userService.signup(dto);
+        return SuccessResponse.success("회원가입에 성공했습니다.", responseDto);
     }
 
 }
