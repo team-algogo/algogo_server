@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private static final String DEFAULT_USER_IMAGE = "https://d3ud9ocg2cusae.cloudfront.net/files/8/0f3b175d-1d3f-4b70-8438-5466f154a0b6.png";
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final S3Service s3Service;
@@ -46,7 +47,7 @@ public class UserServiceImpl implements UserService {
                 .userRole(UserRole.USER);
 
         User user = userBuilder.build();
-        userRepository.save(user);
+        userRepository.save(user); // -> 얘는 더티체킹이 아니라 신규 객체기때문에 save를 해야한다, 수정은 기존 데이터를 이미 JPA가 알고있기에 감시하고 더티체킹,
 
         return SignupResponseDto.from(user);
     }
@@ -100,7 +101,6 @@ public class UserServiceImpl implements UserService {
         // TODO : 닉네임 수정시, 화면에서도 중복 체크 버튼을 해줘야한다. 이 부분은 아직 말을 안한 거 같다. -> 에러로 처리하진 않겠다. 중복체크는 에러가 아니다.
 
         user.updateUserInfo(updateUserInfoRequestDto.getNickname(), updateUserInfoRequestDto.getDescription());
-        userRepository.save(user);
 
         return UpdateUserInfoResponseDto.from(user);
     }
@@ -111,28 +111,23 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
 
-        String oldImageUrl = user.getProfileImage();
-        // TODO : 이부분 만약 얻어왔는데 기본 이미지일경우에는 S3에 없긴해서 삭제는 안될듯 싶습니다,
-        if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
-            s3Service.deleteImage(oldImageUrl);
-        }
-
         String newImageUrl = s3Service.uploadProfileImage(image, userId);
 
         user.updateProfileImage(newImageUrl);
-        // userRepository.save(user);
-        //// ❌ Before
-        //user.updateProfileImage(newImageUrl);
-        //userRepository.save(user);  // 불필요
-        //
-        //// ✅ After
-        //user.updateProfileImage(newImageUrl);  // 더티체킹으로 자동 저장
-        //```
-        //
+        // userRepository.save(user); -> 이 부분을 하지 않아도 된다. 배웠습니다..
         //**이유:** `@Transactional` 안에서 Entity를 변경하면 트랜잭션 커밋 시 자동으로 UPDATE 쿼리가 날아갑니다.
-        //
-        //---
+
         return UpdateUserProfileImageResponseDto.from(newImageUrl);
+    }
+
+    @Override
+    public UpdateUserProfileImageResponseDto updateDefaultProfileImage(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
+
+        user.updateProfileImage(DEFAULT_USER_IMAGE);
+        return UpdateUserProfileImageResponseDto.from(DEFAULT_USER_IMAGE);
     }
 
 }

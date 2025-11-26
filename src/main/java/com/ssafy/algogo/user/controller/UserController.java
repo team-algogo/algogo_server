@@ -77,4 +77,12 @@ public class UserController {
         return SuccessResponse.success("프로필 사진 수정에 성공했습니다.", updateUserProfileImageResponseDto);
     }
 
+    @PutMapping("/profile-images")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse deleteProfileImage(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
+        UpdateUserProfileImageResponseDto updateUserProfileImageResponseDto = userService.updateDefaultProfileImage(userId);
+        return SuccessResponse.success("프로필 사진 삭제에 성공했습니다.", updateUserProfileImageResponseDto);
+    }
+
 }

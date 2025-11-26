@@ -19,4 +19,6 @@ public interface UserService {
 
     UpdateUserProfileImageResponseDto updateUserProfileImage(Long userId, MultipartFile image);
 
+    UpdateUserProfileImageResponseDto updateDefaultProfileImage(Long userId);
+
 }
