@@ -5,10 +5,8 @@ import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.user.dto.request.CheckDuplicateEmailRequestDto;
 import com.ssafy.algogo.user.dto.request.CheckDuplicateNicknameRequestDto;
 import com.ssafy.algogo.user.dto.request.SignupRequestDto;
-import com.ssafy.algogo.user.dto.response.CheckDuplicateEmailResponseDto;
-import com.ssafy.algogo.user.dto.response.CheckDuplicateNicknameResponseDto;
-import com.ssafy.algogo.user.dto.response.SignupResponseDto;
-import com.ssafy.algogo.user.dto.response.UserInfoResponseDto;
+import com.ssafy.algogo.user.dto.request.UpdateUserInfoRequestDto;
+import com.ssafy.algogo.user.dto.response.*;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.entity.UserRole;
 import com.ssafy.algogo.user.repository.UserRepository;
@@ -54,6 +52,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CheckDuplicateEmailResponseDto isAvailableEmail(CheckDuplicateEmailRequestDto dto) {
 
         boolean result = userRepository.existsByEmail(dto.getEmail());
@@ -69,6 +68,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CheckDuplicateNicknameResponseDto isAvailableNickname(CheckDuplicateNicknameRequestDto dto) {
         boolean result = userRepository.existsByNickname(dto.getNickname());
         CheckDuplicateNicknameResponseDto responseDto = null;
@@ -83,12 +83,26 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserInfoResponseDto getOneUserInfo(Long userId) {
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
 
         return UserInfoResponseDto.from(user);
+    }
+
+    @Override
+    public UpdateUserInfoResponseDto updateUserInfo(Long userId, UpdateUserInfoRequestDto updateUserInfoRequestDto) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
+
+        // TODO : 닉네임 수정시, 화면에서도 중복 체크 버튼을 해줘야한다. 이 부분은 아직 말을 안한 거 같다. -> 에러로 처리하진 않겠다. 중복체크는 에러가 아니다.
+
+        user.updateUserInfo(updateUserInfoRequestDto.getNickname(), updateUserInfoRequestDto.getDescription());
+        userRepository.save(user);
+
+        return UpdateUserInfoResponseDto.from(user);
     }
 
 }
