@@ -14,6 +14,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "programs_problems"
+)
 public class ProgramProblem {
 
     @Id

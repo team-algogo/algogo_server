@@ -4,6 +4,7 @@ import com.ssafy.algogo.program.entity.Program;
 import com.ssafy.algogo.program.entity.ProgramType;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -11,6 +12,9 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(
+    name = "group_rooms"
+)
 public class GroupRoom extends Program {
 
     @NotNull

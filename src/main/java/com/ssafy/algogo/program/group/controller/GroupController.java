@@ -1,5 +1,6 @@
 package com.ssafy.algogo.program.group.controller;
 
+import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.program.group.config.GroupAuthorize;
 import com.ssafy.algogo.program.group.config.GroupId;
@@ -14,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,10 +48,10 @@ public class GroupController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponse createGroupRoom(
-      //@AuthenticationPrincipal CustomUserDetails customUserDetails,
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
       @RequestBody @Valid CreateGroupRoomRequestDto createGroupRoomRequestDto
   ){
-    GroupRoomResponseDto groupRoomResponseDto = groupService.createGroupRoom(1L, createGroupRoomRequestDto);
+    GroupRoomResponseDto groupRoomResponseDto = groupService.createGroupRoom(customUserDetails.getUserId(), createGroupRoomRequestDto);
 
     return new SuccessResponse("그룹방 생성 성공", groupRoomResponseDto);
   }
@@ -81,5 +83,12 @@ public class GroupController {
 
     return new SuccessResponse("그룹방 수정 성공", groupRoomResponseDto);
   }
+
+//  @PostMapping("/{programId}/join")
+//  @ResponseStatus(HttpStatus.NO_CONTENT)
+//  public SuccessResponse applyGroupJoin(
+//      @AuthenticationPrincipal CustomUserDetails customUserDetails
+//
+//  )
 
 }

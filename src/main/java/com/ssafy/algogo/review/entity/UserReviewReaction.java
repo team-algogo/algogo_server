@@ -10,6 +10,9 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "user_review_reactions"
+)
 public class UserReviewReaction {
 
     @Id

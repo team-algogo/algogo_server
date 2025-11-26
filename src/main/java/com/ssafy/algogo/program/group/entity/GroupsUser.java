@@ -11,6 +11,9 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(
+    name = "group_rooms_users"
+)
 public class GroupsUser extends ProgramUser {
 
     @NotNull
