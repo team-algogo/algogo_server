@@ -1,20 +1,23 @@
 package com.ssafy.algogo.program.group.controller;
 
-import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.SuccessResponse;
+import com.ssafy.algogo.program.group.config.GroupAuthorize;
+import com.ssafy.algogo.program.group.config.GroupId;
 import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
+import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
+import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.service.GroupService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -66,4 +69,17 @@ public class GroupController {
     }
     return new SuccessResponse(message, checkGroupNameResponseDto);
   }
+
+  @PutMapping("/{programId}")
+  @ResponseStatus(HttpStatus.OK)
+  @GroupAuthorize(minRole = GroupRole.MANAGER)
+  public SuccessResponse updateGroupRoom(
+      @PathVariable @GroupId Long programId,
+      @RequestBody UpdateGroupRoomRequestDto updateGroupRoomRequestDto
+  ){
+    GroupRoomResponseDto groupRoomResponseDto = groupService.updateGroupRoom(programId, updateGroupRoomRequestDto);
+
+    return new SuccessResponse("그룹방 수정 성공", groupRoomResponseDto);
+  }
+
 }

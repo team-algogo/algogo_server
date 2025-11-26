@@ -7,7 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum GroupRole {
     ADMIN(2),
-    MANGER(1),
+    MANAGER(1),
     USER(0);
 
     private final int level;

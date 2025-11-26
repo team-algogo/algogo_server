@@ -24,4 +24,12 @@ public class GroupRoom extends Program {
     public static GroupRoom create(String title, String description, ProgramType programType, Long capacity) {
         return new GroupRoom(title, description, programType, capacity);
     }
+
+    // 그룹방 정보 변경 메서드
+    public void updateGroupRoom(String title, String description, Long capacity) {
+        super.updateProgram(title, description);
+        if (capacity != null) {
+            this.capacity = capacity;
+        }
+    }
 }

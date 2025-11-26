@@ -43,4 +43,13 @@ public class Program extends BaseTime {
         this.thumbnail = thumbnail;
         this.programType = programType;
     }
+
+    protected void updateProgram(String title, String description){
+        if (title != null) {
+            this.title = title;
+        }
+        if (description != null) {
+            this.description = description;
+        }
+    }
 }
