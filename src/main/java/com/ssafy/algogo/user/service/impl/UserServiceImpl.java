@@ -3,8 +3,10 @@ package com.ssafy.algogo.user.service.impl;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.user.dto.request.CheckDuplicateEmailRequestDto;
+import com.ssafy.algogo.user.dto.request.CheckDuplicateNicknameRequestDto;
 import com.ssafy.algogo.user.dto.request.SignupRequestDto;
 import com.ssafy.algogo.user.dto.response.CheckDuplicateEmailResponseDto;
+import com.ssafy.algogo.user.dto.response.CheckDuplicateNicknameResponseDto;
 import com.ssafy.algogo.user.dto.response.SignupResponseDto;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.entity.UserRole;
@@ -60,6 +62,20 @@ public class UserServiceImpl implements UserService {
             responseDto = new CheckDuplicateEmailResponseDto(false);
         } else {
             responseDto = new CheckDuplicateEmailResponseDto(true);
+        }
+
+        return responseDto;
+    }
+
+    @Override
+    public CheckDuplicateNicknameResponseDto isAvailableNickname(CheckDuplicateNicknameRequestDto dto) {
+        boolean result = userRepository.existsByNickname(dto.getNickname());
+        CheckDuplicateNicknameResponseDto responseDto = null;
+
+        if (result) {
+            responseDto = new CheckDuplicateNicknameResponseDto(false);
+        } else {
+            responseDto = new CheckDuplicateNicknameResponseDto(true);
         }
 
         return responseDto;
