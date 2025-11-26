@@ -33,7 +33,6 @@ public class GroupController {
 
   private final GroupService groupService;
 
-
   @GetMapping("/{programId}")
   @ResponseStatus(HttpStatus.OK)
   public SuccessResponse getGroupRoomDetail(
@@ -84,11 +83,15 @@ public class GroupController {
     return new SuccessResponse("그룹방 수정 성공", groupRoomResponseDto);
   }
 
-//  @PostMapping("/{programId}/join")
-//  @ResponseStatus(HttpStatus.NO_CONTENT)
-//  public SuccessResponse applyGroupJoin(
-//      @AuthenticationPrincipal CustomUserDetails customUserDetails
-//
-//  )
+  @PostMapping("/{programId}/join")
+  @ResponseStatus(HttpStatus.OK)
+  public SuccessResponse applyGroupJoin(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
+      @PathVariable Long programId
+  ){
+    groupService.applyGroupJoin(customUserDetails.getUserId(), programId);
+
+    return new SuccessResponse("그룹 참여 신청 성공", null);
+  }
 
 }

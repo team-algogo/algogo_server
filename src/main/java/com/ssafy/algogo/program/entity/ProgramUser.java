@@ -1,12 +1,11 @@
 package com.ssafy.algogo.program.entity;
 
 import com.ssafy.algogo.common.utils.BaseTime;
-import com.ssafy.algogo.program.group.entity.ProgramStatus;
+import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
 import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
@@ -26,7 +25,7 @@ public class ProgramUser extends BaseTime {
     @NotNull
     @Enumerated(EnumType.STRING)
     @JoinColumn(name = "program_status")
-    private ProgramStatus programStatus;
+    private ProgramUserStatus programUserStatus;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,8 +37,8 @@ public class ProgramUser extends BaseTime {
     @JoinColumn(name = "user_id")
     private User user;
 
-    protected ProgramUser(ProgramStatus programStatus, Program program, User user) {
-        this.programStatus = programStatus;
+    protected ProgramUser(ProgramUserStatus programUserStatus, Program program, User user) {
+        this.programUserStatus = programUserStatus;
         this.program = program;
         this.user = user;
     }

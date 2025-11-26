@@ -72,7 +72,11 @@ public enum ErrorCode {
      * Program (프로그램 전체 관려)
      * 프로그램, 프로그램 타입 관련
      * ============================================================ */
+    /** 프로그램 타입이 존재하지 않음 */
     PROGRAM_TYPE_NOT_FOUND(HttpStatus.BAD_REQUEST, "PROGRAM_TYPE_NOT_FOUND"),
+
+    /** 사용자가 이미 그룹에 존재할 경우 발생시킬 conflict 에러*/
+    PROGRAM_ALREADY_JOINED(HttpStatus.CONFLICT, "PROGRAM_ALREADY_JOINED"),
 
 
     /* ============================================================

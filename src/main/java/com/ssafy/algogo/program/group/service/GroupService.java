@@ -14,4 +14,6 @@ public interface GroupService {
   public CheckGroupNameResponseDto checkGroupName(CheckGroupNameRequestDto checkGroupNameRequestDto);
 
   public GroupRoomResponseDto updateGroupRoom(Long programId, UpdateGroupRoomRequestDto updateGroupRoomRequestDto);
+
+  void applyGroupJoin(Long userId, Long programId);
 }

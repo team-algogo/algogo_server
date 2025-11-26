@@ -1,4 +1,4 @@
-package com.ssafy.algogo.program.group.service;
+package com.ssafy.algogo.program.group.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
@@ -11,11 +11,13 @@ import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.entity.GroupRoom;
 import com.ssafy.algogo.program.group.entity.GroupsUser;
-import com.ssafy.algogo.program.group.entity.ProgramStatus;
+import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
 import com.ssafy.algogo.program.group.repository.GroupRepository;
 import com.ssafy.algogo.program.group.repository.GroupUserRepository;
+import com.ssafy.algogo.program.group.service.GroupService;
 import com.ssafy.algogo.program.repository.ProgramRepository;
 import com.ssafy.algogo.program.repository.ProgramTypeRepository;
+import com.ssafy.algogo.program.service.ProgramService;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class GroupServiceImpl implements GroupService{
+public class GroupServiceImpl implements GroupService {
+
+  private final ProgramService programService;
 
   private final GroupRepository groupRepository;
   private final UserRepository userRepository;
@@ -70,7 +74,7 @@ public class GroupServiceImpl implements GroupService{
     groupRepository.save(groupRoom);
 
     GroupsUser groupsUser = GroupsUser.create(
-        ProgramStatus.ACTIVE,
+        ProgramUserStatus.ACTIVE,
         groupRoom,
         user,
         GroupRole.ADMIN
@@ -99,13 +103,23 @@ public class GroupServiceImpl implements GroupService{
     }
 
     groupRoom.updateGroupRoom(
-        groupRoom.getTitle(),  // 기존 title 유지
-        groupRoom.getDescription(), // 기존 description 유지
+        groupRoom.getTitle(),
+        groupRoom.getDescription(),
         updateGroupRoomRequestDto.getCapacity()
     );
 
     groupRepository.save(groupRoom);
 
     return groupRepository.getGroupRoomDetail(groupRoom.getId());
+  }
+
+  @Override
+  public void applyGroupJoin(Long userId, Long programId) {
+    GroupRoom groupRoom = groupRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+    programService.applyProgramJoin(userId, programId);
+
+    // 방장에게 알람 보내는 로직 나중에 추가
   }
 }
