@@ -2,6 +2,8 @@ package com.ssafy.algogo.program.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
+import com.ssafy.algogo.program.dto.response.GetGroupJoinStateListResponseDto;
+import com.ssafy.algogo.program.dto.response.GetGroupJoinStateResponseDto;
 import com.ssafy.algogo.program.entity.JoinStatus;
 import com.ssafy.algogo.program.entity.Program;
 import com.ssafy.algogo.program.entity.ProgramJoin;
@@ -14,7 +16,9 @@ import com.ssafy.algogo.program.repository.ProgramUserRepository;
 import com.ssafy.algogo.program.service.ProgramService;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -60,5 +64,18 @@ public class ProgramServiceImpl implements ProgramService {
         .joinStatus(JoinStatus.PENDING)
         .build();
     programJoinRepository.save(programJoin);
+  }
+
+  @Override
+  public GetGroupJoinStateListResponseDto getProgramJoinState(Long programId) {
+    //만약 유저 신청 정보가 엄청 많은 경우는 어떻게 처리? <- 이 부분은 나중에 고민
+
+    List<ProgramJoin> programJoins = programJoinRepository.findByProgramIdWithUser(programId);
+
+    List<GetGroupJoinStateResponseDto> userList = programJoins.stream()
+        .map(GetGroupJoinStateResponseDto::from)
+        .collect(Collectors.toList());
+
+    return new GetGroupJoinStateListResponseDto(userList);
   }
 }

@@ -2,6 +2,7 @@ package com.ssafy.algogo.program.group.controller;
 
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.SuccessResponse;
+import com.ssafy.algogo.program.dto.response.GetGroupJoinStateListResponseDto;
 import com.ssafy.algogo.program.group.config.GroupAuthorize;
 import com.ssafy.algogo.program.group.config.GroupId;
 import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
@@ -110,5 +111,15 @@ public class GroupController {
     return new SuccessResponse("그룹 회원 참여 신청 상태 수정 성공", null);
   }
 
+  @GetMapping("/{programId}/join/lists")
+  @ResponseStatus(HttpStatus.OK)
+  @GroupAuthorize(minRole = GroupRole.ADMIN)
+  public SuccessResponse getGroupJoinState(
+      @PathVariable @GroupId Long programId
+  ){
+    GetGroupJoinStateListResponseDto getGroupJoinStateListResponseDto = groupService.getGroupJoinState(programId);
+
+    return new SuccessResponse("그룹 회원 참여신청 리스트 조회에 성공했습니다.", getGroupJoinStateListResponseDto);
+  }
 
 }
