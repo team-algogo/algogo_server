@@ -2,10 +2,13 @@ package com.ssafy.algogo.program.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
+import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
 import com.ssafy.algogo.program.dto.response.GetGroupJoinStateListResponseDto;
 import com.ssafy.algogo.program.dto.response.GetGroupJoinStateResponseDto;
+import com.ssafy.algogo.program.entity.InviteStatus;
 import com.ssafy.algogo.program.entity.JoinStatus;
 import com.ssafy.algogo.program.entity.Program;
+import com.ssafy.algogo.program.entity.ProgramInvite;
 import com.ssafy.algogo.program.entity.ProgramJoin;
 import com.ssafy.algogo.program.entity.ProgramUser;
 import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
@@ -78,4 +81,36 @@ public class ProgramServiceImpl implements ProgramService {
 
     return new GetGroupJoinStateListResponseDto(userList);
   }
+
+  @Override
+  public void applyProgramInvite(Long programId,
+      ApplyProgramInviteRequestDto applyProgramInviteRequestDto) {
+
+    // 프로그램에 이미 참여한 사용자가 있는지 확인 (ProgramUserStatus가 ACTIVE인 경우)
+    Optional<ProgramUser> existingUserInProgram = programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(applyProgramInviteRequestDto.getUserId(), programId, ProgramUserStatus.ACTIVE);
+    if (existingUserInProgram.isPresent()) {
+      throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
+    }
+
+    // 이미 PENDING 상태로 초대가 존재하는지 확인
+    Optional<ProgramInvite> existingInvite = programInviteRepository.findByProgramIdAndUserIdAndInviteStatus(
+        programId, applyProgramInviteRequestDto.getUserId(), InviteStatus.PENDING);
+
+    if (existingInvite.isPresent()) {
+      throw new CustomException("이미 초대 신청이 존재합니다.", ErrorCode.DUPLICATE_RESOURCE);
+    }
+
+    Program program = programRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("프로그램을 찾을 수 없습니다.", ErrorCode.PROGRAM_ID_NOT_FOUND));
+    User user = userRepository.findById(applyProgramInviteRequestDto.getUserId())
+        .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
+
+    ProgramInvite programInvite = ProgramInvite.builder()
+        .program(program)
+        .user(user)
+        .inviteStatus(InviteStatus.PENDING)
+        .build();
+    programInviteRepository.save(programInvite);
+  }
+
 }

@@ -1,5 +1,6 @@
 package com.ssafy.algogo.program.group.service;
 
+import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
 import com.ssafy.algogo.program.dto.response.GetGroupJoinStateListResponseDto;
 import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
@@ -22,4 +23,6 @@ public interface GroupService {
   void updateGroupJoinState(Long userId, Long programId, Long joinId, UpdateProgramJoinStateRequestDto updateProgramJoinStateRequestDto);
 
     GetGroupJoinStateListResponseDto getGroupJoinState(Long programId);
+
+  void applyGroupInvite(Long programId, ApplyProgramInviteRequestDto applyProgramInviteRequestDto);
 }

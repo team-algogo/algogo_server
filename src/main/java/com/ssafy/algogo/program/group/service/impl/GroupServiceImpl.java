@@ -2,6 +2,7 @@ package com.ssafy.algogo.program.group.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
+import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
 import com.ssafy.algogo.program.dto.response.GetGroupJoinStateListResponseDto;
 import com.ssafy.algogo.program.entity.JoinStatus;
 import com.ssafy.algogo.program.entity.Program;
@@ -195,5 +196,14 @@ public class GroupServiceImpl implements GroupService {
         .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
     return programService.getProgramJoinState(programId);
+  }
+
+  @Override
+  public void applyGroupInvite(Long programId,
+      ApplyProgramInviteRequestDto applyProgramInviteRequestDto) {
+    GroupRoom groupRoom = groupRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+    programService.applyProgramInvite(programId, applyProgramInviteRequestDto);
   }
 }
