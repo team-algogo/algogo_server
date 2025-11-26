@@ -8,7 +8,8 @@ import com.ssafy.algogo.program.group.config.GroupAuthorize;
 import com.ssafy.algogo.program.group.config.GroupId;
 import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
-import com.ssafy.algogo.program.dto.request.UpdateProgramJoinStateRequestDto;
+import com.ssafy.algogo.program.group.dto.request.UpdateGroupInviteStateRequestDto;
+import com.ssafy.algogo.program.group.dto.request.UpdateGroupJoinStateRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
@@ -104,10 +105,10 @@ public class GroupController {
       @AuthenticationPrincipal CustomUserDetails customUserDetails,
       @PathVariable @GroupId Long programId,
       @PathVariable Long joinId,
-      @RequestBody @Valid UpdateProgramJoinStateRequestDto updateProgramJoinStateRequestDto
+      @RequestBody @Valid UpdateGroupJoinStateRequestDto updateGroupJoinStateRequestDto
   ){
     groupService.updateGroupJoinState(customUserDetails.getUserId(), programId, joinId,
-        updateProgramJoinStateRequestDto);
+        updateGroupJoinStateRequestDto);
 
     return new SuccessResponse("그룹 회원 참여 신청 상태 수정 성공", null);
   }
@@ -133,6 +134,20 @@ public class GroupController {
     groupService.applyGroupInvite(programId, applyProgramInviteRequestDto);
 
     return new SuccessResponse("그룹 회원 초대 성공", null);
+  }
+
+  @PutMapping("/{programId}/invite/{inviteId}")
+  @ResponseStatus(HttpStatus.OK)
+  public SuccessResponse updateGroupInviteState(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
+      @PathVariable Long programId,
+      @PathVariable Long inviteId,
+      @RequestBody @Valid UpdateGroupInviteStateRequestDto updateGroupInviteStateRequestDto
+  ){
+    groupService.updateGroupInviteState(customUserDetails.getUserId(), programId, inviteId,
+        updateGroupInviteStateRequestDto);
+
+    return new SuccessResponse(" 그룹회원 초대 상태 수정에 성공했습니다.", null);
   }
 
 }

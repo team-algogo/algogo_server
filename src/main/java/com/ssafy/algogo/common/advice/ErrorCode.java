@@ -78,7 +78,9 @@ public enum ErrorCode {
     /** 사용자가 이미 그룹에 존재할 경우 발생시킬 conflict 에러*/
     PROGRAM_ALREADY_JOINED(HttpStatus.CONFLICT, "PROGRAM_ALREADY_JOINED"),
 
-    PROGRAM_JOIN_NOT_FOUND(HttpStatus.BAD_REQUEST, "GROUP_JOIN_NOT_FOUND"),
+    PROGRAM_JOIN_NOT_FOUND(HttpStatus.BAD_REQUEST, "PROGRAM_JOIN_NOT_FOUND"),
+
+    PROGRAM_INVITE_NOT_FOUND(HttpStatus.BAD_REQUEST, "PROGRAM_INVITE_NOT_FOUND"),
 
     /* ============================================================
      * GROUP (그룹 / 그룹방)

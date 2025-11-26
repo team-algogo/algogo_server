@@ -4,7 +4,8 @@ import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
 import com.ssafy.algogo.program.dto.response.GetGroupJoinStateListResponseDto;
 import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
-import com.ssafy.algogo.program.dto.request.UpdateProgramJoinStateRequestDto;
+import com.ssafy.algogo.program.group.dto.request.UpdateGroupInviteStateRequestDto;
+import com.ssafy.algogo.program.group.dto.request.UpdateGroupJoinStateRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
@@ -20,9 +21,11 @@ public interface GroupService {
 
   void applyGroupJoin(Long userId, Long programId);
 
-  void updateGroupJoinState(Long userId, Long programId, Long joinId, UpdateProgramJoinStateRequestDto updateProgramJoinStateRequestDto);
+  void updateGroupJoinState(Long userId, Long programId, Long joinId, UpdateGroupJoinStateRequestDto updateGroupJoinStateRequestDto);
 
     GetGroupJoinStateListResponseDto getGroupJoinState(Long programId);
 
   void applyGroupInvite(Long programId, ApplyProgramInviteRequestDto applyProgramInviteRequestDto);
+
+  void updateGroupInviteState(Long userId, Long programId, Long inviteId, UpdateGroupInviteStateRequestDto updateGroupInviteStateRequestDto);
 }

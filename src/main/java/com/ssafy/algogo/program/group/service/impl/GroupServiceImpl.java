@@ -4,14 +4,17 @@ import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
 import com.ssafy.algogo.program.dto.response.GetGroupJoinStateListResponseDto;
+import com.ssafy.algogo.program.entity.InviteStatus;
 import com.ssafy.algogo.program.entity.JoinStatus;
 import com.ssafy.algogo.program.entity.Program;
+import com.ssafy.algogo.program.entity.ProgramInvite;
 import com.ssafy.algogo.program.entity.ProgramJoin;
 import com.ssafy.algogo.program.entity.ProgramType;
 import com.ssafy.algogo.program.entity.ProgramUser;
 import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
-import com.ssafy.algogo.program.dto.request.UpdateProgramJoinStateRequestDto;
+import com.ssafy.algogo.program.group.dto.request.UpdateGroupInviteStateRequestDto;
+import com.ssafy.algogo.program.group.dto.request.UpdateGroupJoinStateRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
@@ -22,6 +25,7 @@ import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
 import com.ssafy.algogo.program.group.repository.GroupRepository;
 import com.ssafy.algogo.program.group.repository.GroupUserRepository;
 import com.ssafy.algogo.program.group.service.GroupService;
+import com.ssafy.algogo.program.repository.ProgramInviteRepository;
 import com.ssafy.algogo.program.repository.ProgramJoinRepository;
 import com.ssafy.algogo.program.repository.ProgramRepository;
 import com.ssafy.algogo.program.repository.ProgramTypeRepository;
@@ -49,6 +53,7 @@ public class GroupServiceImpl implements GroupService {
   private final GroupUserRepository groupUserRepository;
   private final ProgramRepository programRepository;
   private final ProgramJoinRepository programJoinRepository;
+  private final ProgramInviteRepository programInviteRepository;
   private final ProgramUserRepository programUserRepository;
 
   @Override
@@ -137,7 +142,7 @@ public class GroupServiceImpl implements GroupService {
 
   @Override
   public void updateGroupJoinState(Long userId, Long programId, Long joinId,
-      UpdateProgramJoinStateRequestDto updateProgramJoinStateRequestDto) {
+      UpdateGroupJoinStateRequestDto updateGroupJoinStateRequestDto) {
 
     GroupRoom groupRoom = groupRepository.findById(programId)
         .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
@@ -159,18 +164,18 @@ public class GroupServiceImpl implements GroupService {
 
     Long applicantId = programJoin.getUser().getId();  // 신청자 ID
 
-    // 신청자가 이미 ACTIVE 상태인지 검사
-    Optional<ProgramUser> existingUserInProgram =
-        programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(
-            applicantId, programId, ProgramUserStatus.ACTIVE);
-    if (existingUserInProgram.isPresent()) {
-      throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
-    }
-
     // 처리 로직
     Program program = programJoin.getProgram();
     User applicant = programJoin.getUser();
-    if (updateProgramJoinStateRequestDto.getIsAccepted().equals("ACCEPTED")) {
+    if (updateGroupJoinStateRequestDto.getIsAccepted().equals("ACCEPTED")) {
+
+      // 신청자가 이미 ACTIVE 상태인지 검사
+      Optional<ProgramUser> existingUserInProgram =
+          programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(
+              applicantId, programId, ProgramUserStatus.ACTIVE);
+      if (existingUserInProgram.isPresent()) {
+        throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
+      }
 
       // 신청 승인 → 프로그램 유저 등록
       GroupsUser groupsUser = GroupsUser.create(ProgramUserStatus.ACTIVE, program, applicant, GroupRole.USER);
@@ -180,7 +185,7 @@ public class GroupServiceImpl implements GroupService {
       programJoin.updateJoinStatus(JoinStatus.ACCEPTED);
       programJoinRepository.save(programJoin);
 
-    } else if (updateProgramJoinStateRequestDto.getIsAccepted().equals("DENIED")) {
+    } else if (updateGroupJoinStateRequestDto.getIsAccepted().equals("DENIED")) {
 
       programJoin.updateJoinStatus(JoinStatus.DENIED);
       programJoinRepository.save(programJoin);
@@ -205,5 +210,64 @@ public class GroupServiceImpl implements GroupService {
         .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
     programService.applyProgramInvite(programId, applyProgramInviteRequestDto);
+  }
+
+  @Override
+  public void updateGroupInviteState(Long userId, Long programId, Long inviteId,
+      UpdateGroupInviteStateRequestDto updateGroupInviteStateRequestDto) {
+
+    GroupRoom groupRoom = groupRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+    // 해당 초대가 실제 존재하는지 확인
+    ProgramInvite programInvite = programInviteRepository.findById(inviteId)
+        .orElseThrow(() -> new CustomException("해당 초대 정보를 찾을 수 없습니다.", ErrorCode.PROGRAM_INVITE_NOT_FOUND));
+
+    // 초대가 해당 programId에 속해야 함
+    if (!programInvite.getProgram().getId().equals(programId)) {
+      throw new CustomException("해당 프로그램의 초대가 아닙니다.", ErrorCode.INVALID_PARAMETER);
+    }
+
+    // 초대가 해당 userId에 속해야 함
+    if(!programInvite.getUser().getId().equals(userId)){
+      throw new CustomException("해당 유저의 초대가 아닙니다.", ErrorCode.INVALID_PARAMETER);
+    }
+
+    // 이미 처리된 초대면 거부
+    if (programInvite.getInviteStatus() != InviteStatus.PENDING) {
+      throw new CustomException("이미 처리된 초대입니다.", ErrorCode.BAD_REQUEST);
+    }
+
+    // 처리 로직
+    if (updateGroupInviteStateRequestDto.getIsAccepted().equals("ACCEPTED")) {
+
+      // 신청자가 이미 ACTIVE 상태인지 검사
+      Optional<ProgramUser> existingUserInProgram =
+          programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(
+              userId, programId, ProgramUserStatus.ACTIVE);
+      if (existingUserInProgram.isPresent()) {
+        throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
+      }
+
+      // 초대 승인 → 프로그램에 사용자를 추가
+      Program program = programInvite.getProgram();
+      User user = programInvite.getUser();
+
+      // ProgramUser 생성 (사용자가 그룹에 참여하도록 설정)
+      GroupsUser groupsUser = GroupsUser.create(ProgramUserStatus.ACTIVE, program, user, GroupRole.USER);
+      programUserRepository.save(groupsUser);
+
+      // 초대 상태를 ACCEPTED로 변경
+      programInvite.updateInviteStatus(InviteStatus.ACCEPTED);
+      programInviteRepository.save(programInvite);
+
+    } else if (updateGroupInviteStateRequestDto.getIsAccepted().equals("DENIED")) {
+
+      // 초대 거절 → 상태만 변경
+      programInvite.updateInviteStatus(InviteStatus.DENIED);
+      programInviteRepository.save(programInvite);
+    }
+
+    // 방장한테 알람 보내는 로직 나중에 추가
   }
 }
