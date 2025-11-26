@@ -3,6 +3,7 @@ package com.ssafy.algogo.user.controller;
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.user.dto.request.CheckDuplicateEmailRequestDto;
 import com.ssafy.algogo.user.dto.request.SignupRequestDto;
+import com.ssafy.algogo.user.dto.response.CheckDuplicateEmailResponseDto;
 import com.ssafy.algogo.user.dto.response.SignupResponseDto;
 import com.ssafy.algogo.user.service.UserService;
 import jakarta.validation.Valid;
@@ -27,8 +28,12 @@ public class UserController {
     @PostMapping("/check/emails")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse checkDuplicateEmail(@RequestBody @Valid CheckDuplicateEmailRequestDto dto) {
-
-        return null;
+        CheckDuplicateEmailResponseDto responseDto = userService.isAvailableEmail(dto);
+        if (responseDto.isAvailable()) {
+            return SuccessResponse.success("사용가능한 이메일입니다.", responseDto);
+        } else {
+            return SuccessResponse.success("이미 존재하는 이메일입니다.", responseDto);
+        }
     }
 
 }

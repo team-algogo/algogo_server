@@ -2,7 +2,9 @@ package com.ssafy.algogo.user.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
+import com.ssafy.algogo.user.dto.request.CheckDuplicateEmailRequestDto;
 import com.ssafy.algogo.user.dto.request.SignupRequestDto;
+import com.ssafy.algogo.user.dto.response.CheckDuplicateEmailResponseDto;
 import com.ssafy.algogo.user.dto.response.SignupResponseDto;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.entity.UserRole;
@@ -46,6 +48,21 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         return SignupResponseDto.response(user);
+    }
+
+    @Override
+    public CheckDuplicateEmailResponseDto isAvailableEmail(CheckDuplicateEmailRequestDto dto) {
+
+        boolean result = userRepository.existsByEmail(dto.getEmail());
+        CheckDuplicateEmailResponseDto responseDto = null;
+
+        if (result) {
+            responseDto = new CheckDuplicateEmailResponseDto(false);
+        } else {
+            responseDto = new CheckDuplicateEmailResponseDto(true);
+        }
+
+        return responseDto;
     }
 
 }
