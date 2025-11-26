@@ -44,4 +44,13 @@ public class User extends BaseTime {
     @Column(name = "user_role")
     private UserRole userRole;
 
+    public void updateUserInfo(String nickname, String description) {
+        this.nickname = nickname;
+        this.description = description;
+    }
+
+    public void updateProfileImage(String profileImage) {
+        this.profileImage = profileImage;
+    }
+
 }

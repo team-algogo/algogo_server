@@ -2,13 +2,9 @@ package com.ssafy.algogo.user.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
-import com.ssafy.algogo.user.dto.request.CheckDuplicateEmailRequestDto;
-import com.ssafy.algogo.user.dto.request.CheckDuplicateNicknameRequestDto;
-import com.ssafy.algogo.user.dto.request.SignupRequestDto;
-import com.ssafy.algogo.user.dto.response.CheckDuplicateEmailResponseDto;
-import com.ssafy.algogo.user.dto.response.CheckDuplicateNicknameResponseDto;
-import com.ssafy.algogo.user.dto.response.SignupResponseDto;
-import com.ssafy.algogo.user.dto.response.UserInfoResponseDto;
+import com.ssafy.algogo.common.utils.S3Service;
+import com.ssafy.algogo.user.dto.request.*;
+import com.ssafy.algogo.user.dto.response.*;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.entity.UserRole;
 import com.ssafy.algogo.user.repository.UserRepository;
@@ -19,14 +15,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private static final String DEFAULT_USER_IMAGE = "https://d3ud9ocg2cusae.cloudfront.net/files/8/0f3b175d-1d3f-4b70-8438-5466f154a0b6.png";
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final S3Service s3Service;
 
     @Override
     public SignupResponseDto signup(SignupRequestDto dto) {
@@ -48,12 +47,13 @@ public class UserServiceImpl implements UserService {
                 .userRole(UserRole.USER);
 
         User user = userBuilder.build();
-        userRepository.save(user);
+        userRepository.save(user); // -> 얘는 더티체킹이 아니라 신규 객체기때문에 save를 해야한다, 수정은 기존 데이터를 이미 JPA가 알고있기에 감시하고 더티체킹,
 
         return SignupResponseDto.from(user);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CheckDuplicateEmailResponseDto isAvailableEmail(CheckDuplicateEmailRequestDto dto) {
 
         boolean result = userRepository.existsByEmail(dto.getEmail());
@@ -69,6 +69,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CheckDuplicateNicknameResponseDto isAvailableNickname(CheckDuplicateNicknameRequestDto dto) {
         boolean result = userRepository.existsByNickname(dto.getNickname());
         CheckDuplicateNicknameResponseDto responseDto = null;
@@ -83,12 +84,50 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserInfoResponseDto getOneUserInfo(Long userId) {
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
 
         return UserInfoResponseDto.from(user);
+    }
+
+    @Override
+    public UpdateUserInfoResponseDto updateUserInfo(Long userId, UpdateUserInfoRequestDto updateUserInfoRequestDto) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
+
+        // TODO : 닉네임 수정시, 화면에서도 중복 체크 버튼을 해줘야한다. 이 부분은 아직 말을 안한 거 같다. -> 에러로 처리하진 않겠다. 중복체크는 에러가 아니다.
+
+        user.updateUserInfo(updateUserInfoRequestDto.getNickname(), updateUserInfoRequestDto.getDescription());
+
+        return UpdateUserInfoResponseDto.from(user);
+    }
+
+    @Override
+    public UpdateUserProfileImageResponseDto updateUserProfileImage(Long userId, MultipartFile image) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
+
+        String newImageUrl = s3Service.uploadProfileImage(image, userId);
+
+        user.updateProfileImage(newImageUrl);
+        // userRepository.save(user); -> 이 부분을 하지 않아도 된다. 배웠습니다..
+        //**이유:** `@Transactional` 안에서 Entity를 변경하면 트랜잭션 커밋 시 자동으로 UPDATE 쿼리가 날아갑니다.
+
+        return UpdateUserProfileImageResponseDto.from(newImageUrl);
+    }
+
+    @Override
+    public UpdateUserProfileImageResponseDto updateDefaultProfileImage(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
+
+        user.updateProfileImage(DEFAULT_USER_IMAGE);
+        return UpdateUserProfileImageResponseDto.from(DEFAULT_USER_IMAGE);
     }
 
 }
