@@ -5,6 +5,7 @@ import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.program.entity.ProgramType;
 import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
+import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
@@ -55,6 +56,11 @@ public class GroupServiceImpl implements GroupService{
   ProgramType programType = programTypeRepository.findByName("group")
       .orElseThrow(() -> new CustomException("group에 해당하는 데이터가 DB에 없습니다.", ErrorCode.PROGRAM_TYPE_NOT_FOUND));
 
+    boolean isTitleConflict = programRepository.existsByTitle(createGroupRoomRequestDto.getTitle());
+    if (isTitleConflict) {
+      throw new CustomException("이미 존재하는 그룹명이 있습니다.", ErrorCode.DUPLICATE_RESOURCE);
+    }
+
     GroupRoom groupRoom = GroupRoom.create(
         createGroupRoomRequestDto.getTitle(),
         createGroupRoomRequestDto.getDescription(),
@@ -78,5 +84,28 @@ public class GroupServiceImpl implements GroupService{
   @Transactional(readOnly = true)
   public CheckGroupNameResponseDto checkGroupName(CheckGroupNameRequestDto checkGroupNameRequestDto) {
     return new CheckGroupNameResponseDto(!programRepository.existsByTitle(checkGroupNameRequestDto.getGroupTitle()));
+  }
+
+  @Override
+  public GroupRoomResponseDto updateGroupRoom(Long programId, UpdateGroupRoomRequestDto updateGroupRoomRequestDto) {
+    GroupRoom groupRoom = groupRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+    if (updateGroupRoomRequestDto.getTitle() != null) {
+      boolean isTitleConflict = programRepository.existsByTitle(updateGroupRoomRequestDto.getTitle());
+      if (isTitleConflict) {
+        throw new CustomException("이미 존재하는 그룹명이 있습니다.", ErrorCode.DUPLICATE_RESOURCE);
+      }
+    }
+
+    groupRoom.updateGroupRoom(
+        groupRoom.getTitle(),  // 기존 title 유지
+        groupRoom.getDescription(), // 기존 description 유지
+        updateGroupRoomRequestDto.getCapacity()
+    );
+
+    groupRepository.save(groupRoom);
+
+    return groupRepository.getGroupRoomDetail(groupRoom.getId());
   }
 }

@@ -12,6 +12,9 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "alarms"
+)
 public class Alarm {
 
     @Id
