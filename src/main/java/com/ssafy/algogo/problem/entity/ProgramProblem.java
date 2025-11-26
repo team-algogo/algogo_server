@@ -1,5 +1,7 @@
 package com.ssafy.algogo.problem.entity;
 
+import com.ssafy.algogo.common.utils.BaseTime;
+import com.ssafy.algogo.problem.dto.request.ProgramProblemRequestDto;
 import com.ssafy.algogo.program.entity.Program;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -11,7 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ProgramProblem {
 
     @Id
@@ -20,19 +22,23 @@ public class ProgramProblem {
 
     @NotNull
     @Column(name = "participant_count")
-    private Long participantCount;
+    @Builder.Default
+    private Long participantCount = 0L;
 
     @NotNull
     @Column(name = "submission_count")
-    private Long submissionCount;
+    @Builder.Default
+    private Long submissionCount = 0L;
 
     @NotNull
     @Column(name = "solved_count")
-    private Long solvedCount;
+    @Builder.Default
+    private Long solvedCount = 0L;
 
     @NotNull
     @Column(name = "view_count")
-    private Long viewCount;
+    @Builder.Default
+    private Long viewCount = 0L;
 
     @NotNull
     @Column(name = "start_date")
@@ -61,4 +67,14 @@ public class ProgramProblem {
     @JoinColumn(name = "problem_id")
     private Problem problem;
 
+    public static ProgramProblem create(Program program, Problem problem, ProgramProblemRequestDto programProblemRequestDto){
+        return ProgramProblem.builder()
+                .program(program)
+                .problem(problem)
+                .startDate((programProblemRequestDto.getStartDate() != null) ? programProblemRequestDto.getStartDate() : LocalDateTime.now())
+                .endDate((programProblemRequestDto.getEndDate() != null) ? programProblemRequestDto.getEndDate() : BaseTime.MYSQL_TIMESTAMP_MAX)
+                .userDifficultyType((programProblemRequestDto.getUserDifficultyType() != null) ? programProblemRequestDto.getUserDifficultyType() : UserDifficultyType.MEDIUM)
+                .difficultyViewType((programProblemRequestDto.getDifficultyViewType() != null) ? programProblemRequestDto.getDifficultyViewType() : DifficultyViewType.PROBLEM_DIFFICULTY)
+                .build();
+    }
 }
