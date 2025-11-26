@@ -4,17 +4,17 @@ import com.ssafy.algogo.user.entity.User;
 
 import java.time.LocalDateTime;
 
-public record SignupResponseDto(
+public record UserInfoResponseDto(
         Long userId,
         String email,
         String description,
         String nickname,
         String profileImage,
-        LocalDateTime createAt,
+        LocalDateTime createdAt,
         LocalDateTime modifiedAt
 ) {
-    public static SignupResponseDto from(User user) {
-        return new SignupResponseDto(
+    public static UserInfoResponseDto from(User user) {
+        return new UserInfoResponseDto(
                 user.getId(),
                 user.getEmail(),
                 user.getDescription(),

@@ -55,7 +55,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다", ErrorCode.ACCESS_DENIED));
 
         return AuthResultDto.builder()
-                .localLoginResponseDto(LocalLoginResponseDto.response(user))
+                .localLoginResponseDto(LocalLoginResponseDto.from(user))
                 .tokenInfo(new TokenInfo(accessToken, refreshToken))
                 .build();
     }

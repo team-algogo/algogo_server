@@ -1,5 +1,6 @@
 package com.ssafy.algogo.user.controller;
 
+import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.user.dto.request.CheckDuplicateEmailRequestDto;
 import com.ssafy.algogo.user.dto.request.CheckDuplicateNicknameRequestDto;
@@ -7,10 +8,12 @@ import com.ssafy.algogo.user.dto.request.SignupRequestDto;
 import com.ssafy.algogo.user.dto.response.CheckDuplicateEmailResponseDto;
 import com.ssafy.algogo.user.dto.response.CheckDuplicateNicknameResponseDto;
 import com.ssafy.algogo.user.dto.response.SignupResponseDto;
+import com.ssafy.algogo.user.dto.response.UserInfoResponseDto;
 import com.ssafy.algogo.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -47,6 +50,14 @@ public class UserController {
         } else {
             return SuccessResponse.success("이미 존재하는 닉네임입니다.", responseDto);
         }
+    }
+
+    @GetMapping("/profiles")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse getUserInfo(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
+        UserInfoResponseDto responseDto = userService.getOneUserInfo(userId);
+        return SuccessResponse.success("유저 정보 조회에 성공했습니다.", responseDto);
     }
 
 }
