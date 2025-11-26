@@ -2,18 +2,21 @@ package com.ssafy.algogo.program.group.service;
 
 import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
+import com.ssafy.algogo.program.dto.request.UpdateProgramJoinStateRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 
 public interface GroupService {
-  public GroupRoomResponseDto getGroupRoomDetail(Long programId);
+  GroupRoomResponseDto getGroupRoomDetail(Long programId);
 
-  public GroupRoomResponseDto createGroupRoom(Long userId, CreateGroupRoomRequestDto createGroupRoomRequestDto);
+  GroupRoomResponseDto createGroupRoom(Long userId, CreateGroupRoomRequestDto createGroupRoomRequestDto);
 
-  public CheckGroupNameResponseDto checkGroupName(CheckGroupNameRequestDto checkGroupNameRequestDto);
+  CheckGroupNameResponseDto checkGroupName(CheckGroupNameRequestDto checkGroupNameRequestDto);
 
-  public GroupRoomResponseDto updateGroupRoom(Long programId, UpdateGroupRoomRequestDto updateGroupRoomRequestDto);
+  GroupRoomResponseDto updateGroupRoom(Long programId, UpdateGroupRoomRequestDto updateGroupRoomRequestDto);
 
   void applyGroupJoin(Long userId, Long programId);
+
+  void updateGroupJoinState(Long userId, Long programId, Long joinId, UpdateProgramJoinStateRequestDto updateProgramJoinStateRequestDto);
 }

@@ -6,6 +6,7 @@ import com.ssafy.algogo.program.group.config.GroupAuthorize;
 import com.ssafy.algogo.program.group.config.GroupId;
 import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
+import com.ssafy.algogo.program.dto.request.UpdateProgramJoinStateRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
@@ -93,5 +94,21 @@ public class GroupController {
 
     return new SuccessResponse("그룹 참여 신청 성공", null);
   }
+
+  @PutMapping("/{programId}/join/{joinId}")
+  @ResponseStatus(HttpStatus.OK)
+  @GroupAuthorize(minRole = GroupRole.ADMIN)
+  public SuccessResponse updateGroupJoinState(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
+      @PathVariable @GroupId Long programId,
+      @PathVariable Long joinId,
+      @RequestBody @Valid UpdateProgramJoinStateRequestDto updateProgramJoinStateRequestDto
+  ){
+    groupService.updateGroupJoinState(customUserDetails.getUserId(), programId, joinId,
+        updateProgramJoinStateRequestDto);
+
+    return new SuccessResponse("그룹 회원 참여 신청 상태 수정 성공", null);
+  }
+
 
 }
