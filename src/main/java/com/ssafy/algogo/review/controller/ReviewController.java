@@ -1,7 +1,9 @@
 package com.ssafy.algogo.review.controller;
 
+import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.SuccessResponse;
-import com.ssafy.algogo.review.dto.request.CodeReviewCreateRequestDto;
+import com.ssafy.algogo.review.dto.request.CreateCodeReviewRequestDto;
+import com.ssafy.algogo.review.dto.request.UpdateCodeReiewRequestDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
@@ -10,7 +12,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,33 +33,41 @@ public class ReviewController {
 
   @PostMapping("")
   @ResponseStatus(HttpStatus.CREATED)
-  public SuccessResponse CodeReviewCreate(
-      //@AuthenticationPrincipal CustomUserDetails customUserDetails,
-      @RequestBody @Valid CodeReviewCreateRequestDto reviewRequest) {
+  public SuccessResponse createCodeReview(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
+      @RequestBody @Valid CreateCodeReviewRequestDto reviewRequest) {
 
-    log.info("reviewRequest {}", reviewRequest);
+    CodeReviewTreeResponseDto codeReviewTreeResponseDto = reviewService.createCodeReview(reviewRequest,
+        customUserDetails.getUserId());
 
-    CodeReviewTreeResponseDto reviewResponse = reviewService.codeReviewCreate(reviewRequest, 1L);
-
-    return new SuccessResponse("리뷰 작성을 성공했습니다.", reviewResponse);
+    return new SuccessResponse("리뷰 작성을 성공했습니다.", codeReviewTreeResponseDto);
   }
 
+  @ResponseStatus(HttpStatus.OK)
   @GetMapping("")
-  public SuccessResponse getCodeReviewListResponseDto(
+  public SuccessResponse getCodeReviews(
       @RequestParam("submission_id") Long submissionId) {
 
-    CodeReviewListResponseDto codeReviewList = reviewService.getReviewsBySubmissionId(submissionId);
+    CodeReviewListResponseDto codeReviewListResponseDto = reviewService.getReviewsBySubmissionId(submissionId);
+
+    return new SuccessResponse("리뷰 작성내역 조회를 성공했습니다.", codeReviewListResponseDto);
+  }
+
 
     return new SuccessResponse("리뷰 작성내역 조회를 성공했습니다.", codeReviewList);
   }
 
+  @ResponseStatus(HttpStatus.OK)
   @GetMapping("/lists/require")
   public SuccessResponse getRequiredCodeReviewResponseDto(
-      //@AuthenticationPrincipal CustomUserDetails customUserDetails
+      @AuthenticationPrincipal CustomUserDetails customUserDetails
   ) {
 
-    RequiredCodeReviewListResponseDto requiredCodeReviewList = reviewService.getRequiredReviews(1L);
+    RequiredCodeReviewListResponseDto requiredCodeReviewListResponseDto = reviewService.getRequiredReviews(
+        customUserDetails.getUserId());
 
-    return new SuccessResponse("내가 해야할 리뷰 리스트 조회를 성공했습니다.", requiredCodeReviewList);
+    return new SuccessResponse("내가 해야할 리뷰 리스트 조회를 성공했습니다.", requiredCodeReviewListResponseDto);
   }
+
+
 }

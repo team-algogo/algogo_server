@@ -2,7 +2,8 @@ package com.ssafy.algogo.review.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
-import com.ssafy.algogo.review.dto.request.CodeReviewCreateRequestDto;
+import com.ssafy.algogo.review.dto.request.CreateCodeReviewRequestDto;
+import com.ssafy.algogo.review.dto.request.UpdateCodeReiewRequestDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
@@ -36,28 +37,28 @@ public class ReviewServiceImpl implements ReviewService {
   private final UserRepository userRepository;
 
   @Override
-  public CodeReviewTreeResponseDto codeReviewCreate(CodeReviewCreateRequestDto reviewRequest, Long userId) {
+  public CodeReviewTreeResponseDto createCodeReview(CreateCodeReviewRequestDto createCodeReviewRequestDto, Long userId) {
 
-    Submission submission = submissionRepository.findById(reviewRequest.getSubmissionId())
+    Submission submission = submissionRepository.findById(createCodeReviewRequestDto.getSubmissionId())
         .orElseThrow(() -> new CustomException("submission ID에 해당하는 데이터가 DB에 없습니다.",
             ErrorCode.SUBMISSION_NOT_FOUND));
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException("user ID에 해당하는 데이터가 DB에 없습니다.", ErrorCode.USER_NOT_FOUND));
 
     Review parentReview = null;
-    if(reviewRequest.getParentReviewId() != null) {
-      parentReview = reviewRepository.findById(reviewRequest.getParentReviewId())
+    if(createCodeReviewRequestDto.getParentReviewId() != null) {
+      parentReview = reviewRepository.findById(createCodeReviewRequestDto.getParentReviewId())
           .orElseThrow(() -> new CustomException("parentReview ID에 해당하는 데이터가 DB에 없습니다.",
               ErrorCode.REVIEW_NOT_FOUND));
     }
 
     Review newReview = Review.builder()
-        .codeLine(reviewRequest.getCodeLine())
+        .codeLine(createCodeReviewRequestDto.getCodeLine())
         .likeCount(0L)
         .parentReview(parentReview)
         .submission(submission)
         .user(user)
-        .content(reviewRequest.getContent())
+        .content(createCodeReviewRequestDto.getContent())
         .build();
 
     Review saveReview = reviewRepository.save(newReview);
@@ -120,8 +121,8 @@ public class ReviewServiceImpl implements ReviewService {
   }
 
   public RequiredCodeReviewListResponseDto getRequiredReviews(Long userId) {
-    List<RequiredCodeReviewResponseDto> requiredCodeReviews = requireReviewRepository.getRequiredReviews(userId);
+    List<RequiredCodeReviewResponseDto> requiredCodeReviewResponseDtos = requireReviewRepository.getRequiredReviews(userId);
 
-    return RequiredCodeReviewListResponseDto.from(requiredCodeReviews);
+    return RequiredCodeReviewListResponseDto.from(requiredCodeReviewResponseDtos);
   }
 }

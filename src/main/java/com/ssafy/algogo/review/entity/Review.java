@@ -5,6 +5,7 @@ import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity

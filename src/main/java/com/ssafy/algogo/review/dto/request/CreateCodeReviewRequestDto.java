@@ -14,7 +14,7 @@ import lombok.ToString;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString
-public class CodeReviewCreateRequestDto {
+public class CreateCodeReviewRequestDto {
   @NotNull(message = "submissionId is required")
   private Long submissionId;
 

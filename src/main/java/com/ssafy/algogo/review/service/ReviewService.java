@@ -1,13 +1,15 @@
 package com.ssafy.algogo.review.service;
 
-import com.ssafy.algogo.review.dto.request.CodeReviewCreateRequestDto;
+import com.ssafy.algogo.review.dto.request.CreateCodeReviewRequestDto;
+import com.ssafy.algogo.review.dto.request.UpdateCodeReiewRequestDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 
 public interface ReviewService {
 
-  public CodeReviewTreeResponseDto codeReviewCreate(CodeReviewCreateRequestDto reviewRequest, Long userId);
+  public CodeReviewTreeResponseDto createCodeReview(CreateCodeReviewRequestDto reviewRequest, Long userId);
   public CodeReviewListResponseDto getReviewsBySubmissionId(Long submissionId);
+  public CodeReviewTreeResponseDto editCodeReview(Long userId, Long reviewId, UpdateCodeReiewRequestDto updateReview);
   public RequiredCodeReviewListResponseDto getRequiredReviews(Long userId);
 }
