@@ -1,7 +1,9 @@
 package com.ssafy.algogo.auth.service.impl;
 
 import com.ssafy.algogo.auth.dto.request.LocalLoginRequestDto;
+import com.ssafy.algogo.auth.dto.response.AuthResultDto;
 import com.ssafy.algogo.auth.dto.response.LocalLoginResponseDto;
+import com.ssafy.algogo.auth.dto.response.TokenInfo;
 import com.ssafy.algogo.auth.service.AuthService;
 import com.ssafy.algogo.auth.service.jwt.JwtTokenProvider;
 import com.ssafy.algogo.auth.service.security.CookieUtils;
@@ -32,7 +34,7 @@ public class AuthServiceImpl implements AuthService {
     private final RedisJwtService redisJwtService;
 
     @Override
-    public LocalLoginResponseDto login(LocalLoginRequestDto dto, HttpServletRequest request, HttpServletResponse response) {
+    public AuthResultDto login(LocalLoginRequestDto dto, HttpServletRequest request, HttpServletResponse response) {
 
         // 이 부분이, email, pwd로 토큰을 만들고
         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken
@@ -46,16 +48,16 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(authentication, ip);
         String refreshToken = jwtTokenProvider.createRefreshToken(authentication, ip);
 
-        CookieUtils.addTokenCookie(response, "accessToken", accessToken, jwtTokenProvider.getAccessTokenValidTime());
-        CookieUtils.addTokenCookie(response, "refreshToken", refreshToken, jwtTokenProvider.getRefreshTokenValidTime());
-
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         redisJwtService.save(customUserDetails.getUserId(), refreshToken, ip); // redist에 rt저장
 
         User user = userRepository.findById(((CustomUserDetails) authentication.getPrincipal()).getUserId())
                 .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다", ErrorCode.ACCESS_DENIED));
 
-        return LocalLoginResponseDto.response(user);
+        return AuthResultDto.builder()
+                .localLoginResponseDto(LocalLoginResponseDto.response(user))
+                .tokenInfo(new TokenInfo(accessToken, refreshToken))
+                .build();
     }
 
 }
