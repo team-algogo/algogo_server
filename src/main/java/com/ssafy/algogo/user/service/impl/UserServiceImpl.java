@@ -2,8 +2,13 @@ package com.ssafy.algogo.user.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
+import com.ssafy.algogo.user.dto.request.CheckDuplicateEmailRequestDto;
+import com.ssafy.algogo.user.dto.request.CheckDuplicateNicknameRequestDto;
 import com.ssafy.algogo.user.dto.request.SignupRequestDto;
+import com.ssafy.algogo.user.dto.response.CheckDuplicateEmailResponseDto;
+import com.ssafy.algogo.user.dto.response.CheckDuplicateNicknameResponseDto;
 import com.ssafy.algogo.user.dto.response.SignupResponseDto;
+import com.ssafy.algogo.user.dto.response.UserInfoResponseDto;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.entity.UserRole;
 import com.ssafy.algogo.user.repository.UserRepository;
@@ -45,7 +50,45 @@ public class UserServiceImpl implements UserService {
         User user = userBuilder.build();
         userRepository.save(user);
 
-        return SignupResponseDto.response(user);
+        return SignupResponseDto.from(user);
+    }
+
+    @Override
+    public CheckDuplicateEmailResponseDto isAvailableEmail(CheckDuplicateEmailRequestDto dto) {
+
+        boolean result = userRepository.existsByEmail(dto.getEmail());
+        CheckDuplicateEmailResponseDto responseDto = null;
+
+        if (result) {
+            responseDto = new CheckDuplicateEmailResponseDto(false);
+        } else {
+            responseDto = new CheckDuplicateEmailResponseDto(true);
+        }
+
+        return responseDto;
+    }
+
+    @Override
+    public CheckDuplicateNicknameResponseDto isAvailableNickname(CheckDuplicateNicknameRequestDto dto) {
+        boolean result = userRepository.existsByNickname(dto.getNickname());
+        CheckDuplicateNicknameResponseDto responseDto = null;
+
+        if (result) {
+            responseDto = new CheckDuplicateNicknameResponseDto(false);
+        } else {
+            responseDto = new CheckDuplicateNicknameResponseDto(true);
+        }
+
+        return responseDto;
+    }
+
+    @Override
+    public UserInfoResponseDto getOneUserInfo(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
+
+        return UserInfoResponseDto.from(user);
     }
 
 }
