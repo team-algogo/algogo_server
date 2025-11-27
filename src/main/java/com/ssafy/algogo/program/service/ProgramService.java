@@ -14,4 +14,5 @@ public interface ProgramService {
     void deleteProgramInvite(Long programId, Long inviteId);
 
   GetProgramInviteStateListResponseDto getProgramInviteState(Long programId);
+
 }

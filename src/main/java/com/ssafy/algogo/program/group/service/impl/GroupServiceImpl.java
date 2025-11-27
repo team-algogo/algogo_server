@@ -301,7 +301,7 @@ public class GroupServiceImpl implements GroupService {
     GroupRoom groupRoom = groupRepository.findById(programId)
         .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
-    List<GroupsUser> groupUsers = groupUserRepository.findByProgramIdWithUser(programId);
+    List<GroupsUser> groupUsers = groupUserRepository.findByProgramIdAndProgramUserStatusWithUser(programId, ProgramUserStatus.ACTIVE);
 
     List<GetGroupMemberResponseDto> members = groupUsers.stream()
         .map(GetGroupMemberResponseDto::from)
@@ -346,5 +346,42 @@ public class GroupServiceImpl implements GroupService {
 
     groupUserRepository.save(groupUser);
 
+  }
+
+  @Override
+  public void deleteGroupMember(Long userId, Long programId, Long programUserId) {
+    GroupRoom groupRoom = groupRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+    GroupsUser tryUser =  groupUserRepository.findByProgramIdAndUserIdWithUser(programId, userId)
+        .orElseThrow(() -> new CustomException("삭제를 시도하는 사용자를 찾을 수 없습니다.", ErrorCode.GROUP_USER_NOT_FOUND));
+
+    GroupsUser targetUser = groupUserRepository.findById(programUserId)
+        .orElseThrow(() -> new CustomException("삭제 대상이 되는 사용자를 찾을 수 없습니다.", ErrorCode.GROUP_USER_NOT_FOUND));
+
+    // 대상이 이미 삭제된 경우
+    if(targetUser.getProgramUserStatus() == ProgramUserStatus.WITHDRAW){
+      throw new CustomException("이미 삭제된 사용자 입니다.", ErrorCode.DUPLICATE_RESOURCE);
+    }
+
+    if (tryUser.getGroupRole() == GroupRole.ADMIN) {
+      // 관리자는 자신을 제외한 다른 유저 삭제 가능
+      if (tryUser.getId().equals(targetUser.getId())) {
+        throw new CustomException("관리자는 자신을 삭제할 수 없습니다.", ErrorCode.BAD_REQUEST);
+      }
+
+      targetUser.updateProgramUserStatus(ProgramUserStatus.WITHDRAW);
+      groupUserRepository.save(targetUser);
+    }
+    // 일반 사용자(USER) 또는 관리자(MANAGER)일 경우
+    else if (tryUser.getGroupRole() == GroupRole.USER || tryUser.getGroupRole() == GroupRole.MANAGER) {
+      // 자신만 삭제 가능
+      if (!tryUser.getId().equals(targetUser.getId())) {
+        throw new CustomException("관라지가 아닌 멤버는 자기 자신만 삭제할 수 있습니다.", ErrorCode.BAD_REQUEST);
+      }
+
+      targetUser.updateProgramUserStatus(ProgramUserStatus.WITHDRAW);
+      groupUserRepository.save(targetUser);
+    }
   }
 }

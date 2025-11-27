@@ -24,7 +24,7 @@ public class ProgramUser extends BaseTime {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @JoinColumn(name = "program_status")
+    @Column(name = "program_user_status")
     private ProgramUserStatus programUserStatus;
 
     @NotNull
@@ -41,5 +41,9 @@ public class ProgramUser extends BaseTime {
         this.programUserStatus = programUserStatus;
         this.program = program;
         this.user = user;
+    }
+
+    public void updateProgramUserStatus(ProgramUserStatus programUserStatus) {
+        this.programUserStatus = programUserStatus;
     }
 }

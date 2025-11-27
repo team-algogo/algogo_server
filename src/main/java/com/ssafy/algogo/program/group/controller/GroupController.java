@@ -201,4 +201,17 @@ public class GroupController {
     return new SuccessResponse("그룹회원 권한 수정을 성공했습니다.", null);
   }
 
+  @PutMapping("/{programId}/users/{programUserId}")
+  @ResponseStatus(HttpStatus.OK)
+  @GroupAuthorize(minRole = GroupRole.USER)
+  public SuccessResponse deleteGroupMember(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
+      @PathVariable @GroupId Long programId,
+      @PathVariable Long programUserId
+  ){
+    groupService.deleteGroupMember(customUserDetails.getUserId(), programId, programUserId);
+
+    return new SuccessResponse("그룹회원 삭제를 성공했습니다.", null);
+  }
+
 }

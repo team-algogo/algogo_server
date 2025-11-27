@@ -13,8 +13,15 @@ public interface GroupUserRepository extends JpaRepository<GroupsUser, Long> {
 
   @Query("SELECT gu FROM GroupsUser gu " +
       "JOIN FETCH gu.user u " +
-      "WHERE gu.program.id = :programId")
-  List<GroupsUser> findByProgramIdWithUser(Long programId);
+      "WHERE gu.program.id = :programId " +
+      "AND gu.programUserStatus = :programUserStatus")
+  List<GroupsUser> findByProgramIdAndProgramUserStatusWithUser(Long programId, ProgramUserStatus programUserStatus);
 
   Optional<GroupsUser> findByProgramIdAndUserIdAndProgramUserStatus(Long programId, Long programUserId, ProgramUserStatus programUserStatus);
+
+  @Query("SELECT gu FROM GroupsUser gu " +
+      "JOIN FETCH gu.user u " +
+      "WHERE gu.program.id = :programId " +
+      "AND gu.user.id = :userId")
+  Optional<GroupsUser> findByProgramIdAndUserIdWithUser(Long programId, Long userId);
 }

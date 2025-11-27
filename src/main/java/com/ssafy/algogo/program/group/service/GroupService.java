@@ -39,4 +39,6 @@ public interface GroupService {
     GetGroupMemberListResponseDto getGroupMember(Long programId);
 
   void updateGroupMemberRole(Long programId, Long programUserId, UpdateGroupMemberRoleRequestDto updateGroupMemberRoleRequestDto);
+
+  void deleteGroupMember(Long userId, Long programId, Long programUserId);
 }

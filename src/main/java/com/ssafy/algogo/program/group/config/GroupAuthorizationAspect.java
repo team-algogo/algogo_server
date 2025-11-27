@@ -5,6 +5,7 @@ import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.entity.GroupsUser;
+import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
 import com.ssafy.algogo.program.group.repository.GroupUserRepository;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -39,7 +40,7 @@ public class GroupAuthorizationAspect {
     }
 
     // 그룹에 대한 사용자의 역할 조회 (DB에서 `groups_user` 테이블)
-    GroupsUser groupsUser = groupUserRepository.findByProgramIdAndUserId(groupId, userId)
+    GroupsUser groupsUser = groupUserRepository.findByProgramIdAndUserIdAndProgramUserStatus(groupId, userId, ProgramUserStatus.ACTIVE)
         .orElseThrow(() -> new CustomException(
             "그룹에 대한 유저 권한을 찾을 수 없습니다.",
             ErrorCode.GROUP_USER_NOT_FOUND
