@@ -15,7 +15,7 @@ public record LocalLoginResponseDto(
         LocalDateTime createAt,
         LocalDateTime modifiedAt
 ) {
-    public static LocalLoginResponseDto response(User user) {
+    public static LocalLoginResponseDto from(User user) {
         return new LocalLoginResponseDto(
                 user.getId(),
                 user.getEmail(),

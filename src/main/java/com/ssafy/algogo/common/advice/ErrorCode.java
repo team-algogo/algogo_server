@@ -182,6 +182,28 @@ public enum ErrorCode {
     TIMEOUT_ERROR(HttpStatus.GATEWAY_TIMEOUT, "TIMEOUT_ERROR"),
 
     /* ============================================================
+     * FILE / IMAGE
+     * ============================================================ */
+
+    /** 빈 파일을 보낼 경우 발생하는 에러 */
+    EMPTY_FILE(HttpStatus.BAD_REQUEST, "FILE_IS_EMPTY"),
+
+    /** 파일 사이즈가 10MB 이상일 경우 발생하는 에러 */
+    OVERSIZE_FILE(HttpStatus.BAD_REQUEST, "FILE_SIZE_ERROR-[OVERSIZE]"),
+
+    /** 파일 타입이 허용되지 않을 경우 발생하는 에러 */
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "FILE_TYPE_INVALID"),
+
+    /** 파일 확장자가 허용되지 않는 확장자일 경우 발생하는 에러 */
+    INVALID_FILE_EXTENSION(HttpStatus.BAD_REQUEST, "FILE_EXTENSION_INVALID"),
+
+    /** 파일 업로드가 실패할 경우 발생하는 에러*/
+    FAILED_FILE_UPLOAD(HttpStatus.INTERNAL_SERVER_ERROR, "FAILED_FILE_UPLOAD"),
+
+    /** 파일 확장자를 찾을 수 없는경우 발생하는 에러*/
+    NOT_FOUND_FILE_EXTENSION(HttpStatus.BAD_REQUEST, "NOT_FOUND_FILE_EXTENSION"),
+
+    /* ============================================================
      * SERVER
      * ============================================================ */
 
