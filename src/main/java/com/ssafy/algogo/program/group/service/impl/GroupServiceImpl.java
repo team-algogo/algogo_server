@@ -18,6 +18,8 @@ import com.ssafy.algogo.program.group.dto.request.UpdateGroupInviteStateRequestD
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupJoinStateRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetGroupMemberResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.entity.GroupRoom;
@@ -34,7 +36,9 @@ import com.ssafy.algogo.program.repository.ProgramUserRepository;
 import com.ssafy.algogo.program.service.ProgramService;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -288,5 +292,19 @@ public class GroupServiceImpl implements GroupService {
         .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
     return programService.getProgramInviteState(programId);
+  }
+
+  @Override
+  public GetGroupMemberListResponseDto getGroupMember(Long programId) {
+    GroupRoom groupRoom = groupRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+    List<GroupsUser> groupUsers = groupUserRepository.findByProgramIdWithUser(programId);
+
+    List<GetGroupMemberResponseDto> members = groupUsers.stream()
+        .map(GetGroupMemberResponseDto::from)
+        .collect(Collectors.toList());
+
+    return new GetGroupMemberListResponseDto(members);
   }
 }

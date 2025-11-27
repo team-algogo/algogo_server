@@ -9,6 +9,7 @@ import com.ssafy.algogo.program.group.dto.request.UpdateGroupInviteStateRequestD
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupJoinStateRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 
 public interface GroupService {
@@ -33,4 +34,6 @@ public interface GroupService {
   void deleteGroupInvite(Long programId, Long inviteId);
 
   GetProgramInviteStateListResponseDto getGroupInviteState(Long programId);
+
+    GetGroupMemberListResponseDto getGroupMember(Long programId);
 }

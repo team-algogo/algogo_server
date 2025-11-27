@@ -13,6 +13,7 @@ import com.ssafy.algogo.program.group.dto.request.UpdateGroupInviteStateRequestD
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupJoinStateRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.service.GroupService;
@@ -173,6 +174,17 @@ public class GroupController {
     GetProgramInviteStateListResponseDto getProgramInviteStateListResponseDto = groupService.getGroupInviteState(programId);
 
     return new SuccessResponse("그룹 회원 초대 리스트 조회에 성공했습니다.", getProgramInviteStateListResponseDto);
+  }
+
+  @GetMapping("/{programId}/users")
+  @ResponseStatus(HttpStatus.OK)
+  @GroupAuthorize(minRole = GroupRole.USER)
+  public SuccessResponse getGroupMember(
+      @PathVariable @GroupId Long programId
+  ){
+    GetGroupMemberListResponseDto getGroupMemberListResponseDto = groupService.getGroupMember(programId);
+
+    return new SuccessResponse("그룹 회원 조회 성공", getGroupMemberListResponseDto);
   }
 
 }
