@@ -3,8 +3,10 @@ package com.ssafy.algogo.program.service.impl;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
-import com.ssafy.algogo.program.dto.response.GetGroupJoinStateListResponseDto;
-import com.ssafy.algogo.program.dto.response.GetGroupJoinStateResponseDto;
+import com.ssafy.algogo.program.dto.response.GetProgramInviteStateListResponseDto;
+import com.ssafy.algogo.program.dto.response.GetProgramInviteStateResponseDto;
+import com.ssafy.algogo.program.dto.response.GetProgramJoinStateListResponseDto;
+import com.ssafy.algogo.program.dto.response.GetProgramJoinStateResponseDto;
 import com.ssafy.algogo.program.entity.InviteStatus;
 import com.ssafy.algogo.program.entity.JoinStatus;
 import com.ssafy.algogo.program.entity.Program;
@@ -70,16 +72,17 @@ public class ProgramServiceImpl implements ProgramService {
   }
 
   @Override
-  public GetGroupJoinStateListResponseDto getProgramJoinState(Long programId) {
+  @Transactional(readOnly = true)
+  public GetProgramJoinStateListResponseDto getProgramJoinState(Long programId) {
     //만약 유저 신청 정보가 엄청 많은 경우는 어떻게 처리? <- 이 부분은 나중에 고민
 
     List<ProgramJoin> programJoins = programJoinRepository.findByProgramIdWithUser(programId);
 
-    List<GetGroupJoinStateResponseDto> userList = programJoins.stream()
-        .map(GetGroupJoinStateResponseDto::from)
+    List<GetProgramJoinStateResponseDto> userList = programJoins.stream()
+        .map(GetProgramJoinStateResponseDto::from)
         .collect(Collectors.toList());
 
-    return new GetGroupJoinStateListResponseDto(userList);
+    return new GetProgramJoinStateListResponseDto(userList);
   }
 
   @Override
@@ -131,5 +134,19 @@ public class ProgramServiceImpl implements ProgramService {
     programInviteRepository.delete(programInvite);
 
     // 음 알림을 삭제해야 한다면 해당 로직 나중에 추가
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public GetProgramInviteStateListResponseDto getProgramInviteState(Long programId) {
+    //만약 유저 초대 정보가 엄청 많은 경우는 어떻게 처리? <- 이 부분은 나중에 고민
+
+    List<ProgramInvite> programInvites = programInviteRepository.findByProgramIdWithUser(programId);
+
+    List<GetProgramInviteStateResponseDto> userList = programInvites.stream()
+        .map(GetProgramInviteStateResponseDto::from)
+        .collect(Collectors.toList());
+
+    return new GetProgramInviteStateListResponseDto(userList);
   }
 }

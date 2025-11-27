@@ -3,7 +3,8 @@ package com.ssafy.algogo.program.group.service.impl;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
-import com.ssafy.algogo.program.dto.response.GetGroupJoinStateListResponseDto;
+import com.ssafy.algogo.program.dto.response.GetProgramInviteStateListResponseDto;
+import com.ssafy.algogo.program.dto.response.GetProgramJoinStateListResponseDto;
 import com.ssafy.algogo.program.entity.InviteStatus;
 import com.ssafy.algogo.program.entity.JoinStatus;
 import com.ssafy.algogo.program.entity.Program;
@@ -196,7 +197,8 @@ public class GroupServiceImpl implements GroupService {
   }
 
   @Override
-  public GetGroupJoinStateListResponseDto getGroupJoinState(Long programId) {
+  @Transactional(readOnly = true)
+  public GetProgramJoinStateListResponseDto getGroupJoinState(Long programId) {
     GroupRoom groupRoom = groupRepository.findById(programId)
         .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
@@ -277,5 +279,14 @@ public class GroupServiceImpl implements GroupService {
         .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
     programService.deleteProgramInvite(programId, inviteId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public GetProgramInviteStateListResponseDto getGroupInviteState(Long programId) {
+    GroupRoom groupRoom = groupRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+    return programService.getProgramInviteState(programId);
   }
 }

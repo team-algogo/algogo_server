@@ -6,7 +6,7 @@ import com.ssafy.algogo.program.entity.ProgramJoin;
 import com.ssafy.algogo.user.entity.User;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record GetGroupJoinStateResponseDto(
+public record GetProgramJoinStateResponseDto(
     Long joinId,
     String email,
     String profileImage,
@@ -14,9 +14,9 @@ public record GetGroupJoinStateResponseDto(
     JoinStatus status
 ) {
 
-    public static GetGroupJoinStateResponseDto from(ProgramJoin programJoin) {
+    public static GetProgramJoinStateResponseDto from(ProgramJoin programJoin) {
         User user = programJoin.getUser();
-        return new GetGroupJoinStateResponseDto(
+        return new GetProgramJoinStateResponseDto(
             programJoin.getId(),
             user.getEmail(),
             user.getProfileImage(),
