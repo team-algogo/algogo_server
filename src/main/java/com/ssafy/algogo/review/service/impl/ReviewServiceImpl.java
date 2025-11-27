@@ -7,8 +7,8 @@ import com.ssafy.algogo.review.dto.request.CreateCodeReviewRequestDto;
 import com.ssafy.algogo.review.dto.request.UpdateCodeReiewRequestDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
-import com.ssafy.algogo.review.dto.response.ReceiveCodeReviewListResponseDto;
-import com.ssafy.algogo.review.dto.response.ReceiveCodeReviewResponseDto;
+import com.ssafy.algogo.review.dto.response.UserCodeReviewListResponseDto;
+import com.ssafy.algogo.review.dto.response.UserCodeReviewResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
 import com.ssafy.algogo.review.entity.Review;
@@ -27,8 +27,6 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -156,21 +154,39 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public ReceiveCodeReviewListResponseDto getReceiveReviews(Long userId, Integer page,
+    public UserCodeReviewListResponseDto getReceiveReviews(Long userId, Integer page,
         Integer size) {
 
         // 디폴트 값 설정
         int pageSafe = (page == null || page < 0) ? 0 : page;
         int sizeSafe = (size == null || size <= 0) ? 10 : Math.min(size, 100);
 
-        Page<ReceiveCodeReviewResponseDto> receiveCodeReviewResponseDtos = reviewRepository.getReceiveReviews(
+        Page<UserCodeReviewResponseDto> userCodeReviewResponseDtos = reviewRepository.getReceiveReviews(
             userId, pageSafe, sizeSafe);
 
-        PageInfo pageInfo = PageInfo.of(receiveCodeReviewResponseDtos);
+        PageInfo pageInfo = PageInfo.of(userCodeReviewResponseDtos);
 
-        return ReceiveCodeReviewListResponseDto.from(
+        return UserCodeReviewListResponseDto.from(
             pageInfo,
-            receiveCodeReviewResponseDtos.getContent()
+            userCodeReviewResponseDtos.getContent()
+        );
+    }
+
+    @Override
+    public UserCodeReviewListResponseDto getDoneReviews(Long userId, Integer page, Integer size) {
+
+        // 디폴트 값 설정
+        int pageSafe = (page == null || page < 0) ? 0 : page;
+        int sizeSafe = (size == null || size <= 0) ? 10 : Math.min(size, 100);
+
+        Page<UserCodeReviewResponseDto> userCodeReviewResponseDtos = reviewRepository.getDoneReviews(
+            userId, pageSafe, sizeSafe);
+
+        PageInfo pageInfo = PageInfo.of(userCodeReviewResponseDtos);
+
+        return UserCodeReviewListResponseDto.from(
+            pageInfo,
+            userCodeReviewResponseDtos.getContent()
         );
     }
 

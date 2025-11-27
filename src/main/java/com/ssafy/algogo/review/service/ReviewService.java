@@ -4,10 +4,8 @@ import com.ssafy.algogo.review.dto.request.CreateCodeReviewRequestDto;
 import com.ssafy.algogo.review.dto.request.UpdateCodeReiewRequestDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
-import com.ssafy.algogo.review.dto.response.ReceiveCodeReviewListResponseDto;
-import com.ssafy.algogo.review.dto.response.ReceiveCodeReviewResponseDto;
+import com.ssafy.algogo.review.dto.response.UserCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
-import org.springframework.data.domain.Page;
 
 public interface ReviewService {
 
@@ -21,6 +19,9 @@ public interface ReviewService {
 
     public RequiredCodeReviewListResponseDto getRequiredReviews(Long userId);
 
-    public ReceiveCodeReviewListResponseDto getReceiveReviews(Long userId, Integer page,
+    public UserCodeReviewListResponseDto getReceiveReviews(Long userId, Integer page,
+        Integer size);
+
+    public UserCodeReviewListResponseDto getDoneReviews(Long userId, Integer page,
         Integer size);
 }

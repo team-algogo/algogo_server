@@ -2,21 +2,19 @@ package com.ssafy.algogo.review.controller;
 
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.SuccessResponse;
-import com.ssafy.algogo.common.dto.PageInfo;
 import com.ssafy.algogo.review.dto.request.CreateCodeReviewRequestDto;
 import com.ssafy.algogo.review.dto.request.UpdateCodeReiewRequestDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
-import com.ssafy.algogo.review.dto.response.ReceiveCodeReviewListResponseDto;
-import com.ssafy.algogo.review.dto.response.ReceiveCodeReviewResponseDto;
+import com.ssafy.algogo.review.dto.response.UserCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 import com.ssafy.algogo.review.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -94,10 +92,26 @@ public class ReviewController {
 
     ) {
 
-        ReceiveCodeReviewListResponseDto receiveCodeReviewListResponseDto = reviewService.getReceiveReviews(
+        UserCodeReviewListResponseDto userCodeReviewListResponseDto = reviewService.getReceiveReviews(
             customUserDetails.getUserId(), page, size);
 
-        return new SuccessResponse("내가 받은 리뷰 리스트 조회를 성공했습니다.", receiveCodeReviewListResponseDto);
+        return new SuccessResponse("내가 받은 리뷰 리스트 조회를 성공했습니다.", userCodeReviewListResponseDto);
     }
+
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping("/lists/done")
+    public SuccessResponse getDoneCodeReviewResponseDto(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @RequestParam(defaultValue = "0") Integer page,
+        @RequestParam(defaultValue = "10") Integer size
+
+    ) {
+
+        UserCodeReviewListResponseDto userCodeReviewListResponseDto = reviewService.getDoneReviews(
+            customUserDetails.getUserId(), page, size);
+
+        return new SuccessResponse("내가 한 리뷰 리스트 조회를 성공했습니다.", userCodeReviewListResponseDto);
+    }
+
 
 }
