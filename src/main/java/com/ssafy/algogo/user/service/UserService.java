@@ -1,12 +1,24 @@
 package com.ssafy.algogo.user.service;
 
 
-import com.ssafy.algogo.user.dto.request.SignupRequestDto;
-import com.ssafy.algogo.user.dto.response.SignupResponseDto;
-import com.ssafy.algogo.user.entity.User;
+import com.ssafy.algogo.user.dto.request.*;
+import com.ssafy.algogo.user.dto.response.*;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
 
     SignupResponseDto signup(SignupRequestDto dto);
+
+    CheckDuplicateEmailResponseDto isAvailableEmail(CheckDuplicateEmailRequestDto checkDuplicateEmailRequestDto);
+
+    CheckDuplicateNicknameResponseDto isAvailableNickname(CheckDuplicateNicknameRequestDto checkDuplicateNicknameRequestDto);
+
+    UserInfoResponseDto getOneUserInfo(Long userId);
+
+    UpdateUserInfoResponseDto updateUserInfo(Long userId, UpdateUserInfoRequestDto updateUserInfoRequestDto);
+
+    UpdateUserProfileImageResponseDto updateUserProfileImage(Long userId, MultipartFile image);
+
+    UpdateUserProfileImageResponseDto updateDefaultProfileImage(Long userId);
 
 }
