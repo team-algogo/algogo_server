@@ -11,6 +11,7 @@ import com.ssafy.algogo.review.dto.response.UserCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.UserCodeReviewResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
+import com.ssafy.algogo.review.entity.RequireReview;
 import com.ssafy.algogo.review.entity.Review;
 import com.ssafy.algogo.review.repository.RequireReviewRepository;
 import com.ssafy.algogo.review.repository.ReviewRepository;
@@ -70,6 +71,19 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review saveReview = reviewRepository.save(newReview);
 
+        // 해당 리뷰가 루트 리뷰면..
+        if (saveReview.getParentReview() == null) {
+            // 내가 해야할 리뷰와 같은 제출 id에 리뷰 작성을 했다면
+            // 해당 requireReview 를 가져옴
+            requireReviewRepository
+                .findByUser_IdAndSubmission_Id(userId,
+                    saveReview.getSubmission().getId())
+                .ifPresent(requireReview -> {
+                    requireReview.updateRequireReview(true);
+                });
+
+        }
+
         return CodeReviewTreeResponseDto.from(saveReview);
     }
 
@@ -109,7 +123,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         return CodeReviewTreeResponseDto.from(review);
     }
-
+    
     private List<CodeReviewTreeResponseDto> buildReviewTree(List<Review> reviews) {
 
         Map<Long, CodeReviewTreeResponseDto> dtoMap = new LinkedHashMap<>();

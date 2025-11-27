@@ -41,6 +41,7 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
             .join(programProblem.program, program)
             .join(requireReview.user, user)
             .where(requireReview.user.id.eq(userId))
+            .where(requireReview.isDone.isFalse())
             .fetch();
     }
 }

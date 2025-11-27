@@ -5,6 +5,7 @@ import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value.Bool;
 
 @Entity
 @Getter
@@ -20,8 +21,10 @@ public class RequireReview {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @Column(name = "is_done")
+    @Column(
+        name = "is_done",
+        columnDefinition = "TINYINT(1) NOT NULL DEFAULT 0"
+    )
     private Boolean isDone;
 
     @NotNull
@@ -34,4 +37,7 @@ public class RequireReview {
     @JoinColumn(name = "submission_id")
     private Submission submission;
 
+    public void updateRequireReview(Boolean isDone) {
+        this.isDone = isDone;
+    }
 }
