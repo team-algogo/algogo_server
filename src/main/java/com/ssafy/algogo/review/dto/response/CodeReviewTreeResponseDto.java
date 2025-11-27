@@ -17,24 +17,25 @@ public record CodeReviewTreeResponseDto(Long reviewId,
                                         LocalDateTime createdAt,
                                         LocalDateTime modifiedAt,
                                         List<CodeReviewTreeResponseDto> children
-                                        ) {
-  public static CodeReviewTreeResponseDto from(Review review) {
+) {
 
-    Review parent = review.getParentReview();
-    Long parentReviewId = parent != null ? parent.getId() : null;
+    public static CodeReviewTreeResponseDto from(Review review) {
 
-    return new CodeReviewTreeResponseDto(
-        review.getId(),
-        parentReviewId,
-        review.getUser().getId(),
-        review.getSubmission().getId(),
-        review.getLikeCount(),
-        review.getCodeLine(),
-        review.getContent(),
-        review.getCreatedAt(),
-        review.getModifiedAt(),
-        new ArrayList<>()
-    );
-  }
+        Review parent = review.getParentReview();
+        Long parentReviewId = parent != null ? parent.getId() : null;
+
+        return new CodeReviewTreeResponseDto(
+            review.getId(),
+            parentReviewId,
+            review.getUser().getId(),
+            review.getSubmission().getId(),
+            review.getLikeCount(),
+            review.getCodeLine(),
+            review.getContent(),
+            review.getCreatedAt(),
+            review.getModifiedAt(),
+            new ArrayList<>()
+        );
+    }
 
 }

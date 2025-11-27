@@ -4,12 +4,23 @@ import com.ssafy.algogo.review.dto.request.CreateCodeReviewRequestDto;
 import com.ssafy.algogo.review.dto.request.UpdateCodeReiewRequestDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
+import com.ssafy.algogo.review.dto.response.ReceiveCodeReviewListResponseDto;
+import com.ssafy.algogo.review.dto.response.ReceiveCodeReviewResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
+import org.springframework.data.domain.Page;
 
 public interface ReviewService {
 
-  public CodeReviewTreeResponseDto createCodeReview(CreateCodeReviewRequestDto reviewRequest, Long userId);
-  public CodeReviewListResponseDto getReviewsBySubmissionId(Long submissionId);
-  public CodeReviewTreeResponseDto editCodeReview(Long userId, Long reviewId, UpdateCodeReiewRequestDto updateReview);
-  public RequiredCodeReviewListResponseDto getRequiredReviews(Long userId);
+    public CodeReviewTreeResponseDto createCodeReview(CreateCodeReviewRequestDto reviewRequest,
+        Long userId);
+
+    public CodeReviewListResponseDto getReviewsBySubmissionId(Long submissionId);
+
+    public CodeReviewTreeResponseDto editCodeReview(Long userId, Long reviewId,
+        UpdateCodeReiewRequestDto updateReview);
+
+    public RequiredCodeReviewListResponseDto getRequiredReviews(Long userId);
+
+    public ReceiveCodeReviewListResponseDto getReceiveReviews(Long userId, Integer page,
+        Integer size);
 }

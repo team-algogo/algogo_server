@@ -15,14 +15,15 @@ import lombok.ToString;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString
 public class CreateCodeReviewRequestDto {
-  @NotNull(message = "submissionId is required")
-  private Long submissionId;
 
-  private Long parentReviewId;
+    @NotNull(message = "submissionId is required")
+    private Long submissionId;
 
-  private Long codeLine;
+    private Long parentReviewId;
 
-  @NotBlank(message = "content is required")
-  private String content;
+    private Long codeLine;
+
+    @NotBlank(message = "content is required")
+    private String content;
 
 }

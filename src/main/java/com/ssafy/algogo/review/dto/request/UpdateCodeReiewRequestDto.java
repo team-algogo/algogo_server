@@ -15,9 +15,9 @@ import lombok.ToString;
 @ToString
 public class UpdateCodeReiewRequestDto {
 
-  private Long codeLine;
+    private Long codeLine;
 
-  @NotBlank(message = "content is required")
-  private String content;
+    @NotBlank(message = "content is required")
+    private String content;
 
 }

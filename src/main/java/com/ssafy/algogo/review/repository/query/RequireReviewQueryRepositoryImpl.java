@@ -19,28 +19,28 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepository {
 
-  private final JPAQueryFactory query;
+    private final JPAQueryFactory query;
 
-  @Override
-  public List<RequiredCodeReviewResponseDto> getRequiredReviews(Long userId) {
+    @Override
+    public List<RequiredCodeReviewResponseDto> getRequiredReviews(Long userId) {
 
-    return query
-        .select(Projections.constructor(
-            RequiredCodeReviewResponseDto.class,
-            submission.id,
-            problem.title,
-            program.programType.name,
-            program.title,
-            user.nickname
+        return query
+            .select(Projections.constructor(
+                RequiredCodeReviewResponseDto.class,
+                submission.id,
+                problem.title,
+                program.programType.name,
+                program.title,
+                user.nickname
 
-        ))
-        .from(requireReview)
-        .join(requireReview.submission, submission)
-        .join(submission.programProblem, programProblem)
-        .join(programProblem.problem, problem)
-        .join(programProblem.program, program)
-        .join(requireReview.user, user)
-        .where(requireReview.user.id.eq(userId))
-        .fetch();
-  }
+            ))
+            .from(requireReview)
+            .join(requireReview.submission, submission)
+            .join(submission.programProblem, programProblem)
+            .join(programProblem.problem, problem)
+            .join(programProblem.program, program)
+            .join(requireReview.user, user)
+            .where(requireReview.user.id.eq(userId))
+            .fetch();
+    }
 }
