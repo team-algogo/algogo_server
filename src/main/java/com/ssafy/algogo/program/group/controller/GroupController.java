@@ -11,6 +11,7 @@ import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupInviteStateRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupJoinStateRequestDto;
+import com.ssafy.algogo.program.group.dto.request.UpdateGroupMemberRoleRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
@@ -185,6 +186,19 @@ public class GroupController {
     GetGroupMemberListResponseDto getGroupMemberListResponseDto = groupService.getGroupMember(programId);
 
     return new SuccessResponse("그룹 회원 조회 성공", getGroupMemberListResponseDto);
+  }
+
+  @PutMapping("/{programId}/users/{programUserId}/role")
+  @ResponseStatus(HttpStatus.OK)
+  @GroupAuthorize(minRole = GroupRole.ADMIN)
+  public SuccessResponse updateGroupMemberRole(
+      @PathVariable @GroupId Long programId,
+      @PathVariable Long programUserId,
+      @RequestBody @Valid UpdateGroupMemberRoleRequestDto updateGroupMemberRoleRequestDto
+  ){
+    groupService.updateGroupMemberRole(programId, programUserId, updateGroupMemberRoleRequestDto);
+
+    return new SuccessResponse("그룹회원 권한 수정을 성공했습니다.", null);
   }
 
 }

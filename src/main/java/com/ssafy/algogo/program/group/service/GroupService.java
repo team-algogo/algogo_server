@@ -7,6 +7,7 @@ import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupInviteStateRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupJoinStateRequestDto;
+import com.ssafy.algogo.program.group.dto.request.UpdateGroupMemberRoleRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
@@ -36,4 +37,6 @@ public interface GroupService {
   GetProgramInviteStateListResponseDto getGroupInviteState(Long programId);
 
     GetGroupMemberListResponseDto getGroupMember(Long programId);
+
+  void updateGroupMemberRole(Long programId, Long programUserId, UpdateGroupMemberRoleRequestDto updateGroupMemberRoleRequestDto);
 }

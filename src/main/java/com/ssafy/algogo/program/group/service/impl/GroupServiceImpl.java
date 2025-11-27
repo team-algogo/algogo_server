@@ -16,6 +16,7 @@ import com.ssafy.algogo.program.group.dto.request.CheckGroupNameRequestDto;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupInviteStateRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupJoinStateRequestDto;
+import com.ssafy.algogo.program.group.dto.request.UpdateGroupMemberRoleRequestDto;
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
@@ -295,6 +296,7 @@ public class GroupServiceImpl implements GroupService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public GetGroupMemberListResponseDto getGroupMember(Long programId) {
     GroupRoom groupRoom = groupRepository.findById(programId)
         .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
@@ -306,5 +308,43 @@ public class GroupServiceImpl implements GroupService {
         .collect(Collectors.toList());
 
     return new GetGroupMemberListResponseDto(members);
+  }
+
+  @Override
+  public void updateGroupMemberRole(Long programId, Long programUserId,
+      UpdateGroupMemberRoleRequestDto updateGroupMemberRoleRequestDto) {
+
+    // 프로그램이 그룹인지 확인
+    GroupRoom groupRoom = groupRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+    // 그룹에 해당 프로그램 유저가 존재하는지 확인
+    GroupsUser groupUser = groupUserRepository.findById(programUserId)
+        .orElseThrow(() -> new CustomException("해당 그룹의 멤버가 아닙니다.", ErrorCode.GROUP_USER_NOT_FOUND));
+
+    // 해당 유저가 active가 아닌 경우
+    if(groupUser.getProgramUserStatus() != ProgramUserStatus.ACTIVE){
+      throw new CustomException("해당 멤버는 ACTIVE 상태가 아닙니다.", ErrorCode.GROUP_USER_NOT_FOUND);
+    }
+
+    if(!groupRoom.getId().equals(groupUser.getProgram().getId())){
+      throw new CustomException("프로그램 id 정보와 프로그램 회원 id 정보가 매치하지 않습니다", ErrorCode.BAD_REQUEST);
+    }
+
+    // 변경하려는 role이 기존 역할과 동일한지 확인
+    if (groupUser.getGroupRole().name().equals(updateGroupMemberRoleRequestDto.getRole())) {
+      throw new CustomException("현재 역할과 동일한 권한으로 변경할 수 없습니다.", ErrorCode.BAD_REQUEST);
+    }
+
+    // admin의 권환을 바꾸려고 하는 경우
+    if (groupUser.getGroupRole() == GroupRole.ADMIN) {
+      throw new CustomException("ADMIN의 권한은 바꿀 수 없습니다.", ErrorCode.BAD_REQUEST);
+    }
+
+    GroupRole newRole = GroupRole.valueOf(updateGroupMemberRoleRequestDto.getRole());
+    groupUser.updateRole(newRole);
+
+    groupUserRepository.save(groupUser);
+
   }
 }

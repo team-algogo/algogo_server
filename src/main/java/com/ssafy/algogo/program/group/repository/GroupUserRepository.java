@@ -1,6 +1,7 @@
 package com.ssafy.algogo.program.group.repository;
 
 import com.ssafy.algogo.program.group.entity.GroupsUser;
+import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,4 +15,6 @@ public interface GroupUserRepository extends JpaRepository<GroupsUser, Long> {
       "JOIN FETCH gu.user u " +
       "WHERE gu.program.id = :programId")
   List<GroupsUser> findByProgramIdWithUser(Long programId);
+
+  Optional<GroupsUser> findByProgramIdAndUserIdAndProgramUserStatus(Long programId, Long programUserId, ProgramUserStatus programUserStatus);
 }

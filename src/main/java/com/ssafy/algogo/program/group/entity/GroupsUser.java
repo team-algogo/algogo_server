@@ -31,4 +31,8 @@ public class GroupsUser extends ProgramUser {
     public static GroupsUser create(ProgramUserStatus programUserStatus, Program program, User user, GroupRole groupRole) {
         return new GroupsUser(programUserStatus, program, user, groupRole);
     }
+
+    public void updateRole(GroupRole groupRole) {
+        this.groupRole = groupRole;
+    }
 }
