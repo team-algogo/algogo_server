@@ -3,6 +3,7 @@ package com.ssafy.algogo.program.group.service.impl;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemCreateRequestDto;
+import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.problem.service.ProgramProblemService;
 import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
 import com.ssafy.algogo.program.dto.response.GetProgramInviteStateListResponseDto;
@@ -44,6 +45,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -424,5 +426,16 @@ public class GroupServiceImpl implements GroupService {
                 () -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
         programProblemService.createProgramProblem(programId, programProblemCreateRequestDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProgramProblemPageResponseDto getAllProgramProblems(Long programId, Pageable pageable) {
+
+        GroupRoom groupRoom = groupRepository.findById(programId)
+            .orElseThrow(
+                () -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+        return programProblemService.getAllProgramProblems(programId, pageable);
     }
 }

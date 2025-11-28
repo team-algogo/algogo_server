@@ -1,6 +1,7 @@
 package com.ssafy.algogo.program.group.service;
 
 import com.ssafy.algogo.problem.dto.request.ProgramProblemCreateRequestDto;
+import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
 import com.ssafy.algogo.program.dto.response.GetProgramInviteStateListResponseDto;
 import com.ssafy.algogo.program.dto.response.GetProgramJoinStateListResponseDto;
@@ -13,6 +14,7 @@ import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
+import org.springframework.data.domain.Pageable;
 
 public interface GroupService {
 
@@ -52,4 +54,6 @@ public interface GroupService {
 
     void addGroupProblem(Long programId,
         ProgramProblemCreateRequestDto programProblemCreateRequestDto);
+
+    ProgramProblemPageResponseDto getAllProgramProblems(Long programId, Pageable pageable);
 }
