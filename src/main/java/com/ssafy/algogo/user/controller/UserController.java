@@ -12,6 +12,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users")
@@ -83,6 +85,13 @@ public class UserController {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
         UpdateUserProfileImageResponseDto updateUserProfileImageResponseDto = userService.updateDefaultProfileImage(userId);
         return SuccessResponse.success("프로필 사진 삭제에 성공했습니다.", updateUserProfileImageResponseDto);
+    }
+
+    @GetMapping("/search/members")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse searchUsersInGroupRoom(@RequestParam("content") String content) {
+        List<SearchUserResponseDto> searchUserResponseDtoList = userService.searchUserListByContent(content);
+        return SuccessResponse.success("유저 조회에 성공했습니다.", searchUserResponseDtoList);
     }
 
 }

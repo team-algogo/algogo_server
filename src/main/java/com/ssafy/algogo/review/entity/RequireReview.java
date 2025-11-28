@@ -4,6 +4,8 @@ import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Getter
@@ -31,6 +33,7 @@ public class RequireReview {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "review_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Review review;
 
 }

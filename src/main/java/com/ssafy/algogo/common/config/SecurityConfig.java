@@ -1,6 +1,6 @@
 package com.ssafy.algogo.common.config;
 
-import com.ssafy.algogo.auth.service.jwt.JwtAccessTokenFilter;
+import com.ssafy.algogo.auth.service.jwt.JwtAuthenticationTokenFilter;
 import com.ssafy.algogo.auth.service.jwt.JwtTokenProvider;
 import com.ssafy.algogo.auth.service.jwt.RedisJwtService;
 import com.ssafy.algogo.auth.service.security.CustomUserDetailsService;
@@ -44,7 +44,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
-            .addFilterBefore(new JwtAccessTokenFilter(jwtTokenProvider, redisJwtService),
+            .addFilterBefore(new JwtAuthenticationTokenFilter(jwtTokenProvider, redisJwtService),
                 UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/test/auth/admin").hasRole("ADMIN") // 유저권한 테스트용

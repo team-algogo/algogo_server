@@ -6,12 +6,10 @@ import com.ssafy.algogo.auth.dto.response.LocalLoginResponseDto;
 import com.ssafy.algogo.auth.dto.response.TokenInfo;
 import com.ssafy.algogo.auth.service.AuthService;
 import com.ssafy.algogo.auth.service.jwt.JwtTokenProvider;
-import com.ssafy.algogo.auth.service.security.CookieUtils;
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.auth.service.jwt.RedisJwtService;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
-import com.ssafy.algogo.user.dto.response.SignupResponseDto;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -58,6 +56,11 @@ public class AuthServiceImpl implements AuthService {
                 .localLoginResponseDto(LocalLoginResponseDto.from(user))
                 .tokenInfo(new TokenInfo(accessToken, refreshToken))
                 .build();
+    }
+
+    @Override
+    public void logout(Long userId) {
+        redisJwtService.delete(userId);
     }
 
 }

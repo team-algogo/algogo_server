@@ -17,6 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -128,6 +132,15 @@ public class UserServiceImpl implements UserService {
 
         user.updateProfileImage(DEFAULT_USER_IMAGE);
         return UpdateUserProfileImageResponseDto.from(DEFAULT_USER_IMAGE);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SearchUserResponseDto> searchUserListByContent(String content) {
+        // IgnoreCase -> 대소문자 구별 X 모두 나타냄
+        return userRepository.findByEmailContainingIgnoreCase(content).stream()
+                .map(SearchUserResponseDto::from)
+                .toList();
     }
 
 }

@@ -5,6 +5,8 @@ import com.ssafy.algogo.user.dto.request.*;
 import com.ssafy.algogo.user.dto.response.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 public interface UserService {
 
     SignupResponseDto signup(SignupRequestDto dto);
@@ -20,5 +22,7 @@ public interface UserService {
     UpdateUserProfileImageResponseDto updateUserProfileImage(Long userId, MultipartFile image);
 
     UpdateUserProfileImageResponseDto updateDefaultProfileImage(Long userId);
+
+    List<SearchUserResponseDto> searchUserListByContent(String content);
 
 }

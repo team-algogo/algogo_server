@@ -54,14 +54,24 @@ public enum ErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED"),
 
     /**
+     * 로그아웃한 유저가 로그인 할 경우 재 로그인 에러 코드 전송
+     */
+    LOGOUT_USER_ID(HttpStatus.UNAUTHORIZED, "LOGOUT_USER_ID"),
+
+    /**
      * 토큰이 잘못되었거나 변조된 경우
      */
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_TOKEN"),
 
     /**
-     * 토큰이 만료된 경우 (프론트는 재발급 요청하도록 유도)
+     * 토큰이 만료된 경우 AT (프론트는 재발급 요청하도록 유도)
      */
-    EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "EXPIRED_TOKEN"),
+    EXPIRED_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "EXPIRED_ACCESS_TOKEN"),
+
+    /**
+     * 토큰이 만료된 경우 RT (프론트는 재로그인 요청하도록 유도)
+     */
+    EXPIRED_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "EXPIRED_REFRESH_TOKEN"),
 
     /**
      * 지원하지 않는 토큰 타입
