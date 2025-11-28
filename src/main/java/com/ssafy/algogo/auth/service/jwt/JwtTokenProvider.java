@@ -1,11 +1,8 @@
 package com.ssafy.algogo.auth.service.jwt;
 
-import ch.qos.logback.core.net.server.Client;
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
-import com.ssafy.algogo.auth.service.security.CustomUserDetailsService;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
-import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -16,12 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.net.UnknownServiceException;
 import java.security.Key;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -85,28 +79,6 @@ public class JwtTokenProvider {
                 .setExpiration(new Date(System.currentTimeMillis() + validTime))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
-    }
-
-    public String resolveAccessToken(HttpServletRequest request) {
-        String authorizationHeader = request.getHeader("Authorization");
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            String token = authorizationHeader.substring(7).trim();
-            if (extractTokenType(token).equals("access")) {
-                return token;
-            }
-        }
-        return null;
-    }
-
-    public String resolveRefreshToken(HttpServletRequest request) {
-        String authorizationHeader = request.getHeader("RefreshToken");
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            String token = authorizationHeader.substring(7).trim();
-            if (extractTokenType(token).equals("refresh")) {
-                return token;
-            }
-        }
-        return null;
     }
 
     public String extractTokenType(String token) {
