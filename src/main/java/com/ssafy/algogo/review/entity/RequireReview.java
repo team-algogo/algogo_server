@@ -5,7 +5,6 @@ import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import software.amazon.awssdk.services.s3.endpoints.internal.Value.Bool;
 
 @Entity
 @Getter
@@ -13,7 +12,13 @@ import software.amazon.awssdk.services.s3.endpoints.internal.Value.Bool;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
-    name = "required_reviews"
+    name = "required_reviews",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_required_review_user_submission",
+            columnNames = {"user_id", "submission_id"}
+        )
+    }
 )
 public class RequireReview {
 

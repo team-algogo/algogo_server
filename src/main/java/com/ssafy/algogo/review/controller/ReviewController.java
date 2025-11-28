@@ -72,6 +72,18 @@ public class ReviewController {
     }
 
     @ResponseStatus(HttpStatus.OK)
+    @DeleteMapping("/{reviewId}")
+    public SuccessResponse deleteCodeReview(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable Long reviewId
+    ) {
+
+        reviewService.deleteCodeReview(customUserDetails.getUserId(), reviewId);
+
+        return new SuccessResponse("리뷰 삭제를 성공했습니다.", null);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
     @GetMapping("/lists/require")
     public SuccessResponse getRequiredCodeReviewResponseDto(
         @AuthenticationPrincipal CustomUserDetails customUserDetails

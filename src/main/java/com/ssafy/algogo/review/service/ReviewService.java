@@ -17,6 +17,8 @@ public interface ReviewService {
     public CodeReviewTreeResponseDto editCodeReview(Long userId, Long reviewId,
         UpdateCodeReiewRequestDto updateReview);
 
+    public void deleteCodeReview(Long userId, Long reviewId);
+
     public RequiredCodeReviewListResponseDto getRequiredReviews(Long userId);
 
     public UserCodeReviewListResponseDto getReceiveReviews(Long userId, Integer page,

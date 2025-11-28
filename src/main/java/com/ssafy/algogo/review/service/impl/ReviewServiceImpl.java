@@ -123,7 +123,41 @@ public class ReviewServiceImpl implements ReviewService {
 
         return CodeReviewTreeResponseDto.from(review);
     }
-    
+
+    @Override
+    public void deleteCodeReview(Long userId, Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+            .orElseThrow(() -> new CustomException("reviewID에 해당하는 리뷰가 DB에 없습니다.",
+                ErrorCode.REVIEW_NOT_FOUND));
+
+        if (!review.getUser().getId().equals(userId)) {
+            throw new CustomException("리뷰 작성자만 삭제할 수 있습니다.", ErrorCode.FORBIDDEN);
+        }
+
+        // 리뷰의 제출 id
+        Long submissionId = review.getSubmission().getId();
+
+        // 부모 댓글이라면 자식 댓글부터 삭제
+        Long parentReviewId =
+            review.getParentReview() == null ? null : review.getParentReview().getId();
+        if (parentReviewId == null) {
+            reviewRepository.deleteAllByParentReview_Id(reviewId);
+        }
+        // 본인 삭제
+        reviewRepository.delete(review);
+
+        // user 의 required_reviews 테이블에 해당 submissionId가 있는 지
+        requireReviewRepository.findByUser_IdAndSubmission_Id(userId, submissionId)
+            .ifPresent(requireReview -> {
+                // 해당 submissionId로 작성된 review 가 있는지, 해당 리뷰의 parentId가 null 인지
+                if (!reviewRepository.existsByUser_IdAndSubmission_IdAndParentReviewIsNull(
+                    userId, submissionId)) {
+                    // 없으면, required_reviews 테이블의 isDone false 로 변경
+                    requireReview.updateRequireReview(false);
+                }
+            });
+    }
+
     private List<CodeReviewTreeResponseDto> buildReviewTree(List<Review> reviews) {
 
         Map<Long, CodeReviewTreeResponseDto> dtoMap = new LinkedHashMap<>();

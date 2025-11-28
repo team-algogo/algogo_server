@@ -8,4 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ReviewRepository extends JpaRepository<Review, Long>, ReviewQueryRepository {
 
     List<Review> findAllBySubmission_IdOrderByCreatedAtAsc(Long submissionId);
+
+    void deleteAllByParentReview_Id(Long parentReviewId);
+
+    boolean existsByUser_IdAndSubmission_IdAndParentReviewIsNull(Long userId, Long submissionId);
+
 }
