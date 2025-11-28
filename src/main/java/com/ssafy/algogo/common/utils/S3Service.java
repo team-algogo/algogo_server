@@ -40,7 +40,7 @@ public class S3Service {
     private long maxSize;
 
     private static final List<String> ALLOWED_MIME_TYPES = Arrays.asList(
-            "image/jpeg", "image/png", "image/jpg", "image/webp"
+        "image/jpeg", "image/png", "image/jpg", "image/webp"
     );
 
     public String uploadProfileImage(MultipartFile file, Long userId) {
@@ -69,9 +69,9 @@ public class S3Service {
             String s3Key = extractS3Key(imageUrl);
 
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(s3Key)
-                    .build();
+                .bucket(bucketName)
+                .key(s3Key)
+                .build();
 
             s3Client.deleteObject(deleteObjectRequest);
             log.info("S3 이미지 삭제 완료: {}", s3Key);
@@ -89,7 +89,9 @@ public class S3Service {
         }
 
         if (file.getSize() > maxSize) {
-            throw new CustomException(String.format("파일 크기는 %dMB를 초과할 수 없습니다.", maxSize / 1024 / 1024), ErrorCode.OVERSIZE_FILE);
+            throw new CustomException(
+                String.format("파일 크기는 %dMB를 초과할 수 없습니다.", maxSize / 1024 / 1024),
+                ErrorCode.OVERSIZE_FILE);
         }
 
         String contentType = file.getContentType();
@@ -116,11 +118,11 @@ public class S3Service {
     private void uploadToS3(MultipartFile file, String s3Key) {
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(s3Key)
-                    .contentType(file.getContentType())
-                    .contentLength(file.getSize())
-                    .build();
+                .bucket(bucketName)
+                .key(s3Key)
+                .contentType(file.getContentType())
+                .contentLength(file.getSize())
+                .build();
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
         } catch (IOException e) {
             log.error("S3 업로드 실패: {}", s3Key, e);

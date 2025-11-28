@@ -1,6 +1,6 @@
 package com.ssafy.algogo.program.group.entity;
 
-public enum ProgramStatus {
+public enum ProgramUserStatus {
     ACTIVE,
     WITHDRAW
 }

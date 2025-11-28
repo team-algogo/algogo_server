@@ -9,5 +9,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface GroupAuthorize {
-  GroupRole minRole() default GroupRole.USER;  // 기본값: USER
+
+    GroupRole minRole() default GroupRole.USER;  // 기본값: USER
 }

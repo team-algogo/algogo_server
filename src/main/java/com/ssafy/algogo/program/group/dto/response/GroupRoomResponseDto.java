@@ -14,4 +14,5 @@ public record GroupRoomResponseDto(
     Long memberCount,
     Long programProblemCount
 ) {
+
 }

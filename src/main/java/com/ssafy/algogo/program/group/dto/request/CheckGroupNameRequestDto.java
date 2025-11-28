@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CheckGroupNameRequestDto {
 
-  @NotBlank(message = "groupTitle is required")
-  private String groupTitle;
+    @NotBlank(message = "groupTitle is required")
+    private String groupTitle;
 
 }

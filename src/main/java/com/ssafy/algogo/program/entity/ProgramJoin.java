@@ -20,6 +20,7 @@ public class ProgramJoin {
     private Long id;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "join_status")
     private JoinStatus joinStatus;
 
@@ -32,5 +33,9 @@ public class ProgramJoin {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public void updateJoinStatus(JoinStatus joinStatus) {
+        this.joinStatus = joinStatus;
+    }
 
 }

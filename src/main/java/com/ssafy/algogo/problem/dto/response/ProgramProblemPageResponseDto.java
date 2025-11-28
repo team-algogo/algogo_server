@@ -6,16 +6,18 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-public record ProgramProblemPageResponseDto (
-        PageInfo page,
-        SortInfo sort,
-        List<ProgramProblemResponseDto> problemList
-){
-    public static ProgramProblemPageResponseDto from(Page<ProgramProblemResponseDto> programProblemResponseDto){
+public record ProgramProblemPageResponseDto(
+    PageInfo page,
+    SortInfo sort,
+    List<ProgramProblemResponseDto> problemList
+) {
+
+    public static ProgramProblemPageResponseDto from(
+        Page<ProgramProblemResponseDto> programProblemResponseDto) {
         return new ProgramProblemPageResponseDto(
-                PageInfo.of(programProblemResponseDto),
-                SortInfo.of(programProblemResponseDto),
-                programProblemResponseDto.getContent()
+            PageInfo.of(programProblemResponseDto),
+            SortInfo.of(programProblemResponseDto),
+            programProblemResponseDto.getContent()
         );
     }
 }
