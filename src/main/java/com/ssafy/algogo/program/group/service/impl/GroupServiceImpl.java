@@ -3,6 +3,7 @@ package com.ssafy.algogo.program.group.service.impl;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemCreateRequestDto;
+import com.ssafy.algogo.problem.dto.request.ProgramProblemDeleteRequestDto;
 import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.problem.service.ProgramProblemService;
 import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
@@ -430,12 +431,22 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProgramProblemPageResponseDto getAllProgramProblems(Long programId, Pageable pageable) {
+    public ProgramProblemPageResponseDto getAllGroupProblems(Long programId, Pageable pageable) {
 
         GroupRoom groupRoom = groupRepository.findById(programId)
             .orElseThrow(
                 () -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
         return programProblemService.getAllProgramProblems(programId, pageable);
+    }
+
+    @Override
+    public void deleteGroupProblems(Long programId,
+        ProgramProblemDeleteRequestDto programProblemDeleteRequestDto) {
+        GroupRoom groupRoom = groupRepository.findById(programId)
+            .orElseThrow(
+                () -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+        programProblemService.deleteProgramProblem(programId, programProblemDeleteRequestDto);
     }
 }

@@ -3,6 +3,7 @@ package com.ssafy.algogo.problem.service.impl;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemCreateRequestDto;
+import com.ssafy.algogo.problem.dto.request.ProgramProblemDeleteRequestDto;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemRequestDto;
 import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.problem.dto.response.ProgramProblemResponseDto;
@@ -70,10 +71,14 @@ public class ProgramProblemServiceImpl implements ProgramProblemService {
     }
 
     @Override
-    public void deleteProgramProblem(Long programId, List<Long> programProblemIds) {
+    public void deleteProgramProblem(Long programId,
+        ProgramProblemDeleteRequestDto programProblemDeleteRequestDto) {
         // 삭제 수행 여부에 관계 없이, 잘못된 프로그램 정보로, 요청 자체가 문제인 경우
         programRepository.findById(programId)
             .orElseThrow(() -> new CustomException("프로그램 정보가 잘못 되었습니다.", ErrorCode.NOT_FOUND));
-        programProblemRepository.deleteAllById(programProblemIds);
+        programProblemRepository.deleteAllById(
+            programProblemDeleteRequestDto.getProgramProblemIds());
+
+        // PP 삭제했을 때, 연관된 submission, review, required_review, review_user_reaction을 어떻게 처리할 지 추후 고민 후 반영
     }
 }

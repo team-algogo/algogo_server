@@ -3,6 +3,7 @@ package com.ssafy.algogo.program.group.controller;
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemCreateRequestDto;
+import com.ssafy.algogo.problem.dto.request.ProgramProblemDeleteRequestDto;
 import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
 import com.ssafy.algogo.program.dto.response.GetProgramInviteStateListResponseDto;
@@ -21,6 +22,7 @@ import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.service.GroupService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -244,7 +246,7 @@ public class GroupController {
     @GetMapping("/{programId}/problems/lists")
     @ResponseStatus(HttpStatus.OK)
     @GroupAuthorize(minRole = GroupRole.USER)
-    public SuccessResponse getProgramProblems(
+    public SuccessResponse getGroupProblems(
         @PathVariable @GroupId Long programId,
         @RequestParam(value = "sortBy", defaultValue = "endDate") String sortBy,
         @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection,
@@ -253,9 +255,20 @@ public class GroupController {
     ) {
         Pageable pageable = PageRequest.of(page, size,
             Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
-        ProgramProblemPageResponseDto response = groupService.getAllProgramProblems(programId,
+        ProgramProblemPageResponseDto response = groupService.getAllGroupProblems(programId,
             pageable);
         return new SuccessResponse("그룹 문제 리스트 조회 성공", response);
+    }
+
+    @DeleteMapping("/{programId}/problems")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.MANAGER)
+    public SuccessResponse deleteGroupProblems(
+        @PathVariable @GroupId Long programId,
+        @RequestBody @Valid ProgramProblemDeleteRequestDto programProblemDeleteRequestDto
+    ) {
+        groupService.deleteGroupProblems(programId, programProblemDeleteRequestDto);
+        return new SuccessResponse("그룹문제 삭제를 성공했습니다.", null);
     }
 
 }
