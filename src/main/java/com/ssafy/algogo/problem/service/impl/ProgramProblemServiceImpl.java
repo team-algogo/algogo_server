@@ -14,71 +14,70 @@ import com.ssafy.algogo.problem.repository.ProgramProblemRepository;
 import com.ssafy.algogo.problem.service.ProgramProblemService;
 import com.ssafy.algogo.program.entity.Program;
 import com.ssafy.algogo.program.repository.ProgramRepository;
+import java.util.HashSet;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class ProgramProblemServiceImpl implements ProgramProblemService {
 
-    private final ProgramRepository programRepository;
-    private final ProblemRepository problemRepository;
-    private final ProgramProblemRepository programProblemRepository;
+  private final ProgramRepository programRepository;
+  private final ProblemRepository problemRepository;
+  private final ProgramProblemRepository programProblemRepository;
 
-    /*  Controller에서 사용 시, Pagable default 설정은 아래와 같이 작성
-     *  @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
-     * */
-    @Override
-    @Transactional(readOnly = true)
-    public ProgramProblemPageResponseDto getAllProgramProblems(Long programId, Pageable pageable) {
-        Page<ProgramProblem> programProblems = programProblemRepository.findAllByProgramId(
-            programId, pageable);
-        return ProgramProblemPageResponseDto.from(
-            programProblems.map(ProgramProblemResponseDto::from)
-        );
+  /*  Controller에서 사용 시, Pagable default 설정은 아래와 같이 작성
+   *  @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+   * */
+  @Override
+  @Transactional(readOnly = true)
+  public ProgramProblemPageResponseDto getAllProgramProblems(Long programId, Pageable pageable) {
+    Page<ProgramProblem> programProblems = programProblemRepository.findAllByProgramId(
+        programId, pageable);
+    return ProgramProblemPageResponseDto.from(
+        programProblems.map(ProgramProblemResponseDto::from)
+    );
+  }
+
+  @Override
+  public void createProgramProblem(Long programId,
+      ProgramProblemCreateRequestDto programProblemCreateRequestDto) {
+    Program program = programRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("프로그램 정보가 잘못 되었습니다.", ErrorCode.NOT_FOUND));
+
+    List<ProgramProblemRequestDto> programProblemRequestDtoList = programProblemCreateRequestDto.getProblems();
+    List<Long> problemIdList = programProblemRequestDtoList.stream()
+        .map(ProgramProblemRequestDto::getProblemId)
+        .toList();
+    List<Problem> problemList = problemRepository.findAllById(new HashSet<>(problemIdList));
+
+    // 중복 제거 후 사이즈와 실제 DB 조회 사이즈가 다르면 없는 문제가 요청에 섞인 경우임.
+    if (new HashSet<>(problemIdList).size() != problemList.size()) {
+      throw new CustomException("잘못된 문제 ID 정보가 포함되어 되었습니다.", ErrorCode.BAD_REQUEST);
     }
+    // 정상적인 요청인 경우 -> 프록시 객체로 넣어줌
+    List<ProgramProblem> programProblemList = programProblemRequestDtoList.stream()
+        .map(request -> ProgramProblem.create(program,
+            problemRepository.getReferenceById(request.getProblemId()), request))
+        .toList();
 
-    @Override
-    public void createProgramProblem(Long programId,
-        ProgramProblemCreateRequestDto programProblemCreateRequestDto) {
-        Program program = programRepository.findById(programId)
-            .orElseThrow(() -> new CustomException("프로그램 정보가 잘못 되었습니다.", ErrorCode.NOT_FOUND));
+    programProblemRepository.saveAll(programProblemList);
+  }
 
-        List<ProgramProblemRequestDto> programProblemRequestDtoList = programProblemCreateRequestDto.getProblems();
-        List<Long> problemIdList = programProblemRequestDtoList.stream()
-            .map(ProgramProblemRequestDto::getProblemId)
-            .toList();
-        List<Problem> problemList = problemRepository.findAllById(new HashSet<>(problemIdList));
+  @Override
+  public void deleteProgramProblem(Long programId,
+      ProgramProblemDeleteRequestDto programProblemDeleteRequestDto) {
+    // 삭제 수행 여부에 관계 없이, 잘못된 프로그램 정보로, 요청 자체가 문제인 경우
+    programRepository.findById(programId)
+        .orElseThrow(() -> new CustomException("프로그램 정보가 잘못 되었습니다.", ErrorCode.NOT_FOUND));
+    programProblemRepository.deleteAllById(
+        programProblemDeleteRequestDto.getProgramProblemIds());
 
-        // 중복 제거 후 사이즈와 실제 DB 조회 사이즈가 다르면 없는 문제가 요청에 섞인 경우임.
-        if (new HashSet<>(problemIdList).size() != problemList.size()) {
-            throw new CustomException("잘못된 문제 ID 정보가 포함되어 되었습니다.", ErrorCode.BAD_REQUEST);
-        }
-        // 정상적인 요청인 경우 -> 프록시 객체로 넣어줌
-        List<ProgramProblem> programProblemList = programProblemRequestDtoList.stream()
-            .map(request -> ProgramProblem.create(program,
-                problemRepository.getReferenceById(request.getProblemId()), request))
-            .toList();
-
-        programProblemRepository.saveAll(programProblemList);
-    }
-
-    @Override
-    public void deleteProgramProblem(Long programId,
-        ProgramProblemDeleteRequestDto programProblemDeleteRequestDto) {
-        // 삭제 수행 여부에 관계 없이, 잘못된 프로그램 정보로, 요청 자체가 문제인 경우
-        programRepository.findById(programId)
-            .orElseThrow(() -> new CustomException("프로그램 정보가 잘못 되었습니다.", ErrorCode.NOT_FOUND));
-        programProblemRepository.deleteAllById(
-            programProblemDeleteRequestDto.getProgramProblemIds());
-
-        // PP 삭제했을 때, 연관된 submission, review, required_review, review_user_reaction을 어떻게 처리할 지 추후 고민 후 반영
-    }
+    // PP 삭제했을 때, 연관된 submission, review, required_review, review_user_reaction을 어떻게 처리할 지 추후 고민 후 반영
+  }
 }
