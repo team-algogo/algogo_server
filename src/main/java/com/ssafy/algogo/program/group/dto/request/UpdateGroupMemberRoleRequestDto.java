@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class UpdateGroupMemberRoleRequestDto {
+
     @NotNull(message = "role은 필수 값입니다.")
     @Pattern(regexp = "USER|MANAGER", message = "role 값은 'USER' 또는 'MANAGER'이어야 합니다.")
     String role;

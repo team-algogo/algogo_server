@@ -14,10 +14,10 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(
-        name = "programs",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_program_title", columnNames = {"title"})
-        }
+    name = "programs",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_program_title", columnNames = {"title"})
+    }
 )
 public class Program extends BaseTime {
 
@@ -45,7 +45,7 @@ public class Program extends BaseTime {
         this.programType = programType;
     }
 
-    protected void updateProgram(String title, String description){
+    protected void updateProgram(String title, String description) {
         if (title != null) {
             this.title = title;
         }

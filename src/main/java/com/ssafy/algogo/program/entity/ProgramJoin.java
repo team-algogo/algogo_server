@@ -34,7 +34,7 @@ public class ProgramJoin {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public void updateJoinStatus(JoinStatus joinStatus){
+    public void updateJoinStatus(JoinStatus joinStatus) {
         this.joinStatus = joinStatus;
     }
 

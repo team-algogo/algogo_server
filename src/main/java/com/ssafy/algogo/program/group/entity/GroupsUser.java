@@ -22,13 +22,15 @@ public class GroupsUser extends ProgramUser {
     private GroupRole groupRole;
 
     // 명시적 생성자 추가
-    private GroupsUser(ProgramUserStatus programUserStatus, Program program, User user, GroupRole groupRole) {
+    private GroupsUser(ProgramUserStatus programUserStatus, Program program, User user,
+        GroupRole groupRole) {
         super(programUserStatus, program, user);
         this.groupRole = groupRole;
     }
 
     // 정적 팩토리 메서드 추가
-    public static GroupsUser create(ProgramUserStatus programUserStatus, Program program, User user, GroupRole groupRole) {
+    public static GroupsUser create(ProgramUserStatus programUserStatus, Program program, User user,
+        GroupRole groupRole) {
         return new GroupsUser(programUserStatus, program, user, groupRole);
     }
 

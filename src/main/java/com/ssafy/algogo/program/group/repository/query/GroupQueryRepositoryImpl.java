@@ -13,31 +13,31 @@ import static com.ssafy.algogo.program.group.entity.QGroupRoom.*;
 
 @Repository
 @RequiredArgsConstructor
-public class GroupQueryRepositoryImpl implements GroupQueryRepository{
+public class GroupQueryRepositoryImpl implements GroupQueryRepository {
 
-  private final JPAQueryFactory query;
+    private final JPAQueryFactory query;
 
-  @Override
-  public GroupRoomResponseDto getGroupRoomDetail(Long programId) {
+    @Override
+    public GroupRoomResponseDto getGroupRoomDetail(Long programId) {
 
-    return query
-        .select(Projections.constructor(
-            GroupRoomResponseDto.class,
-            program.id,
-            program.title,
-            program.description,
-            program.createdAt,
-            program.modifiedAt,
-            groupRoom.capacity,
-            programUser.id.countDistinct(),
-            programProblem.id.countDistinct()
-        ))
-        .from(program)
-        .join(groupRoom).on(groupRoom.id.eq(program.id))
-        .leftJoin(programUser).on(programUser.program.id.eq(programId))
-        .leftJoin(programProblem).on(programProblem.program.id.eq(programId))
-        .where(program.id.eq(programId))
-        .groupBy(program.id, groupRoom.capacity)
-        .fetchOne();
-  }
+        return query
+            .select(Projections.constructor(
+                GroupRoomResponseDto.class,
+                program.id,
+                program.title,
+                program.description,
+                program.createdAt,
+                program.modifiedAt,
+                groupRoom.capacity,
+                programUser.id.countDistinct(),
+                programProblem.id.countDistinct()
+            ))
+            .from(program)
+            .join(groupRoom).on(groupRoom.id.eq(program.id))
+            .leftJoin(programUser).on(programUser.program.id.eq(programId))
+            .leftJoin(programProblem).on(programProblem.program.id.eq(programId))
+            .where(program.id.eq(programId))
+            .groupBy(program.id, groupRoom.capacity)
+            .fetchOne();
+    }
 }

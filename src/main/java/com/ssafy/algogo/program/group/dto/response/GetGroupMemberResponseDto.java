@@ -13,6 +13,7 @@ public record GetGroupMemberResponseDto(
     String nickname,
     GroupRole role
 ) {
+
     public static GetGroupMemberResponseDto from(GroupsUser groupsUser) {
         User user = groupsUser.getUser();
         return new GetGroupMemberResponseDto(

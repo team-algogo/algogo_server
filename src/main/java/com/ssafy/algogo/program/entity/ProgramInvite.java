@@ -34,7 +34,7 @@ public class ProgramInvite {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public void updateInviteStatus(InviteStatus inviteStatus){
+    public void updateInviteStatus(InviteStatus inviteStatus) {
         this.inviteStatus = inviteStatus;
     }
 }

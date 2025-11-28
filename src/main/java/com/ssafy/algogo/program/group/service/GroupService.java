@@ -1,5 +1,6 @@
 package com.ssafy.algogo.program.group.service;
 
+import com.ssafy.algogo.problem.dto.request.ProgramProblemCreateRequestDto;
 import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
 import com.ssafy.algogo.program.dto.response.GetProgramInviteStateListResponseDto;
 import com.ssafy.algogo.program.dto.response.GetProgramJoinStateListResponseDto;
@@ -14,31 +15,41 @@ import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 
 public interface GroupService {
-  GroupRoomResponseDto getGroupRoomDetail(Long programId);
 
-  GroupRoomResponseDto createGroupRoom(Long userId, CreateGroupRoomRequestDto createGroupRoomRequestDto);
+    GroupRoomResponseDto getGroupRoomDetail(Long programId);
 
-  CheckGroupNameResponseDto checkGroupName(CheckGroupNameRequestDto checkGroupNameRequestDto);
+    GroupRoomResponseDto createGroupRoom(Long userId,
+        CreateGroupRoomRequestDto createGroupRoomRequestDto);
 
-  GroupRoomResponseDto updateGroupRoom(Long programId, UpdateGroupRoomRequestDto updateGroupRoomRequestDto);
+    CheckGroupNameResponseDto checkGroupName(CheckGroupNameRequestDto checkGroupNameRequestDto);
 
-  void applyGroupJoin(Long userId, Long programId);
+    GroupRoomResponseDto updateGroupRoom(Long programId,
+        UpdateGroupRoomRequestDto updateGroupRoomRequestDto);
 
-  void updateGroupJoinState(Long userId, Long programId, Long joinId, UpdateGroupJoinStateRequestDto updateGroupJoinStateRequestDto);
+    void applyGroupJoin(Long userId, Long programId);
+
+    void updateGroupJoinState(Long userId, Long programId, Long joinId,
+        UpdateGroupJoinStateRequestDto updateGroupJoinStateRequestDto);
 
     GetProgramJoinStateListResponseDto getGroupJoinState(Long programId);
 
-  void applyGroupInvite(Long programId, ApplyProgramInviteRequestDto applyProgramInviteRequestDto);
+    void applyGroupInvite(Long programId,
+        ApplyProgramInviteRequestDto applyProgramInviteRequestDto);
 
-  void updateGroupInviteState(Long userId, Long programId, Long inviteId, UpdateGroupInviteStateRequestDto updateGroupInviteStateRequestDto);
+    void updateGroupInviteState(Long userId, Long programId, Long inviteId,
+        UpdateGroupInviteStateRequestDto updateGroupInviteStateRequestDto);
 
-  void deleteGroupInvite(Long programId, Long inviteId);
+    void deleteGroupInvite(Long programId, Long inviteId);
 
-  GetProgramInviteStateListResponseDto getGroupInviteState(Long programId);
+    GetProgramInviteStateListResponseDto getGroupInviteState(Long programId);
 
     GetGroupMemberListResponseDto getGroupMember(Long programId);
 
-  void updateGroupMemberRole(Long programId, Long programUserId, UpdateGroupMemberRoleRequestDto updateGroupMemberRoleRequestDto);
+    void updateGroupMemberRole(Long programId, Long programUserId,
+        UpdateGroupMemberRoleRequestDto updateGroupMemberRoleRequestDto);
 
-  void deleteGroupMember(Long userId, Long programId, Long programUserId);
+    void deleteGroupMember(Long userId, Long programId, Long programUserId);
+
+    void addGroupProblem(Long programId,
+        ProgramProblemCreateRequestDto programProblemCreateRequestDto);
 }

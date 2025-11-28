@@ -12,7 +12,8 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ProgramProblemCreateRequestDto {
+
     @NotNull
     @Valid
-    List<ProgramProblemRequestDto> programProblemRequestDtoList;
+    List<ProgramProblemRequestDto> problems;
 }

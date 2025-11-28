@@ -35,118 +35,126 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProgramServiceImpl implements ProgramService {
 
-  private final ProgramRepository programRepository;
-  private final ProgramUserRepository programUserRepository;
-  private final ProgramJoinRepository programJoinRepository;
-  private final ProgramInviteRepository programInviteRepository;
-  private final UserRepository userRepository;
+    private final ProgramRepository programRepository;
+    private final ProgramUserRepository programUserRepository;
+    private final ProgramJoinRepository programJoinRepository;
+    private final ProgramInviteRepository programInviteRepository;
+    private final UserRepository userRepository;
 
-  @Override
-  public void applyProgramJoin(Long userId, Long programId) {
+    @Override
+    public void applyProgramJoin(Long userId, Long programId) {
 
-    // 이미 신청한 상태가 PENDING인 경우, conflict 에러 발생
-    Optional<ProgramJoin> existingApplication = programJoinRepository.findByUserIdAndProgramIdAndJoinStatus(userId, programId, JoinStatus.PENDING);
-    if (existingApplication.isPresent()) {
-      throw new CustomException("이미 PENDING 상태로 프로그램 신청이 존재합니다.", ErrorCode.DUPLICATE_RESOURCE);
+        // 이미 신청한 상태가 PENDING인 경우, conflict 에러 발생
+        Optional<ProgramJoin> existingApplication = programJoinRepository.findByUserIdAndProgramIdAndJoinStatus(
+            userId, programId, JoinStatus.PENDING);
+        if (existingApplication.isPresent()) {
+            throw new CustomException("이미 PENDING 상태로 프로그램 신청이 존재합니다.",
+                ErrorCode.DUPLICATE_RESOURCE);
+        }
+
+        // 프로그램에 이미 참여한 사용자가 있는지 확인 (ProgramUserStatus가 ACTIVE인 경우)
+        Optional<ProgramUser> existingUserInProgram = programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(
+            userId, programId, ProgramUserStatus.ACTIVE);
+        if (existingUserInProgram.isPresent()) {
+            throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
+        }
+
+        // 프로그램 신청을 위한 로직
+        Program program = programRepository.findById(programId)
+            .orElseThrow(
+                () -> new CustomException("프로그램을 찾을 수 없습니다.", ErrorCode.PROGRAM_ID_NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
+
+        ProgramJoin programJoin = ProgramJoin.builder()
+            .user(user)
+            .program(program)
+            .joinStatus(JoinStatus.PENDING)
+            .build();
+        programJoinRepository.save(programJoin);
     }
 
-    // 프로그램에 이미 참여한 사용자가 있는지 확인 (ProgramUserStatus가 ACTIVE인 경우)
-    Optional<ProgramUser> existingUserInProgram = programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(userId, programId, ProgramUserStatus.ACTIVE);
-    if (existingUserInProgram.isPresent()) {
-      throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
+    @Override
+    @Transactional(readOnly = true)
+    public GetProgramJoinStateListResponseDto getProgramJoinState(Long programId) {
+        //만약 유저 신청 정보가 엄청 많은 경우는 어떻게 처리? <- 이 부분은 나중에 고민
+
+        List<ProgramJoin> programJoins = programJoinRepository.findByProgramIdWithUser(programId);
+
+        List<GetProgramJoinStateResponseDto> userList = programJoins.stream()
+            .map(GetProgramJoinStateResponseDto::from)
+            .collect(Collectors.toList());
+
+        return new GetProgramJoinStateListResponseDto(userList);
     }
 
-    // 프로그램 신청을 위한 로직
-    Program program = programRepository.findById(programId)
-        .orElseThrow(() -> new CustomException("프로그램을 찾을 수 없습니다.", ErrorCode.PROGRAM_ID_NOT_FOUND));
+    @Override
+    public void applyProgramInvite(Long programId,
+        ApplyProgramInviteRequestDto applyProgramInviteRequestDto) {
 
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
+        // 프로그램에 이미 참여한 사용자가 있는지 확인 (ProgramUserStatus가 ACTIVE인 경우)
+        Optional<ProgramUser> existingUserInProgram = programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(
+            applyProgramInviteRequestDto.getUserId(), programId, ProgramUserStatus.ACTIVE);
+        if (existingUserInProgram.isPresent()) {
+            throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
+        }
 
-    ProgramJoin programJoin = ProgramJoin.builder()
-        .user(user)
-        .program(program)
-        .joinStatus(JoinStatus.PENDING)
-        .build();
-    programJoinRepository.save(programJoin);
-  }
+        // 이미 PENDING 상태로 초대가 존재하는지 확인
+        Optional<ProgramInvite> existingInvite = programInviteRepository.findByProgramIdAndUserIdAndInviteStatus(
+            programId, applyProgramInviteRequestDto.getUserId(), InviteStatus.PENDING);
 
-  @Override
-  @Transactional(readOnly = true)
-  public GetProgramJoinStateListResponseDto getProgramJoinState(Long programId) {
-    //만약 유저 신청 정보가 엄청 많은 경우는 어떻게 처리? <- 이 부분은 나중에 고민
+        if (existingInvite.isPresent()) {
+            throw new CustomException("이미 초대 신청이 존재합니다.", ErrorCode.DUPLICATE_RESOURCE);
+        }
 
-    List<ProgramJoin> programJoins = programJoinRepository.findByProgramIdWithUser(programId);
+        Program program = programRepository.findById(programId)
+            .orElseThrow(
+                () -> new CustomException("프로그램을 찾을 수 없습니다.", ErrorCode.PROGRAM_ID_NOT_FOUND));
+        User user = userRepository.findById(applyProgramInviteRequestDto.getUserId())
+            .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
 
-    List<GetProgramJoinStateResponseDto> userList = programJoins.stream()
-        .map(GetProgramJoinStateResponseDto::from)
-        .collect(Collectors.toList());
-
-    return new GetProgramJoinStateListResponseDto(userList);
-  }
-
-  @Override
-  public void applyProgramInvite(Long programId,
-      ApplyProgramInviteRequestDto applyProgramInviteRequestDto) {
-
-    // 프로그램에 이미 참여한 사용자가 있는지 확인 (ProgramUserStatus가 ACTIVE인 경우)
-    Optional<ProgramUser> existingUserInProgram = programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(applyProgramInviteRequestDto.getUserId(), programId, ProgramUserStatus.ACTIVE);
-    if (existingUserInProgram.isPresent()) {
-      throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
+        ProgramInvite programInvite = ProgramInvite.builder()
+            .program(program)
+            .user(user)
+            .inviteStatus(InviteStatus.PENDING)
+            .build();
+        programInviteRepository.save(programInvite);
     }
 
-    // 이미 PENDING 상태로 초대가 존재하는지 확인
-    Optional<ProgramInvite> existingInvite = programInviteRepository.findByProgramIdAndUserIdAndInviteStatus(
-        programId, applyProgramInviteRequestDto.getUserId(), InviteStatus.PENDING);
+    @Override
+    public void deleteProgramInvite(Long programId, Long inviteId) {
+        ProgramInvite programInvite = programInviteRepository.findById(inviteId)
+            .orElseThrow(() -> new CustomException("해당 초대 정보를 찾을 수 없습니다.",
+                ErrorCode.PROGRAM_INVITE_NOT_FOUND));
 
-    if (existingInvite.isPresent()) {
-      throw new CustomException("이미 초대 신청이 존재합니다.", ErrorCode.DUPLICATE_RESOURCE);
+        // 초대가 해당 programId에 속하는지 확인
+        if (!programInvite.getProgram().getId().equals(programId)) {
+            throw new CustomException("해당 프로그램의 초대가 아닙니다.", ErrorCode.INVALID_PARAMETER);
+        }
+
+        // 이미 처리된 초대는 삭제할 수 없음
+        if (programInvite.getInviteStatus() != InviteStatus.PENDING) {
+            throw new CustomException("이미 처리된 초대는 삭제할 수 없습니다.", ErrorCode.BAD_REQUEST);
+        }
+
+        programInviteRepository.delete(programInvite);
+
+        // 음 알림을 삭제해야 한다면 해당 로직 나중에 추가
     }
 
-    Program program = programRepository.findById(programId)
-        .orElseThrow(() -> new CustomException("프로그램을 찾을 수 없습니다.", ErrorCode.PROGRAM_ID_NOT_FOUND));
-    User user = userRepository.findById(applyProgramInviteRequestDto.getUserId())
-        .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
+    @Override
+    @Transactional(readOnly = true)
+    public GetProgramInviteStateListResponseDto getProgramInviteState(Long programId) {
+        //만약 유저 초대 정보가 엄청 많은 경우는 어떻게 처리? <- 이 부분은 나중에 고민
 
-    ProgramInvite programInvite = ProgramInvite.builder()
-        .program(program)
-        .user(user)
-        .inviteStatus(InviteStatus.PENDING)
-        .build();
-    programInviteRepository.save(programInvite);
-  }
+        List<ProgramInvite> programInvites = programInviteRepository.findByProgramIdWithUser(
+            programId);
 
-  @Override
-  public void deleteProgramInvite(Long programId, Long inviteId) {
-    ProgramInvite programInvite = programInviteRepository.findById(inviteId)
-        .orElseThrow(() -> new CustomException("해당 초대 정보를 찾을 수 없습니다.", ErrorCode.PROGRAM_INVITE_NOT_FOUND));
+        List<GetProgramInviteStateResponseDto> userList = programInvites.stream()
+            .map(GetProgramInviteStateResponseDto::from)
+            .collect(Collectors.toList());
 
-    // 초대가 해당 programId에 속하는지 확인
-    if (!programInvite.getProgram().getId().equals(programId)) {
-      throw new CustomException("해당 프로그램의 초대가 아닙니다.", ErrorCode.INVALID_PARAMETER);
+        return new GetProgramInviteStateListResponseDto(userList);
     }
-
-    // 이미 처리된 초대는 삭제할 수 없음
-    if (programInvite.getInviteStatus() != InviteStatus.PENDING) {
-      throw new CustomException("이미 처리된 초대는 삭제할 수 없습니다.", ErrorCode.BAD_REQUEST);
-    }
-
-    programInviteRepository.delete(programInvite);
-
-    // 음 알림을 삭제해야 한다면 해당 로직 나중에 추가
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public GetProgramInviteStateListResponseDto getProgramInviteState(Long programId) {
-    //만약 유저 초대 정보가 엄청 많은 경우는 어떻게 처리? <- 이 부분은 나중에 고민
-
-    List<ProgramInvite> programInvites = programInviteRepository.findByProgramIdWithUser(programId);
-
-    List<GetProgramInviteStateResponseDto> userList = programInvites.stream()
-        .map(GetProgramInviteStateResponseDto::from)
-        .collect(Collectors.toList());
-
-    return new GetProgramInviteStateListResponseDto(userList);
-  }
 }

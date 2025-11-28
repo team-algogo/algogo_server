@@ -9,10 +9,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 public interface ProgramJoinRepository extends JpaRepository<ProgramJoin, Long> {
-  @Query("SELECT pj FROM ProgramJoin pj " +
-      "JOIN FETCH pj.user u " +
-      "WHERE pj.program.id = :programId")
-  List<ProgramJoin> findByProgramIdWithUser(Long programId);
 
-  public Optional<ProgramJoin> findByUserIdAndProgramIdAndJoinStatus(Long userId, Long programId, JoinStatus joinStatus);
+    @Query("SELECT pj FROM ProgramJoin pj " +
+        "JOIN FETCH pj.user u " +
+        "WHERE pj.program.id = :programId")
+    List<ProgramJoin> findByProgramIdWithUser(Long programId);
+
+    public Optional<ProgramJoin> findByUserIdAndProgramIdAndJoinStatus(Long userId, Long programId,
+        JoinStatus joinStatus);
 }

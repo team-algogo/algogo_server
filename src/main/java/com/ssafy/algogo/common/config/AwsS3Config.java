@@ -26,9 +26,9 @@ public class AwsS3Config {
         AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
 
         return S3Client.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .build();
+            .region(Region.of(region))
+            .credentialsProvider(StaticCredentialsProvider.create(credentials))
+            .build();
     }
 
     // CloudFront를 통해 조회하면 지금 당장은 필요 없는데, 나중에 특정 사용자에게만 파일 직접 다운로드 할때 필요함,
@@ -37,8 +37,8 @@ public class AwsS3Config {
         AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
 
         return S3Presigner.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .build();
+            .region(Region.of(region))
+            .credentialsProvider(StaticCredentialsProvider.create(credentials))
+            .build();
     }
 }

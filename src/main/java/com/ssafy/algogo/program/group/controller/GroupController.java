@@ -2,6 +2,7 @@ package com.ssafy.algogo.program.group.controller;
 
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.SuccessResponse;
+import com.ssafy.algogo.problem.dto.request.ProgramProblemCreateRequestDto;
 import com.ssafy.algogo.program.dto.request.ApplyProgramInviteRequestDto;
 import com.ssafy.algogo.program.dto.response.GetProgramInviteStateListResponseDto;
 import com.ssafy.algogo.program.dto.response.GetProgramJoinStateListResponseDto;
@@ -39,179 +40,201 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/groups")
 public class GroupController {
 
-  private final GroupService groupService;
+    private final GroupService groupService;
 
-  @GetMapping("/{programId}")
-  @ResponseStatus(HttpStatus.OK)
-  public SuccessResponse getGroupRoomDetail(
-      @PathVariable Long programId
-  ){
+    @GetMapping("/{programId}")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse getGroupRoomDetail(
+        @PathVariable Long programId
+    ) {
 
-    GroupRoomResponseDto groupRoomResponseDto = groupService.getGroupRoomDetail(programId);
+        GroupRoomResponseDto groupRoomResponseDto = groupService.getGroupRoomDetail(programId);
 
-    return new SuccessResponse("그룹방 상세 정보 조회 성공", groupRoomResponseDto);
-  }
-
-  @PostMapping
-  @ResponseStatus(HttpStatus.CREATED)
-  public SuccessResponse createGroupRoom(
-      @AuthenticationPrincipal CustomUserDetails customUserDetails,
-      @RequestBody @Valid CreateGroupRoomRequestDto createGroupRoomRequestDto
-  ){
-    GroupRoomResponseDto groupRoomResponseDto = groupService.createGroupRoom(customUserDetails.getUserId(), createGroupRoomRequestDto);
-
-    return new SuccessResponse("그룹방 생성 성공", groupRoomResponseDto);
-  }
-
-  @PostMapping("/check/groupnames")
-  @ResponseStatus(HttpStatus.OK)
-  public SuccessResponse checkGroupName(
-      @RequestBody @Valid CheckGroupNameRequestDto checkGroupNameRequestDto
-  ){
-    CheckGroupNameResponseDto checkGroupNameResponseDto = groupService.checkGroupName(checkGroupNameRequestDto);
-
-    String message = null;
-    if(checkGroupNameResponseDto.isAvailable()){
-      message = "사용가능한 그룹명입니다.";
-    }else{
-      message = "이미 존재하는 그룹명입니다.";
+        return new SuccessResponse("그룹방 상세 정보 조회 성공", groupRoomResponseDto);
     }
-    return new SuccessResponse(message, checkGroupNameResponseDto);
-  }
 
-  @PutMapping("/{programId}")
-  @ResponseStatus(HttpStatus.OK)
-  @GroupAuthorize(minRole = GroupRole.MANAGER)
-  public SuccessResponse updateGroupRoom(
-      @PathVariable @GroupId Long programId,
-      @RequestBody UpdateGroupRoomRequestDto updateGroupRoomRequestDto
-  ){
-    GroupRoomResponseDto groupRoomResponseDto = groupService.updateGroupRoom(programId, updateGroupRoomRequestDto);
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public SuccessResponse createGroupRoom(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @RequestBody @Valid CreateGroupRoomRequestDto createGroupRoomRequestDto
+    ) {
+        GroupRoomResponseDto groupRoomResponseDto = groupService.createGroupRoom(
+            customUserDetails.getUserId(), createGroupRoomRequestDto);
 
-    return new SuccessResponse("그룹방 수정 성공", groupRoomResponseDto);
-  }
+        return new SuccessResponse("그룹방 생성 성공", groupRoomResponseDto);
+    }
 
-  @PostMapping("/{programId}/join")
-  @ResponseStatus(HttpStatus.OK)
-  public SuccessResponse applyGroupJoin(
-      @AuthenticationPrincipal CustomUserDetails customUserDetails,
-      @PathVariable Long programId
-  ){
-    groupService.applyGroupJoin(customUserDetails.getUserId(), programId);
+    @PostMapping("/check/groupnames")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse checkGroupName(
+        @RequestBody @Valid CheckGroupNameRequestDto checkGroupNameRequestDto
+    ) {
+        CheckGroupNameResponseDto checkGroupNameResponseDto = groupService.checkGroupName(
+            checkGroupNameRequestDto);
 
-    return new SuccessResponse("그룹 참여 신청 성공", null);
-  }
+        String message = null;
+        if (checkGroupNameResponseDto.isAvailable()) {
+            message = "사용가능한 그룹명입니다.";
+        } else {
+            message = "이미 존재하는 그룹명입니다.";
+        }
+        return new SuccessResponse(message, checkGroupNameResponseDto);
+    }
 
-  @PutMapping("/{programId}/join/{joinId}")
-  @ResponseStatus(HttpStatus.OK)
-  @GroupAuthorize(minRole = GroupRole.ADMIN)
-  public SuccessResponse updateGroupJoinState(
-      @AuthenticationPrincipal CustomUserDetails customUserDetails,
-      @PathVariable @GroupId Long programId,
-      @PathVariable Long joinId,
-      @RequestBody @Valid UpdateGroupJoinStateRequestDto updateGroupJoinStateRequestDto
-  ){
-    groupService.updateGroupJoinState(customUserDetails.getUserId(), programId, joinId,
-        updateGroupJoinStateRequestDto);
+    @PutMapping("/{programId}")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.MANAGER)
+    public SuccessResponse updateGroupRoom(
+        @PathVariable @GroupId Long programId,
+        @RequestBody UpdateGroupRoomRequestDto updateGroupRoomRequestDto
+    ) {
+        GroupRoomResponseDto groupRoomResponseDto = groupService.updateGroupRoom(programId,
+            updateGroupRoomRequestDto);
 
-    return new SuccessResponse("그룹 회원 참여 신청 상태 수정 성공", null);
-  }
+        return new SuccessResponse("그룹방 수정 성공", groupRoomResponseDto);
+    }
 
-  @GetMapping("/{programId}/join/lists")
-  @ResponseStatus(HttpStatus.OK)
-  @GroupAuthorize(minRole = GroupRole.ADMIN)
-  public SuccessResponse getGroupJoinState(
-      @PathVariable @GroupId Long programId
-  ){
-    GetProgramJoinStateListResponseDto getProgramJoinStateListResponseDto = groupService.getGroupJoinState(programId);
+    @PostMapping("/{programId}/join")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse applyGroupJoin(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable Long programId
+    ) {
+        groupService.applyGroupJoin(customUserDetails.getUserId(), programId);
 
-    return new SuccessResponse("그룹 회원 참여신청 리스트 조회에 성공했습니다.", getProgramJoinStateListResponseDto);
-  }
+        return new SuccessResponse("그룹 참여 신청 성공", null);
+    }
 
-  @PostMapping("/{programId}/invite")
-  @ResponseStatus(HttpStatus.OK)
-  @GroupAuthorize(minRole = GroupRole.ADMIN)
-  public SuccessResponse applyGroupInvite(
-      @PathVariable @GroupId Long programId,
-      @RequestBody @Valid ApplyProgramInviteRequestDto applyProgramInviteRequestDto
-  ){
-    groupService.applyGroupInvite(programId, applyProgramInviteRequestDto);
+    @PutMapping("/{programId}/join/{joinId}")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.ADMIN)
+    public SuccessResponse updateGroupJoinState(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable @GroupId Long programId,
+        @PathVariable Long joinId,
+        @RequestBody @Valid UpdateGroupJoinStateRequestDto updateGroupJoinStateRequestDto
+    ) {
+        groupService.updateGroupJoinState(customUserDetails.getUserId(), programId, joinId,
+            updateGroupJoinStateRequestDto);
 
-    return new SuccessResponse("그룹 회원 초대 성공", null);
-  }
+        return new SuccessResponse("그룹 회원 참여 신청 상태 수정 성공", null);
+    }
 
-  @PutMapping("/{programId}/invite/{inviteId}")
-  @ResponseStatus(HttpStatus.OK)
-  public SuccessResponse updateGroupInviteState(
-      @AuthenticationPrincipal CustomUserDetails customUserDetails,
-      @PathVariable Long programId,
-      @PathVariable Long inviteId,
-      @RequestBody @Valid UpdateGroupInviteStateRequestDto updateGroupInviteStateRequestDto
-  ){
-    groupService.updateGroupInviteState(customUserDetails.getUserId(), programId, inviteId,
-        updateGroupInviteStateRequestDto);
+    @GetMapping("/{programId}/join/lists")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.ADMIN)
+    public SuccessResponse getGroupJoinState(
+        @PathVariable @GroupId Long programId
+    ) {
+        GetProgramJoinStateListResponseDto getProgramJoinStateListResponseDto = groupService.getGroupJoinState(
+            programId);
 
-    return new SuccessResponse(" 그룹회원 초대 상태 수정에 성공했습니다.", null);
-  }
+        return new SuccessResponse("그룹 회원 참여신청 리스트 조회에 성공했습니다.",
+            getProgramJoinStateListResponseDto);
+    }
 
-  @DeleteMapping("/{programId}/invite/{inviteId}")
-  @ResponseStatus(HttpStatus.OK)
-  @GroupAuthorize(minRole = GroupRole.ADMIN)
-  public SuccessResponse deleteGroupInvite(
-      @PathVariable @GroupId Long programId,
-      @PathVariable Long inviteId
-  ){
-    groupService.deleteGroupInvite(programId, inviteId);
+    @PostMapping("/{programId}/invite")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.ADMIN)
+    public SuccessResponse applyGroupInvite(
+        @PathVariable @GroupId Long programId,
+        @RequestBody @Valid ApplyProgramInviteRequestDto applyProgramInviteRequestDto
+    ) {
+        groupService.applyGroupInvite(programId, applyProgramInviteRequestDto);
 
-    return new SuccessResponse(" 그룹회원 초대 취소를 성공했습니다.", null);
-  }
+        return new SuccessResponse("그룹 회원 초대 성공", null);
+    }
 
-  @GetMapping("/{programId}/invite/lists")
-  @ResponseStatus(HttpStatus.OK)
-  @GroupAuthorize(minRole = GroupRole.ADMIN)
-  public SuccessResponse getGroupInviteState(
-      @PathVariable @GroupId Long programId
-  ){
-    GetProgramInviteStateListResponseDto getProgramInviteStateListResponseDto = groupService.getGroupInviteState(programId);
+    @PutMapping("/{programId}/invite/{inviteId}")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse updateGroupInviteState(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable Long programId,
+        @PathVariable Long inviteId,
+        @RequestBody @Valid UpdateGroupInviteStateRequestDto updateGroupInviteStateRequestDto
+    ) {
+        groupService.updateGroupInviteState(customUserDetails.getUserId(), programId, inviteId,
+            updateGroupInviteStateRequestDto);
 
-    return new SuccessResponse("그룹 회원 초대 리스트 조회에 성공했습니다.", getProgramInviteStateListResponseDto);
-  }
+        return new SuccessResponse(" 그룹회원 초대 상태 수정에 성공했습니다.", null);
+    }
 
-  @GetMapping("/{programId}/users")
-  @ResponseStatus(HttpStatus.OK)
-  @GroupAuthorize(minRole = GroupRole.USER)
-  public SuccessResponse getGroupMember(
-      @PathVariable @GroupId Long programId
-  ){
-    GetGroupMemberListResponseDto getGroupMemberListResponseDto = groupService.getGroupMember(programId);
+    @DeleteMapping("/{programId}/invite/{inviteId}")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.ADMIN)
+    public SuccessResponse deleteGroupInvite(
+        @PathVariable @GroupId Long programId,
+        @PathVariable Long inviteId
+    ) {
+        groupService.deleteGroupInvite(programId, inviteId);
 
-    return new SuccessResponse("그룹 회원 조회 성공", getGroupMemberListResponseDto);
-  }
+        return new SuccessResponse(" 그룹회원 초대 취소를 성공했습니다.", null);
+    }
 
-  @PutMapping("/{programId}/users/{programUserId}/role")
-  @ResponseStatus(HttpStatus.OK)
-  @GroupAuthorize(minRole = GroupRole.ADMIN)
-  public SuccessResponse updateGroupMemberRole(
-      @PathVariable @GroupId Long programId,
-      @PathVariable Long programUserId,
-      @RequestBody @Valid UpdateGroupMemberRoleRequestDto updateGroupMemberRoleRequestDto
-  ){
-    groupService.updateGroupMemberRole(programId, programUserId, updateGroupMemberRoleRequestDto);
+    @GetMapping("/{programId}/invite/lists")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.ADMIN)
+    public SuccessResponse getGroupInviteState(
+        @PathVariable @GroupId Long programId
+    ) {
+        GetProgramInviteStateListResponseDto getProgramInviteStateListResponseDto = groupService.getGroupInviteState(
+            programId);
 
-    return new SuccessResponse("그룹회원 권한 수정을 성공했습니다.", null);
-  }
+        return new SuccessResponse("그룹 회원 초대 리스트 조회에 성공했습니다.",
+            getProgramInviteStateListResponseDto);
+    }
 
-  @PutMapping("/{programId}/users/{programUserId}")
-  @ResponseStatus(HttpStatus.OK)
-  @GroupAuthorize(minRole = GroupRole.USER)
-  public SuccessResponse deleteGroupMember(
-      @AuthenticationPrincipal CustomUserDetails customUserDetails,
-      @PathVariable @GroupId Long programId,
-      @PathVariable Long programUserId
-  ){
-    groupService.deleteGroupMember(customUserDetails.getUserId(), programId, programUserId);
+    @GetMapping("/{programId}/users")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.USER)
+    public SuccessResponse getGroupMember(
+        @PathVariable @GroupId Long programId
+    ) {
+        GetGroupMemberListResponseDto getGroupMemberListResponseDto = groupService.getGroupMember(
+            programId);
 
-    return new SuccessResponse("그룹회원 삭제를 성공했습니다.", null);
-  }
+        return new SuccessResponse("그룹 회원 조회 성공", getGroupMemberListResponseDto);
+    }
+
+    @PutMapping("/{programId}/users/{programUserId}/role")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.ADMIN)
+    public SuccessResponse updateGroupMemberRole(
+        @PathVariable @GroupId Long programId,
+        @PathVariable Long programUserId,
+        @RequestBody @Valid UpdateGroupMemberRoleRequestDto updateGroupMemberRoleRequestDto
+    ) {
+        groupService.updateGroupMemberRole(programId, programUserId,
+            updateGroupMemberRoleRequestDto);
+
+        return new SuccessResponse("그룹회원 권한 수정을 성공했습니다.", null);
+    }
+
+    @PutMapping("/{programId}/users/{programUserId}")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.USER)
+    public SuccessResponse deleteGroupMember(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable @GroupId Long programId,
+        @PathVariable Long programUserId
+    ) {
+        groupService.deleteGroupMember(customUserDetails.getUserId(), programId, programUserId);
+
+        return new SuccessResponse("그룹회원 삭제를 성공했습니다.", null);
+    }
+
+    @PostMapping("/{programId}/problems")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.MANAGER)
+    public SuccessResponse addGroupProblem(
+        @PathVariable @GroupId Long programId,
+        @RequestBody @Valid ProgramProblemCreateRequestDto programProblemCreateRequestDto
+    ) {
+        groupService.addGroupProblem(programId, programProblemCreateRequestDto);
+
+        return new SuccessResponse("그룹 요소 추가(문제)를 성공했습니다.", null);
+    }
+
 
 }

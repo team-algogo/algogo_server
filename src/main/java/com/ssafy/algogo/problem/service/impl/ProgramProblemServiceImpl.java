@@ -26,41 +26,45 @@ import java.util.List;
 @Transactional
 @RequiredArgsConstructor
 public class ProgramProblemServiceImpl implements ProgramProblemService {
+
     private final ProgramRepository programRepository;
     private final ProblemRepository problemRepository;
     private final ProgramProblemRepository programProblemRepository;
 
     /*  Controller에서 사용 시, Pagable default 설정은 아래와 같이 작성
      *  @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
-    * */
+     * */
     @Override
     @Transactional(readOnly = true)
     public ProgramProblemPageResponseDto getAllProgramProblems(Long programId, Pageable pageable) {
-        Page<ProgramProblem> programProblems = programProblemRepository.findAllByProgramId(programId, pageable);
+        Page<ProgramProblem> programProblems = programProblemRepository.findAllByProgramId(
+            programId, pageable);
         return ProgramProblemPageResponseDto.from(
-                programProblems.map(ProgramProblemResponseDto::from)
+            programProblems.map(ProgramProblemResponseDto::from)
         );
     }
 
     @Override
-    public void createProgramProblem(Long programId, ProgramProblemCreateRequestDto programProblemCreateRequestDto) {
+    public void createProgramProblem(Long programId,
+        ProgramProblemCreateRequestDto programProblemCreateRequestDto) {
         Program program = programRepository.findById(programId)
-                .orElseThrow(() -> new CustomException("프로그램 정보가 잘못 되었습니다.", ErrorCode.NOT_FOUND));
+            .orElseThrow(() -> new CustomException("프로그램 정보가 잘못 되었습니다.", ErrorCode.NOT_FOUND));
 
-        List<ProgramProblemRequestDto> programProblemRequestDtoList = programProblemCreateRequestDto.getProgramProblemRequestDtoList();
+        List<ProgramProblemRequestDto> programProblemRequestDtoList = programProblemCreateRequestDto.getProblems();
         List<Long> problemIdList = programProblemRequestDtoList.stream()
-                .map(ProgramProblemRequestDto::getProblemId)
-                .toList();
-        List<Problem> problemList = problemRepository.findAllById(problemIdList);
+            .map(ProgramProblemRequestDto::getProblemId)
+            .toList();
+        List<Problem> problemList = problemRepository.findAllById(new HashSet<>(problemIdList));
 
         // 중복 제거 후 사이즈와 실제 DB 조회 사이즈가 다르면 없는 문제가 요청에 섞인 경우임.
-        if(new HashSet<>(problemIdList).size() != problemList.size()){
-            throw new CustomException("문제 정보가 잚못 되었습니다.", ErrorCode.BAD_REQUEST);
+        if (new HashSet<>(problemIdList).size() != problemList.size()) {
+            throw new CustomException("잘못된 문제 ID 정보가 포함되어 되었습니다.", ErrorCode.BAD_REQUEST);
         }
         // 정상적인 요청인 경우 -> 프록시 객체로 넣어줌
         List<ProgramProblem> programProblemList = programProblemRequestDtoList.stream()
-                .map(request -> ProgramProblem.create(program, problemRepository.getReferenceById(request.getProblemId()), request))
-                .toList();
+            .map(request -> ProgramProblem.create(program,
+                problemRepository.getReferenceById(request.getProblemId()), request))
+            .toList();
 
         programProblemRepository.saveAll(programProblemList);
     }
@@ -69,7 +73,7 @@ public class ProgramProblemServiceImpl implements ProgramProblemService {
     public void deleteProgramProblem(Long programId, List<Long> programProblemIds) {
         // 삭제 수행 여부에 관계 없이, 잘못된 프로그램 정보로, 요청 자체가 문제인 경우
         programRepository.findById(programId)
-                .orElseThrow(() -> new CustomException("프로그램 정보가 잘못 되었습니다.", ErrorCode.NOT_FOUND));
+            .orElseThrow(() -> new CustomException("프로그램 정보가 잘못 되었습니다.", ErrorCode.NOT_FOUND));
         programProblemRepository.deleteAllById(programProblemIds);
     }
 }

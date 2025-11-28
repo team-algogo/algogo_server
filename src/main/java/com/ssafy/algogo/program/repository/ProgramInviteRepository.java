@@ -10,7 +10,8 @@ import org.springframework.stereotype.Repository;
 
 public interface ProgramInviteRepository extends JpaRepository<ProgramInvite, Long> {
 
-    Optional<ProgramInvite> findByProgramIdAndUserIdAndInviteStatus(Long programId, Long userId, InviteStatus inviteStatus);
+    Optional<ProgramInvite> findByProgramIdAndUserIdAndInviteStatus(Long programId, Long userId,
+        InviteStatus inviteStatus);
 
     @Query("SELECT pi FROM ProgramInvite pi " +
         "JOIN FETCH pi.user u " +

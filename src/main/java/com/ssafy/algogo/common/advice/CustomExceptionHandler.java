@@ -28,19 +28,22 @@ public class CustomExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
+    public ResponseEntity<ErrorResponse> handleValidationException(
+        MethodArgumentNotValidException e) {
 
         boolean isMissingParams = false;
 
         for (FieldError fieldError : e.getBindingResult().getFieldErrors()) {
             String code = fieldError.getCode();
-            if (code != null && code.equals("NotNull") || Objects.requireNonNull(code).equals("NotBlank") || code.equals("NotEmpty")) {
+            if (code != null && code.equals("NotNull") || Objects.requireNonNull(code)
+                .equals("NotBlank") || code.equals("NotEmpty")) {
                 isMissingParams = true;
                 break;
             }
         }
 
-        String errorMessage = Objects.requireNonNull(e.getBindingResult().getFieldError().getDefaultMessage());
+        String errorMessage = Objects.requireNonNull(
+            e.getBindingResult().getFieldError().getDefaultMessage());
 
         ErrorCode code = null;
         if (isMissingParams) {
@@ -55,17 +58,19 @@ public class CustomExceptionHandler {
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(NoResourceFoundException e) {
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(
+        NoResourceFoundException e) {
         ErrorCode code = ErrorCode.NOT_FOUND;
         return ResponseEntity.status(code.getHttpStatusCode())
-                .body(new ErrorResponse(code.getErrorCode(), "요청 URL을 찾을 수 없습니다."));
+            .body(new ErrorResponse(code.getErrorCode(), "요청 URL을 찾을 수 없습니다."));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
+        MethodArgumentTypeMismatchException e) {
         ErrorCode code = ErrorCode.BAD_REQUEST;
         return ResponseEntity.status(code.getHttpStatusCode())
-                .body(new ErrorResponse(code.getErrorCode(), "잘못된 파라미터 타입입니다."));
+            .body(new ErrorResponse(code.getErrorCode(), "잘못된 파라미터 타입입니다."));
     }
 
     @ExceptionHandler(Exception.class)
@@ -74,6 +79,6 @@ public class CustomExceptionHandler {
 
         ErrorCode code = ErrorCode.INTERNAL_SERVER_ERROR;
         return ResponseEntity.status(code.getHttpStatusCode())
-                .body(new ErrorResponse(code.getErrorCode(), e.getLocalizedMessage()));
+            .body(new ErrorResponse(code.getErrorCode(), e.getLocalizedMessage()));
     }
 }

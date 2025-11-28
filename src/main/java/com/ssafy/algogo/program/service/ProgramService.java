@@ -5,14 +5,16 @@ import com.ssafy.algogo.program.dto.response.GetProgramInviteStateListResponseDt
 import com.ssafy.algogo.program.dto.response.GetProgramJoinStateListResponseDto;
 
 public interface ProgramService {
-  void applyProgramJoin(Long userId, Long programId);
 
-  GetProgramJoinStateListResponseDto getProgramJoinState(Long programId);
+    void applyProgramJoin(Long userId, Long programId);
 
-    void applyProgramInvite(Long programId, ApplyProgramInviteRequestDto applyProgramInviteRequestDto);
+    GetProgramJoinStateListResponseDto getProgramJoinState(Long programId);
+
+    void applyProgramInvite(Long programId,
+        ApplyProgramInviteRequestDto applyProgramInviteRequestDto);
 
     void deleteProgramInvite(Long programId, Long inviteId);
 
-  GetProgramInviteStateListResponseDto getProgramInviteState(Long programId);
+    GetProgramInviteStateListResponseDto getProgramInviteState(Long programId);
 
 }
