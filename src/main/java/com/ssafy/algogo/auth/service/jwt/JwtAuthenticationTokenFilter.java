@@ -60,7 +60,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     }
 
     private void authenticateWithAccessToken(String accessToken, HttpServletRequest request) {
-        Map<String, String> token = jwtTokenProvider.extractToken(accessToken);
+        Map<String, String> token = jwtTokenProvider.extractToken(accessToken, "ip", "role");
 
         String ip = token.get("ip");
         String currentIp = jwtTokenProvider.getIpFromRequest(request);
@@ -75,6 +75,12 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         Collection<? extends GrantedAuthority> authorities = (role != null && !role.isEmpty())
                 ? Collections.singletonList(new SimpleGrantedAuthority(role))
                 : Collections.emptyList();
+
+        // 로그아웃 검증
+        if (!redisJwtService.exists(userId)) {
+            log.error("이미 로그아웃 한 사용자입니다. userId: {}", userId);
+            throw new CustomException("이미 로그아웃한 사용자입니다.", ErrorCode.ACCESS_DENIED);
+        }
 
         CustomUserDetails principal = new CustomUserDetails(userId, userId.toString(), "", authorities);
         SecurityContextHolder.getContext().setAuthentication(
@@ -104,6 +110,12 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             throw new CustomException("유효하지 않은 Refresh Token", ErrorCode.EXPIRED_REFRESH_TOKEN);
         }
 
+        // 로그아웃 검증
+        if(!redisJwtService.exists(userId)) {
+            log.error("이미 로그아웃 한 사용자입니다. userId: {}", userId);
+            throw new CustomException("이미 로그아웃한 사용자입니다.", ErrorCode.ACCESS_DENIED);
+        }
+
         // 새로운 인증 객체 생성
         Collection<? extends GrantedAuthority> authorities = (role != null && !role.isEmpty())
                 ? Collections.singletonList(new SimpleGrantedAuthority(role))
@@ -131,4 +143,6 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
         log.info("Tokens reissued - User: {}, IP: {}", userId, currentIp);
     }
+
+
 }
