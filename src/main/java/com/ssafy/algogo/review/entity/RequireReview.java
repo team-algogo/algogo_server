@@ -2,11 +2,22 @@ package com.ssafy.algogo.review.entity;
 
 import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.user.entity.User;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
@@ -24,28 +35,27 @@ import org.hibernate.annotations.OnDeleteAction;
 )
 public class RequireReview {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(
-        name = "is_done",
-        columnDefinition = "TINYINT(1) NOT NULL DEFAULT 0"
-    )
-    private Boolean isDone;
+  @Column(
+      name = "is_done",
+      columnDefinition = "TINYINT(1) NOT NULL DEFAULT 0"
+  )
+  private Boolean isDone;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+  @NotNull
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id")
+  private User user;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "review_id")
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Review review;
+  @NotNull
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "submission_id")
+  private Submission submission;
 
-    public void updateRequireReview(Boolean isDone) {
-        this.isDone = isDone;
-    }
+  public void updateRequireReview(Boolean isDone) {
+    this.isDone = isDone;
+  }
 }

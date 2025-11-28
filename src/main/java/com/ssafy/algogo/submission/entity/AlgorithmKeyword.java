@@ -1,9 +1,5 @@
 package com.ssafy.algogo.submission.entity;
 
-import com.ssafy.algogo.common.utils.BaseTime;
-import com.ssafy.algogo.problem.entity.ProgramProblem;
-import com.ssafy.algogo.user.entity.User;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -25,42 +21,20 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
-    name = "submissions"
+    name = "algorithm_keywords"
 )
-public class Submission extends BaseTime {
+public class AlgorithmKeyword {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   @NotNull
-  private String language;
-
-  @NotNull
-  private String code;
-
-  @NotNull
-  @Column(name = "exec_time")
-  private Long execTime;
-
-  @NotNull
-  private Long memory;
-
-  @NotNull
-  private String strategy;
-
-  @NotNull
-  @Column(name = "is_success")
-  private Boolean isSuccess;
-
-  @NotNull
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id")
-  private User user;
+  @JoinColumn(name = "algorithm_id")
+  private Algorithm algorithm;
 
   @NotNull
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "program_problem_id")
-  private ProgramProblem programProblem;
+  private String keyword;
 
 }
