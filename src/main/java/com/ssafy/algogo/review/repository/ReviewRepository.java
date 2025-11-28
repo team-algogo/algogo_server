@@ -9,6 +9,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long>, ReviewQue
 
     List<Review> findAllBySubmission_IdOrderByCreatedAtAsc(Long submissionId);
 
+    List<Review> findAllByParentReview_Id(Long parentReviewId);
+
     void deleteAllByParentReview_Id(Long parentReviewId);
 
     boolean existsByUser_IdAndSubmission_IdAndParentReviewIsNull(Long userId, Long submissionId);

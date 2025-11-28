@@ -13,8 +13,10 @@ import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
 import com.ssafy.algogo.review.entity.RequireReview;
 import com.ssafy.algogo.review.entity.Review;
+import com.ssafy.algogo.review.entity.UserReviewReaction;
 import com.ssafy.algogo.review.repository.RequireReviewRepository;
 import com.ssafy.algogo.review.repository.ReviewRepository;
+import com.ssafy.algogo.review.repository.UserReviewReactionRepository;
 import com.ssafy.algogo.review.service.ReviewService;
 import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.repository.SubmissionRepository;
@@ -38,6 +40,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final RequireReviewRepository requireReviewRepository;
+    private final UserReviewReactionRepository userReviewReactionRepository;
     private final SubmissionRepository submissionRepository;
     private final UserRepository userRepository;
 
@@ -137,13 +140,22 @@ public class ReviewServiceImpl implements ReviewService {
         // 리뷰의 제출 id
         Long submissionId = review.getSubmission().getId();
 
-        // 부모 댓글이라면 자식 댓글부터 삭제
-        Long parentReviewId =
-            review.getParentReview() == null ? null : review.getParentReview().getId();
-        if (parentReviewId == null) {
-            reviewRepository.deleteAllByParentReview_Id(reviewId);
-        }
-        // 본인 삭제
+//        // 부모 댓글이라면 자식 댓글부터 삭제
+//        Long parentReviewId =
+//            review.getParentReview() == null ? null : review.getParentReview().getId();
+//        if (parentReviewId == null) {
+//            // 자식 댓글 다 가져와서
+//            List<Review> childReviews = reviewRepository.findAllByParentReview_Id(reviewId);
+//
+//            for(Review childReview : childReviews) {
+//                // 자식 댓글 리엑션 삭제
+//                userReviewReactionRepository.deleteByReview_Id(childReview.getId());
+//                // 자식 댓글 삭제
+//                reviewRepository.deleteById(childReview.getId());
+//            }
+//        }
+//        // 본인 삭제
+//        userReviewReactionRepository.deleteByReview_Id(reviewId);
         reviewRepository.delete(review);
 
         // user 의 required_reviews 테이블에 해당 submissionId가 있는 지
@@ -157,6 +169,60 @@ public class ReviewServiceImpl implements ReviewService {
                 }
             });
     }
+
+    @Override
+    public Boolean addCodeReviewLike(Long userId, Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+            .orElseThrow(() -> new CustomException("reviewID에 해당하는 리뷰가 DB에 없습니다.",
+                ErrorCode.REVIEW_NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("userID에 해당하는 유저가 DB에 없습니다.",
+                ErrorCode.USER_NOT_FOUND));
+
+        UserReviewReaction userReviewReaction = userReviewReactionRepository.findByUser_IdAndReview_Id(
+            userId, reviewId);
+
+        if (userReviewReaction != null) {
+            return false;
+        }
+
+        UserReviewReaction newReaction = UserReviewReaction.builder()
+            .user(user)
+            .review(review)
+            .build();
+
+        UserReviewReaction SaveUserReviewReaction = userReviewReactionRepository.save(newReaction);
+
+        review.addReviewLikeCount();
+
+        return true;
+    }
+
+    @Override
+    public Boolean deleteCodeReviewLike(Long userId, Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+            .orElseThrow(() -> new CustomException("reviewID에 해당하는 리뷰가 DB에 없습니다.",
+                ErrorCode.REVIEW_NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("userID에 해당하는 유저가 DB에 없습니다.",
+                ErrorCode.USER_NOT_FOUND));
+
+        UserReviewReaction userReviewReaction = userReviewReactionRepository.findByUser_IdAndReview_Id(
+            userId, reviewId);
+
+        if (userReviewReaction == null) {
+            return false;
+        }
+
+        userReviewReactionRepository.deleteByReview_Id(reviewId);
+
+        review.deleteReviewLikeCount();
+
+        return true;
+    }
+
 
     private List<CodeReviewTreeResponseDto> buildReviewTree(List<Review> reviews) {
 

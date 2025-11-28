@@ -9,21 +9,25 @@ import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 
 public interface ReviewService {
 
-    public CodeReviewTreeResponseDto createCodeReview(CreateCodeReviewRequestDto reviewRequest,
+    CodeReviewTreeResponseDto createCodeReview(CreateCodeReviewRequestDto reviewRequest,
         Long userId);
 
-    public CodeReviewListResponseDto getReviewsBySubmissionId(Long submissionId);
+    CodeReviewListResponseDto getReviewsBySubmissionId(Long submissionId);
 
-    public CodeReviewTreeResponseDto editCodeReview(Long userId, Long reviewId,
+    CodeReviewTreeResponseDto editCodeReview(Long userId, Long reviewId,
         UpdateCodeReiewRequestDto updateReview);
 
-    public void deleteCodeReview(Long userId, Long reviewId);
+    void deleteCodeReview(Long userId, Long reviewId);
 
-    public RequiredCodeReviewListResponseDto getRequiredReviews(Long userId);
+    Boolean addCodeReviewLike(Long userId, Long reviewId);
 
-    public UserCodeReviewListResponseDto getReceiveReviews(Long userId, Integer page,
+    Boolean deleteCodeReviewLike(Long userId, Long reviewId);
+
+    RequiredCodeReviewListResponseDto getRequiredReviews(Long userId);
+
+    UserCodeReviewListResponseDto getReceiveReviews(Long userId, Integer page,
         Integer size);
 
-    public UserCodeReviewListResponseDto getDoneReviews(Long userId, Integer page,
+    UserCodeReviewListResponseDto getDoneReviews(Long userId, Integer page,
         Integer size);
 }

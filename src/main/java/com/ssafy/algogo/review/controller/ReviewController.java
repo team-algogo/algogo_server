@@ -83,6 +83,36 @@ public class ReviewController {
         return new SuccessResponse("리뷰 삭제를 성공했습니다.", null);
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/{reviewId}/likes")
+    public SuccessResponse addCodeReviewLike(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable Long reviewId
+    ) {
+
+        Boolean createLike = reviewService.addCodeReviewLike(customUserDetails.getUserId(),
+            reviewId);
+
+        String message = createLike ? "리뷰 좋아요를 성공했습니다." : "이미 좋아요가 반영된 상태입니다.";
+
+        return new SuccessResponse(message, null);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @DeleteMapping("/{reviewId}/likes")
+    public SuccessResponse deleteCodeReviewLike(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable Long reviewId
+    ) {
+
+        Boolean createLike = reviewService.deleteCodeReviewLike(customUserDetails.getUserId(),
+            reviewId);
+
+        String message = createLike ? "리뷰 좋아요 취소를 성공했습니다." : "이미 좋아요 취소가 반영된 상태입니다.";
+
+        return new SuccessResponse(message, null);
+    }
+
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/lists/require")
     public SuccessResponse getRequiredCodeReviewResponseDto(
