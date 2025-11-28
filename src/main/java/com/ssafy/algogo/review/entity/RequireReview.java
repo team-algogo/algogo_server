@@ -1,5 +1,6 @@
 package com.ssafy.algogo.review.entity;
 
+import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -13,7 +14,13 @@ import org.hibernate.annotations.OnDeleteAction;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
-    name = "required_reviews"
+    name = "required_reviews",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_required_review_user_submission",
+            columnNames = {"user_id", "submission_id"}
+        )
+    }
 )
 public class RequireReview {
 
@@ -21,8 +28,10 @@ public class RequireReview {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @Column(name = "is_done")
+    @Column(
+        name = "is_done",
+        columnDefinition = "TINYINT(1) NOT NULL DEFAULT 0"
+    )
     private Boolean isDone;
 
     @NotNull
@@ -36,4 +45,7 @@ public class RequireReview {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Review review;
 
+    public void updateRequireReview(Boolean isDone) {
+        this.isDone = isDone;
+    }
 }
