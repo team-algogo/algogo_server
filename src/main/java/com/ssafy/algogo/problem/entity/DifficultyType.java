@@ -2,6 +2,7 @@ package com.ssafy.algogo.problem.entity;
 
 public enum DifficultyType {
     /* 백준 */
+    UNRATED(PlatformType.BOJ),
     BRONZE_5(PlatformType.BOJ),
     BRONZE_4(PlatformType.BOJ),
     BRONZE_3(PlatformType.BOJ),

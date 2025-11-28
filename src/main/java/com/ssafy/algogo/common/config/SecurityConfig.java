@@ -38,17 +38,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors(Customizer.withDefaults())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .csrf(AbstractHttpConfigurer::disable)
-                .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .addFilterBefore(new JwtAuthenticationTokenFilter(jwtTokenProvider, redisJwtService), UsernamePasswordAuthenticationFilter.class)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/test/auth/admin").hasRole("ADMIN") // 유저권한 테스트용
-                        .requestMatchers("/test/auth/user").hasRole("USER")
-                        .anyRequest().permitAll()) // 일단 Security 로직 적용되기 전까진 모두 열어두겠습니다.
-                .build();
+            .cors(Customizer.withDefaults())
+            .sessionManagement(
+                session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .csrf(AbstractHttpConfigurer::disable)
+            .formLogin(AbstractHttpConfigurer::disable)
+            .httpBasic(AbstractHttpConfigurer::disable)
+            .addFilterBefore(new JwtAuthenticationTokenFilter(jwtTokenProvider, redisJwtService),
+                UsernamePasswordAuthenticationFilter.class)
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/test/auth/admin").hasRole("ADMIN") // 유저권한 테스트용
+                .requestMatchers("/test/auth/user").hasRole("USER")
+                .anyRequest().permitAll()) // 일단 Security 로직 적용되기 전까진 모두 열어두겠습니다.
+            .build();
     }
 
     @Bean
@@ -61,12 +63,13 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true); // 쿠키를 포함한 요청 허용
         configuration.setAllowedOrigins(List.of(
-                "http://localhost:3000",
-                "https://localhost:3000",
-                "http://43.201.209.14",
-                "https://43.201.209.14"
+            "http://localhost:3000",
+            "https://localhost:3000",
+            "http://43.201.209.14",
+            "https://43.201.209.14"
         )); // 허용할 프론트엔드 도메인
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 메서드
+        configuration.setAllowedMethods(
+            List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 메서드
         configuration.setAllowedHeaders(List.of("*")); //프론트엔드에서 요청을 보낼 때 포함할 수 있는 헤더
         configuration.setExposedHeaders(List.of("Authorization")); // 프론트에서 응답에서 조회할 수 있는 헤더
 
@@ -76,7 +79,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(){
+    public AuthenticationManager authenticationManager() {
         //AuthenticationManager에 등록할 AuthenticationProvider를 새로 정의
         //DaoAuthenticationProvider는 DB 기반 인증을 수행하는 구현체
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();

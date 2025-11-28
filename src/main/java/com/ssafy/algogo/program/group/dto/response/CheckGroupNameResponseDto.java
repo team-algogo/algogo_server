@@ -6,4 +6,5 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public record CheckGroupNameResponseDto(
     Boolean isAvailable
 ) {
+
 }

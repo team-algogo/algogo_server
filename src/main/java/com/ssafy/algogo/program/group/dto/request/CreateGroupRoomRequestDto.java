@@ -16,14 +16,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CreateGroupRoomRequestDto {
 
-  @NotBlank(message = "title is required")
-  private String title;
+    @NotBlank(message = "title is required")
+    private String title;
 
-  @NotBlank(message = "description is required")
-  private String description;
+    @NotBlank(message = "description is required")
+    private String description;
 
-  @NotNull(message = "capacity is required")
-  @Min(value = 1, message = "capacity must be at least 1")
-  @Max(value = 1000, message = "capacity must be at most 1000")
-  private Long capacity;
+    @NotNull(message = "capacity is required")
+    @Min(value = 1, message = "capacity must be at least 1")
+    @Max(value = 1000, message = "capacity must be at most 1000")
+    private Long capacity;
 }

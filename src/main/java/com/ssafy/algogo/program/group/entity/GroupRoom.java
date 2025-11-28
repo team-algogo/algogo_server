@@ -25,7 +25,8 @@ public class GroupRoom extends Program {
         this.capacity = capacity;
     }
 
-    public static GroupRoom create(String title, String description, ProgramType programType, Long capacity) {
+    public static GroupRoom create(String title, String description, ProgramType programType,
+        Long capacity) {
         return new GroupRoom(title, description, programType, capacity);
     }
 
