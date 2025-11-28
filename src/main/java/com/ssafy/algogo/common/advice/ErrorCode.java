@@ -39,6 +39,9 @@ public enum ErrorCode {
     /** 인증이 필요한 요청에서 JWT 또는 로그인 정보가 없을 때 */
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED"),
 
+    /** 로그아웃한 유저가 로그인 할 경우 재 로그인 에러 코드 전송 */
+    LOGOUT_USER_ID(HttpStatus.UNAUTHORIZED, "LOGOUT_USER_ID"),
+
     /** 토큰이 잘못되었거나 변조된 경우 */
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_TOKEN"),
 

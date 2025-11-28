@@ -49,6 +49,7 @@ public class RedisJwtService {
         redisTemplate.delete(PREFIX + userId);
     }
 
+    // NPE 안터짐,
     public boolean exists(Long userId) {
         return Boolean.TRUE.equals(redisTemplate.hasKey(PREFIX + userId));
     }
