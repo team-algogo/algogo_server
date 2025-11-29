@@ -131,7 +131,9 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(
                 () -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
-        if (updateGroupRoomRequestDto.getTitle() != null) {
+        if (updateGroupRoomRequestDto.getTitle() != null &&
+            !updateGroupRoomRequestDto.getTitle().equals(groupRoom.getTitle())) {
+
             boolean isTitleConflict = programRepository.existsByTitle(
                 updateGroupRoomRequestDto.getTitle());
             if (isTitleConflict) {
@@ -140,8 +142,8 @@ public class GroupServiceImpl implements GroupService {
         }
 
         groupRoom.updateGroupRoom(
-            groupRoom.getTitle(),
-            groupRoom.getDescription(),
+            updateGroupRoomRequestDto.getTitle(),
+            updateGroupRoomRequestDto.getDescription(),
             updateGroupRoomRequestDto.getCapacity()
         );
 
