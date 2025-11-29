@@ -102,6 +102,17 @@ public class GroupController {
         return new SuccessResponse("그룹방 수정 성공", groupRoomResponseDto);
     }
 
+    @DeleteMapping("/{programId}")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.MANAGER)
+    public SuccessResponse deleteGroupRoom(
+        @PathVariable @GroupId Long programId
+    ) {
+        groupService.deleteGroupRoom(programId);
+
+        return new SuccessResponse("그룹방 삭제를 성공했습니다.", null);
+    }
+
     @PostMapping("/{programId}/join")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse applyGroupJoin(

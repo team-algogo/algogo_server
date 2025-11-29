@@ -153,6 +153,16 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    public void deleteGroupRoom(Long programId) {
+        GroupRoom groupRoom = groupRepository.findById(programId)
+            .orElseThrow(() -> new CustomException(
+                "해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+        // 음 cascade를 전체에 걸거나, 삭제 이전에 관련된 테이블의 데이터를 모두 수동으로 삭제하는 로직 추가 <- 이건 추후 공부 후에 반영
+        groupRepository.delete(groupRoom);
+    }
+
+    @Override
     public void applyGroupJoin(Long userId, Long programId) {
         GroupRoom groupRoom = groupRepository.findById(programId)
             .orElseThrow(

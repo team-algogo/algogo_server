@@ -61,4 +61,6 @@ public interface GroupService {
 
     void deleteGroupProblems(Long programId,
         ProgramProblemDeleteRequestDto programProblemDeleteRequestDto);
+
+    void deleteGroupRoom(Long programId);
 }
