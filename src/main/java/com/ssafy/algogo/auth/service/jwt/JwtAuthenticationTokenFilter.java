@@ -117,7 +117,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         // Redis에서 저장된 RT와 비교 검증
         if (!redisJwtService.validate(userId, refreshToken, currentIp)) {
             log.warn("Invalid Refresh Token in Redis - User: {}", userId);
-            throw new CustomException("유효하지 않은 Refresh Token", ErrorCode.EXPIRED_REFRESH_TOKEN);
+            throw new CustomException("유효하지 않은 Refresh Token", ErrorCode.EXPIRED_TOKEN);
         }
 
         // 로그아웃 검증

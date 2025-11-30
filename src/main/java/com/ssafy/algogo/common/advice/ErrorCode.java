@@ -69,14 +69,9 @@ public enum ErrorCode {
     EMPTY_TOKEN(HttpStatus.UNAUTHORIZED, "EMPTY_TOKEN"),
 
     /**
-     * 토큰이 만료된 경우 AT (프론트는 재발급 요청하도록 유도)
+     * 토큰이 만료된 경우  (프론트는 재발급 요청하도록 유도)
      */
-    EXPIRED_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "EXPIRED_ACCESS_TOKEN"),
-
-    /**
-     * 토큰이 만료된 경우 RT (프론트는 재로그인 요청하도록 유도)
-     */
-    EXPIRED_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "EXPIRED_REFRESH_TOKEN"),
+    EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "EXPIRED_TOKEN"),
 
     /**
      * 지원하지 않는 토큰 타입
@@ -122,6 +117,16 @@ public enum ErrorCode {
      * 프로필 이미지가 없는 경우 (수정·삭제 시 사용)
      */
     PROFILE_IMAGE_NOT_FOUND(HttpStatus.BAD_REQUEST, "PROFILE_IMAGE_NOT_FOUND"),
+
+    /**
+     * 회원 검색 내용 길이가 설정값 이상일 경우 발생
+     */
+    SEARCH_CONTENT_LENGTH_OVER(HttpStatus.BAD_REQUEST, "SEARCH_CONTENT_LENGTH_OVER"),
+
+    /**
+     * 회원 검색을 빈값으로 검색할 경우 발생
+     */
+    SEARCH_EMPTY_CONTENT(HttpStatus.BAD_REQUEST, "SEARCH_EMPTY_CONTENT"),
 
     /* ============================================================
      * Program (프로그램 전체 관려)

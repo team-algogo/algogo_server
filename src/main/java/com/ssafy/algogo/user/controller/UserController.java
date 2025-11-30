@@ -90,8 +90,8 @@ public class UserController {
     @GetMapping("/search/members")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse searchUsersInGroupRoom(@RequestParam("content") String content) {
-        List<SearchUserResponseDto> searchUserResponseDtoList = userService.searchUserListByContent(content);
-        return SuccessResponse.success("유저 조회에 성공했습니다.", searchUserResponseDtoList);
+        ListSearchUserResponseDto listSearchUserResponseDto = userService.searchUserListByContent(content);
+        return SuccessResponse.success("유저 조회에 성공했습니다.", listSearchUserResponseDto);
     }
 
 }

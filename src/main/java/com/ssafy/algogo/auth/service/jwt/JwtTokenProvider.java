@@ -93,7 +93,7 @@ public class JwtTokenProvider {
             throw new CustomException("잘못된 JWT 서명입니다.", ErrorCode.INVALID_TOKEN);
         } catch (ExpiredJwtException e) {
             log.warn("EXPIRED JWT TOKEN : {}", e.getMessage());
-            throw new CustomException("토큰이 만료되었습니다.", ErrorCode.EXPIRED_ACCESS_TOKEN);
+            throw new CustomException("토큰이 만료되었습니다.", ErrorCode.EXPIRED_TOKEN);
         } catch (UnsupportedJwtException e) {
             log.warn("UNSUPPORTED JWT TOKEN : {}", e.getMessage());
             throw new CustomException("지원하지 않는 JWT 토큰입니다.", ErrorCode.UNSUPPORTED_TOKEN);
