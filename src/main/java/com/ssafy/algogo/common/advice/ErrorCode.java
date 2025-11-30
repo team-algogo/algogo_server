@@ -64,6 +64,11 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_TOKEN"),
 
     /**
+     * 토큰이 비어있을 경우
+     */
+    EMPTY_TOKEN(HttpStatus.UNAUTHORIZED, "EMPTY_TOKEN"),
+
+    /**
      * 토큰이 만료된 경우 AT (프론트는 재발급 요청하도록 유도)
      */
     EXPIRED_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "EXPIRED_ACCESS_TOKEN"),

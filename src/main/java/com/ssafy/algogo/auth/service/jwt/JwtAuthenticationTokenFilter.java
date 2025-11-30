@@ -37,26 +37,36 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         String accessToken = CookieUtils.getTokenFromCookies("accessToken", request);
         String refreshToken = CookieUtils.getTokenFromCookies("refreshToken", request);
 
+        /**
+         *  Security Config 부분에서 만약 Token이 필요한 로직이라면 해당 Filter를 탄다.
+         *  지금 현재는 개발단계이기때문에 모든 URI를 permitAll해둔 상태, 그렇기때문에 여기서 at, rt null체크를 해버리면 모두 걸리게된다,
+         *  여기서 지금 null체크를 해버리게되면 토큰이 필요없는 로직에서도 null이여서 오류가 터질 것, 그렇기때문에 나중에 꼭 토큰유무에따른 uri를 나누고
+         *  filter를 걸치는 로직에 대해서는 null체크를 하는 부분을 체크해서 에러처리를 해줘야한다,
+         */
+
         try {
-            if (accessToken != null && jwtTokenProvider.isValidateToken(accessToken)) {
+//            if (accessToken == null && refreshToken == null) {
+//                throw new CustomException("JWT 토큰이 비어있습니다.", ErrorCode.EMPTY_TOKEN);
+//            }
+            if (accessToken != null) {
+                jwtTokenProvider.isValidateToken(accessToken);
                 authenticateWithAccessToken(accessToken, request);
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            if (refreshToken != null && jwtTokenProvider.isValidateToken(refreshToken)) {
+            if (refreshToken != null) {
+                jwtTokenProvider.isValidateToken(refreshToken);
                 reissueTokens(refreshToken, request, response);
                 filterChain.doFilter(request, response);
                 return;
             }
 
             filterChain.doFilter(request, response);
-        } catch (ExpiredJwtException e) {
-            log.error("All Token Expired : {}", e.getMessage());
         } catch (Exception e) {
             log.error("JWT Filter Error : {}", e.getMessage());
+            throw new CustomException("예상치 못한 서버 에러입니다. - 관리자에게 따지셔야합니다. Mady By 김성훈", ErrorCode.INTERNAL_SERVER_ERROR);
         }
-        filterChain.doFilter(request, response);
     }
 
     private void authenticateWithAccessToken(String accessToken, HttpServletRequest request) {
@@ -111,7 +121,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         }
 
         // 로그아웃 검증
-        if(!redisJwtService.exists(userId)) {
+        if (!redisJwtService.exists(userId)) {
             log.error("이미 로그아웃 한 사용자입니다. userId: {}", userId);
             throw new CustomException("이미 로그아웃한 사용자입니다.", ErrorCode.ACCESS_DENIED);
         }
