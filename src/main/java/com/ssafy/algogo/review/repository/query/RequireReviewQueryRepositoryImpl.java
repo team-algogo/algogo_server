@@ -31,7 +31,7 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
                 problem.title,
                 program.programType.name,
                 program.title,
-                user.nickname
+                submission.user.nickname
 
             ))
             .from(requireReview)
