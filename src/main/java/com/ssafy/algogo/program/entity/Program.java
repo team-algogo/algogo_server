@@ -45,7 +45,7 @@ public class Program extends BaseTime {
         this.programType = programType;
     }
 
-    protected void updateProgram(String title, String description) {
+    public void updateProgram(String title, String description) {
         if (title != null) {
             this.title = title;
         }
