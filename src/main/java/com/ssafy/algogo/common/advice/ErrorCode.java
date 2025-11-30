@@ -99,6 +99,16 @@ public enum ErrorCode {
     USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "USER_NOT_FOUND"),
 
     /**
+     * 이미 존재하는 이메일로 회원가입을 할 경우
+     */
+    ALREADY_EXISTS_EMAIL(HttpStatus.BAD_REQUEST, "ALREADY_EXISTS_EMAIL"),
+
+    /**
+     * 이미 존재하는 이메일로 회원가입을 할 경우
+     */
+    ALREADY_EXISTS_NICKNAME(HttpStatus.BAD_REQUEST, "ALREADY_EXISTS_NICKNAME"),
+
+    /**
      * 로그인 시 잘못된 이메일/비번 입력
      */
     INVALID_LOGIN_CREDENTIALS(HttpStatus.UNAUTHORIZED, "INVALID_LOGIN_CREDENTIALS"),
