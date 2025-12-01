@@ -23,6 +23,6 @@ public interface UserService {
 
     UpdateUserProfileImageResponseDto updateDefaultProfileImage(Long userId);
 
-    List<SearchUserResponseDto> searchUserListByContent(String content);
+    ListSearchUserResponseDto searchUserListByContent(String content);
 
 }
