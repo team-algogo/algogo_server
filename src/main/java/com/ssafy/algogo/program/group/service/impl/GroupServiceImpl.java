@@ -25,6 +25,7 @@ import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GroupRoomPageResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.entity.GroupRoom;
@@ -46,6 +47,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +69,15 @@ public class GroupServiceImpl implements GroupService {
     private final ProgramJoinRepository programJoinRepository;
     private final ProgramInviteRepository programInviteRepository;
     private final ProgramUserRepository programUserRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public GroupRoomPageResponseDto getGroupRoomList(String keyword, Pageable pageable) {
+        Page<GroupRoomResponseDto> page =
+            groupRepository.findAllGroupRooms(keyword, pageable);
+
+        return GroupRoomPageResponseDto.from(page);
+    }
 
     @Override
     @Transactional(readOnly = true)
