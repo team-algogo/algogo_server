@@ -42,6 +42,7 @@ public class Review extends BaseTime {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "submission_id")
     private Submission submission;
 
