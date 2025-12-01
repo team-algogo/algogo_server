@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties.Http;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -48,6 +49,7 @@ public class ProblemSetController {
 	 * 자율 문제집 리스트 조회 * 동적 쿼리. //@return 성공시 반환할거 적을거임 //@throws 예외 적을거임
 	 */
 	@GetMapping("/lists")
+	@ResponseStatus(HttpStatus.OK)
 	public SuccessResponse getProblemSetList(
 		@RequestParam String keyWord,
 		@RequestParam String category,
@@ -64,6 +66,7 @@ public class ProblemSetController {
 
 	// 자율 문제집 조회
 	@GetMapping("/{program_id}")
+	@ResponseStatus(HttpStatus.OK)
 	public SuccessResponse getProblemSet(@PathVariable Long program_id) {
 		ProblemSetResponseDto data = problemSetService.getProblemSet(program_id);
 		return new SuccessResponse("자율 문제집 조회를 성공했습니다.", data);
@@ -84,6 +87,7 @@ public class ProblemSetController {
 	// 자율 문제집 수정
 	@PreAuthorize("hasRole('ADMIN')")
 	@PutMapping("/{program_id}")
+	@ResponseStatus(HttpStatus.OK)
 	public SuccessResponse modifyProblemSet(@PathVariable Long program_id,
 		@RequestBody @Valid ProblemSetModifyRequestDto problemSetModifyRequestDto) {
 
@@ -96,6 +100,7 @@ public class ProblemSetController {
 	// 자율 문제집 삭제
 	@PreAuthorize("hasRole('ADMIN')")
 	@DeleteMapping("/{program_id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public SuccessResponse deleteProblemSet(@PathVariable Long program_id) {
 
 		problemSetService.deleteProblemSet(program_id);
@@ -104,6 +109,7 @@ public class ProblemSetController {
 	}
 
 	@GetMapping("/{program_id}/problems")
+	@ResponseStatus(HttpStatus.OK)
 	public SuccessResponse getProblemsByProblemSetId(
 		@AuthenticationPrincipal CustomUserDetails user,
 		@PathVariable Long program_id,
@@ -126,6 +132,7 @@ public class ProblemSetController {
 	// 문제집 요소 추가(문제추가)
 	@PreAuthorize("hasRole('ADMIN')")
 	@PostMapping("/{program_id}/problems")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public SuccessResponse commonProblemCreate(
 		@PathVariable Long program_id,
 		@RequestBody ProgramProblemCreateRequestDto programProblemCreateRequestDto) {
@@ -139,6 +146,7 @@ public class ProblemSetController {
 	// 	문제집 요소 제거(문제제거)
 	@PreAuthorize("hasRole('ADMIN')")
 	@DeleteMapping("/{program_id}/problems")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public SuccessResponse DeleteProblemSetByProblem(@PathVariable Long program_id,
 		@RequestBody @Valid ProgramProblemDeleteRequestDto programProblemsDeleteRequestDto) {
 
@@ -151,6 +159,7 @@ public class ProblemSetController {
 	// 내가 참여한 문제집 조회
 	@PreAuthorize("hasAnyRole('USER','ADMIN')")
 	@GetMapping("/me")
+	@ResponseStatus(HttpStatus.OK)
 	public SuccessResponse getJoinMe(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
 
 		if (customUserDetails == null) {
