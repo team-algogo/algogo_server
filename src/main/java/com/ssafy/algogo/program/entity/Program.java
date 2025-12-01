@@ -4,13 +4,21 @@ import com.ssafy.algogo.common.utils.BaseTime;
 import com.ssafy.algogo.problem.entity.Problem;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Inheritance(strategy = InheritanceType.JOINED)
+@Table(
+    name = "programs",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_program_title", columnNames = {"title"})
+    }
+)
 public class Program extends BaseTime {
 
     @Id
@@ -23,7 +31,6 @@ public class Program extends BaseTime {
     @NotNull
     private String description;
 
-    @NotNull
     private String thumbnail;
 
     @NotNull
@@ -31,4 +38,19 @@ public class Program extends BaseTime {
     @JoinColumn(name = "program_type_id")
     private ProgramType programType;
 
+    protected Program(String title, String description, String thumbnail, ProgramType programType) {
+        this.title = title;
+        this.description = description;
+        this.thumbnail = thumbnail;
+        this.programType = programType;
+    }
+
+    public void updateProgram(String title, String description) {
+        if (title != null) {
+            this.title = title;
+        }
+        if (description != null) {
+            this.description = description;
+        }
+    }
 }

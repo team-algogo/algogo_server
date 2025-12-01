@@ -49,7 +49,7 @@ CMakeUserPresets.json
 .idea/**/dbnavigator.xml
 
 .idea/
-.scripts/
+scripts/
 
 # Gradle
 .idea/**/gradle.xml

@@ -1,15 +1,26 @@
 package com.ssafy.algogo.review.entity;
 
-import com.ssafy.algogo.program.entity.Program;
 import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "user_review_reactions",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_user_review_reaction",
+            columnNames = {"user_id", "review_id"}
+        )
+    }
+)
 public class UserReviewReaction {
 
     @Id
@@ -23,6 +34,7 @@ public class UserReviewReaction {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "review_id")
     private Review review;
 

@@ -3,16 +3,20 @@ package com.ssafy.algogo.program.campaign.entity;
 import com.ssafy.algogo.program.entity.Program;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Table(
+    name = "campaigns"
+)
 public class Campaign extends Program {
 
     @NotNull

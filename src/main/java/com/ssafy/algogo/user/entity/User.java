@@ -1,16 +1,22 @@
 package com.ssafy.algogo.user.entity;
 
-import com.ssafy.algogo.alarm.entity.Alarm;
 import com.ssafy.algogo.common.utils.BaseTime;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnDefault;
+import lombok.*;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+        name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_user_email", columnNames = {"email"}),
+                @UniqueConstraint(name = "uk_user_nickname", columnNames = {"nickname"})
+        }
+)
 public class User extends BaseTime {
 
     @Id
@@ -24,10 +30,9 @@ public class User extends BaseTime {
     private String password;
 
     @NotNull
-    @ColumnDefault("'안녕하세요'") // 기본 값 설정
-    private String description;
+    @Builder.Default
+    private String description = "안녕하세요";
 
-    @NotNull
     @Column(name = "profile_image")
     private String profileImage;
 
@@ -38,5 +43,14 @@ public class User extends BaseTime {
     @Enumerated(EnumType.STRING)
     @Column(name = "user_role")
     private UserRole userRole;
+
+    public void updateUserInfo(String nickname, String description) {
+        this.nickname = nickname;
+        this.description = description;
+    }
+
+    public void updateProfileImage(String profileImage) {
+        this.profileImage = profileImage;
+    }
 
 }

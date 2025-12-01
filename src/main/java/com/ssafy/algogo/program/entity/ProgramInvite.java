@@ -3,12 +3,16 @@ package com.ssafy.algogo.program.entity;
 import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "program_invites"
+)
 public class ProgramInvite {
 
     @Id
@@ -30,4 +34,7 @@ public class ProgramInvite {
     @JoinColumn(name = "user_id")
     private User user;
 
+    public void updateInviteStatus(InviteStatus inviteStatus) {
+        this.inviteStatus = inviteStatus;
+    }
 }

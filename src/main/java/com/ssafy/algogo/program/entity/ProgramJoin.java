@@ -3,12 +3,16 @@ package com.ssafy.algogo.program.entity;
 import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "program_joins"
+)
 public class ProgramJoin {
 
     @Id
@@ -16,6 +20,7 @@ public class ProgramJoin {
     private Long id;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "join_status")
     private JoinStatus joinStatus;
 
@@ -28,5 +33,9 @@ public class ProgramJoin {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public void updateJoinStatus(JoinStatus joinStatus) {
+        this.joinStatus = joinStatus;
+    }
 
 }

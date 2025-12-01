@@ -1,16 +1,23 @@
 package com.ssafy.algogo.review.entity;
 
 import com.ssafy.algogo.common.utils.BaseTime;
-import com.ssafy.algogo.problem.entity.Submission;
+import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "reviews"
+)
 public class Review extends BaseTime {
 
     @Id
@@ -18,6 +25,7 @@ public class Review extends BaseTime {
     private Long id;
 
     @NotNull
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "code_line")
@@ -34,11 +42,27 @@ public class Review extends BaseTime {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "submission_id")
     private Submission submission;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "parent_review_id")
     private Review parentReview;
+
+    public void updateReview(Long codeLine, String content) {
+        this.codeLine = codeLine;
+        this.content = content;
+        this.modifiedAt = LocalDateTime.now();
+    }
+
+    public void addReviewLikeCount() {
+        this.likeCount++;
+    }
+
+    public void deleteReviewLikeCount() {
+        this.likeCount--;
+    }
 
 }

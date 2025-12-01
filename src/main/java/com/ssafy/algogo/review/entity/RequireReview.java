@@ -1,22 +1,48 @@
 package com.ssafy.algogo.review.entity;
 
+import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.user.entity.User;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "required_reviews",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_required_review_user_submission",
+            columnNames = {"user_id", "submission_id"}
+        )
+    }
+)
 public class RequireReview {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @Column(name = "is_done")
+    @Column(
+        name = "is_done",
+        columnDefinition = "TINYINT(1) NOT NULL DEFAULT 0"
+    )
     private Boolean isDone;
 
     @NotNull
@@ -26,7 +52,11 @@ public class RequireReview {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "review_id")
-    private Review review;
+    @JoinColumn(name = "submission_id")
+    private Submission submission;
 
+    public void updateRequireReview(Boolean isDone) {
+        this.isDone = isDone;
+    }
 }
+
