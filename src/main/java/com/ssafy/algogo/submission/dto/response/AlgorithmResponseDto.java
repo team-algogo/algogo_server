@@ -7,7 +7,7 @@ public record AlgorithmResponseDto(
     String name
 ) {
 
-  public AlgorithmResponseDto from(Algorithm algorithm) {
+  public static AlgorithmResponseDto from(Algorithm algorithm) {
     return new AlgorithmResponseDto(
         algorithm.getId(),
         algorithm.getName()

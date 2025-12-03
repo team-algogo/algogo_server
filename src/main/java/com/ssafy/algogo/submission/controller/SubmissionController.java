@@ -2,17 +2,24 @@ package com.ssafy.algogo.submission.controller;
 
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
+import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.UserSubmissionPageResponseDto;
 import com.ssafy.algogo.submission.service.SubmissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -21,36 +28,78 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/submissions")
 public class SubmissionController {
 
-  private final SubmissionService submissionService;
+    private final SubmissionService submissionService;
 
-  @GetMapping("/{submissionId}")
-  public SuccessResponse getSubmission(@PathVariable Long submissionId) {
-    SubmissionResponseDto submissionResponseDto = submissionService.getSubmission(submissionId);
-    return new SuccessResponse("제출 조회를 성공했습니다.", submissionResponseDto);
-  }
+    @GetMapping("/{submissionId}")
+    public SuccessResponse getSubmission(@PathVariable Long submissionId) {
+        SubmissionResponseDto submissionResponseDto = submissionService.getSubmission(submissionId);
+        return new SuccessResponse("제출 조회를 성공했습니다.", submissionResponseDto);
+    }
 
-  @PostMapping
-  public SuccessResponse createSubmission(
+    @PostMapping
+    public SuccessResponse createSubmission(
 //            @AuthenticationPrincipal CustomUserDetails customUserDetails,
-      @RequestBody @Valid SubmissionRequestDto submissionRequestDto) {
-    log.info("SubmissionRequestDto : {}", submissionRequestDto);
-    SubmissionResponseDto submissionResponseDto = submissionService.createSubmission(12L,
-        submissionRequestDto);
+        @RequestBody @Valid SubmissionRequestDto submissionRequestDto) {
+        log.info("SubmissionRequestDto : {}", submissionRequestDto.toString());
+        SubmissionResponseDto submissionResponseDto = submissionService.createSubmission(6L,
+            submissionRequestDto);
 
-    return new SuccessResponse("코드 제출을 성공했습니다.", submissionResponseDto);
-  }
+        return new SuccessResponse("코드 제출을 성공했습니다.", submissionResponseDto);
+    }
 
-  @GetMapping("/{submissionId}/histories")
-  public SuccessResponse getSubmissionHistories(
+    @DeleteMapping("/{submissionId}")
+    public SuccessResponse deleteSubmission(
+//        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable Long submissionId
+    ) {
+        submissionService.deleteSubmission(6L, submissionId);
+        return new SuccessResponse("제출 삭제를 성공했습니다.", null);
+    }
+
+    @GetMapping("/{submissionId}/histories")
+    public SuccessResponse getSubmissionHistories(
 //            @AuthenticationPrincipal CustomUserDetails customUserDetails,
-      @PathVariable Long submissionId) {
-    SubmissionListResponseDto submissionHistories = submissionService.getSubmissionHistories(1L,
-        submissionId);
-    return new SuccessResponse("제출 히스토리 조회를 성공했습니다.", submissionHistories);
-  }
+        @PathVariable Long submissionId) {
+        SubmissionListResponseDto submissionHistories = submissionService.getSubmissionHistories(6L,
+            submissionId);
+        return new SuccessResponse("제출 히스토리 조회를 성공했습니다.", submissionHistories);
+    }
 
-  @GetMapping("/{submissionId}/me")
-  public SuccessResponse getSubmissionMe() {
-    return null;
-  }
+    @GetMapping("/me")
+    public SuccessResponse getSubmissionMe(
+//            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @RequestParam(value = "language", required = false) String language,
+        @RequestParam(value = "isSuccess", required = false) Boolean isSuccess,
+        @RequestParam(value = "programType", required = false) String programType,
+        @RequestParam(value = "algorithm", required = false) String algorithm,
+        @RequestParam(value = "platform", required = false) String platform,
+        @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+        @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
+        @RequestParam(value = "page", defaultValue = "0") Integer page,
+        @RequestParam(value = "size", defaultValue = "10") Integer size
+    ) {
+        UserSubmissionRequestDto userSubmissionRequestDto = UserSubmissionRequestDto.builder()
+            .language(language)
+            .isSuccess(isSuccess)
+            .programType(programType)
+            .algorithm(algorithm)
+            .platform(platform)
+            .build();
+
+        Pageable pageable = PageRequest.of(page, size,
+            Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
+
+        UserSubmissionPageResponseDto submissionMe = submissionService.getSubmissionMe(6L,
+            userSubmissionRequestDto, pageable);
+        return new SuccessResponse("내 제출 조회를 성공했습니다.", submissionMe);
+    }
+
+//    @GetMapping("/trending")
+//    public SuccessResponse getTrendingSubmissions(
+//        @RequestParam(value = "type", defaultValue = "hot") String trendType
+//    ) {
+//        TrendingSubmissionResponseDto trendingSubmissionResponseDto = submissionService.getTrendingSubmission(
+//            trendType);
+//        return new SuccessResponse("트렌드 제출 조회를 성공했습니다.", trendingSubmissionResponseDto);
+//    }
 }
