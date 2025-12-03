@@ -2,68 +2,183 @@ package com.ssafy.algogo.submission.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
+import com.ssafy.algogo.common.utils.S3Service;
 import com.ssafy.algogo.problem.entity.ProgramProblem;
 import com.ssafy.algogo.problem.repository.ProgramProblemRepository;
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
+import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.UserSubmissionPageResponseDto;
+import com.ssafy.algogo.submission.dto.response.UserSubmissionResponseDto;
+import com.ssafy.algogo.submission.entity.Algorithm;
 import com.ssafy.algogo.submission.entity.Submission;
+import com.ssafy.algogo.submission.entity.SubmissionAlgorithm;
+import com.ssafy.algogo.submission.repository.AlgorithmRepository;
+import com.ssafy.algogo.submission.repository.SubmissionAlgorithmRepository;
 import com.ssafy.algogo.submission.repository.SubmissionRepository;
 import com.ssafy.algogo.submission.service.SubmissionService;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
+import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class SubmissionServiceImpl implements SubmissionService {
 
-  private final UserRepository userRepository;
-  private final SubmissionRepository submissionRepository;
-  private final ProgramProblemRepository programProblemRepository;
+    private final UserRepository userRepository;
+    private final SubmissionRepository submissionRepository;
+    private final ProgramProblemRepository programProblemRepository;
+    private final SubmissionAlgorithmRepository submissionAlgorithmRepository;
+    private final AlgorithmRepository algorithmRepository;
 
-  @Override
-  public SubmissionResponseDto getSubmission(Long submissionId) {
-    return SubmissionResponseDto.from(submissionRepository.findById(submissionId)
-        .orElseThrow(() -> new CustomException("제출 정보가 잘못 되었습니다.", ErrorCode.INVALID_PARAMETER)));
-  }
+    private final S3Service s3Service;
 
-  @Override
-  public SubmissionResponseDto createSubmission(Long userId,
-      SubmissionRequestDto submissionRequestDto) {
-    // userId가 필요한 모든 곳에서 사용할텐데 userId에 관한 검증은 aop로 뺄까?
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
-    ProgramProblem programProblem = programProblemRepository.findById(
-        submissionRequestDto.getProgramProblemId()).orElseThrow(
-        () -> new CustomException("프로그램 문제 정보가 잘못 되었습니다.", ErrorCode.INVALID_PARAMETER));
+    @Override
+    @Transactional(readOnly = true)
+    public SubmissionResponseDto getSubmission(Long submissionId) {
+        Submission submission = submissionRepository.findById(submissionId)
+            .orElseThrow(
+                () -> new CustomException("제출 정보가 잘못 되었습니다.", ErrorCode.INVALID_PARAMETER));
 
-    // 알고리즘 테이블과의 연관관계 테이블 로직 필요
+        List<Algorithm> usedAlgorithmList = algorithmRepository.findAllAlgorithmsBySubmissionId(
+            submission.getId());
+        return SubmissionResponseDto.from(submission, usedAlgorithmList);
+    }
 
-    return SubmissionResponseDto.from(submissionRepository.save(
-        Submission.builder().language(submissionRequestDto.getLanguage())
-            .code(submissionRequestDto.getCode()).execTime(submissionRequestDto.getExecTime())
-            .memory(submissionRequestDto.getMemory()).strategy(submissionRequestDto.getStrategy())
-            .isSuccess(submissionRequestDto.getIsSuccess()).user(user)
-            .programProblem(programProblem).build()));
-  }
-
-  @Override
-  public SubmissionListResponseDto getSubmissionHistories(Long userId, Long submissionId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(
-            () -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
-
-    Submission submission = submissionRepository.findById(submissionId)
-        .orElseThrow(
+    @Override
+    public SubmissionResponseDto createSubmission(Long userId,
+        SubmissionRequestDto submissionRequestDto) {
+        // userId가 필요한 모든 곳에서 사용할텐데 userId에 관한 검증은 aop로 뺄까?
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+        ProgramProblem programProblem = programProblemRepository.findById(
+            submissionRequestDto.getProgramProblemId()).orElseThrow(
             () -> new CustomException("프로그램 문제 정보가 잘못 되었습니다.", ErrorCode.INVALID_PARAMETER));
-    // 해당 유저의 해당 프로그램 문제의 제출 모두 조회
-    List<Submission> submissionHistories = submissionRepository.findAllByUserAndProgramProblemOrderByCreatedAtAsc(
-        user,
-        submission.getProgramProblem());
-    return new SubmissionListResponseDto(
-        submissionHistories.stream().map(SubmissionResponseDto::from).toList());
-  }
+
+        // 코드는 S3에 저장
+        String s3CodeUrl = s3Service.uploadText(userId, submissionRequestDto.getCode());
+
+        // 제출 저장
+        Submission submission = submissionRepository.save(
+            Submission.builder().language(submissionRequestDto.getLanguage())
+                .code(s3CodeUrl)
+                .execTime(submissionRequestDto.getExecTime())
+                .memory(submissionRequestDto.getMemory())
+                .strategy(submissionRequestDto.getStrategy())
+                .isSuccess(submissionRequestDto.getIsSuccess()).user(user)
+                .programProblem(programProblem).build());
+
+        // 프로그램 문제 제출 수 +1
+        programProblem.increaseSubmissionCount();
+
+        // 프로그램 문제 풀이 수 +1
+        if (submission.getIsSuccess().equals(Boolean.TRUE)) {
+            programProblem.increaseSolvedCount();
+        }
+
+        // 제출 시 사용한 알고리즘 저장
+        List<Algorithm> usedAlgorithmList = createSubmissionAlgorithmAndFetch(
+            submissionRequestDto, submission);
+
+        return SubmissionResponseDto.from(submission, usedAlgorithmList);
+    }
+
+    @Override
+    public void deleteSubmission(Long userId, Long submissionId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(
+                () -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+
+        Submission submission = submissionRepository.findById(submissionId)
+            .orElseThrow(
+                () -> new CustomException("잘못된 제출 ID 정보가 포함되어 있습니다.", ErrorCode.BAD_REQUEST));
+
+        // submission <-> review의 삭제는 어플리케이션 레벨에서 먼저 지운 후 지우는게 좋을 것 같음
+        // onDelete를 사용하기에는 DB레벨에 보내버리게 되기도하고
+        // 요구된 리뷰 부분을 삭제할 때 비즈니스 로직이 추가되니까
+
+        // ** 로직 설계
+        // 요구된 리뷰 조회
+        // 수행여부 x시 수정 필요
+        // 요구된 리뷰 삭제
+        // 리뷰 리매칭 요청
+
+        submissionRepository.delete(submission);
+    }
+
+    private List<Algorithm> createSubmissionAlgorithmAndFetch(
+        SubmissionRequestDto submissionRequestDto,
+        Submission submission) {
+        List<Long> usedAlgorithmRequestIdList = submissionRequestDto.getAlgorithmList();
+
+        // SubmissionAlgorithm create 요청 알고리즘 검증을 위한 조회
+        List<Algorithm> usedAlgorithmList = algorithmRepository.findAllById(new HashSet<>(
+            usedAlgorithmRequestIdList));
+
+        // 중복 제거 후 사이즈와 실제 DB 조회 사이즈가 다르면 없는 알고리즘이 요청에 섞인 경우임.
+        if (new HashSet<>(usedAlgorithmRequestIdList).size() != usedAlgorithmList.size()) {
+            throw new CustomException("잘못된 알고리즘 ID 정보가 포함되어 있습니다.", ErrorCode.BAD_REQUEST);
+        }
+
+        // SubmissionAlgorithm 저장
+        submissionAlgorithmRepository.saveAll(usedAlgorithmList.stream().map(
+            usedAlgorithm -> SubmissionAlgorithm.builder().submission(submission)
+                .algorithm(usedAlgorithm).build()).toList());
+
+        return usedAlgorithmList;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SubmissionListResponseDto getSubmissionHistories(Long userId, Long submissionId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(
+                () -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+
+        Submission submission = submissionRepository.findById(submissionId)
+            .orElseThrow(
+                () -> new CustomException("프로그램 문제 정보가 잘못 되었습니다.", ErrorCode.BAD_REQUEST));
+        // 해당 유저의 해당 프로그램 문제의 제출 모두 조회
+        List<Submission> submissionHistories = submissionRepository.findAllByUserAndProgramProblemOrderByCreatedAtAsc(
+            user,
+            submission.getProgramProblem());
+        log.info("submissionHistories : {}", submissionHistories);
+        return new SubmissionListResponseDto(
+            submissionHistories.stream().map(history -> SubmissionResponseDto.from(history,
+                algorithmRepository.findAllAlgorithmsBySubmissionId(history.getId()))).toList());
+    }
+
+    @Override
+    public UserSubmissionPageResponseDto getSubmissionMe(Long userId,
+        UserSubmissionRequestDto userSubmissionRequestDto, Pageable pageable) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(
+                () -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+
+        Page<UserSubmissionResponseDto> submissionMeList = submissionRepository.findAllUserSubmissionList(
+            user.getId(), userSubmissionRequestDto, pageable);
+        return UserSubmissionPageResponseDto.from(submissionMeList);
+    }
+
+//    @Override
+//    public TrendingSubmissionResponseDto getTrendingSubmission(String trendType) {
+//        return new TrendingSubmissionResponseDto(
+//            switch (trendType) {
+//                case "popular" -> submissionRepository.findMostParticipatedSubmissions();
+//                case "recent" -> submissionRepository.findRecentSubmissions();
+//                default -> submissionRepository.findHottestSubmissions();
+//            }
+//        );
+//    }
+
 }

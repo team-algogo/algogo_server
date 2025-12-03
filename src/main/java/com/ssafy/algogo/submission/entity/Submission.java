@@ -29,38 +29,42 @@ import lombok.NoArgsConstructor;
 )
 public class Submission extends BaseTime {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  @NotNull
-  private String language;
+    @NotNull
+    private String language;
 
-  @NotNull
-  private String code;
+    @NotNull
+    private String code;
 
-  @NotNull
-  @Column(name = "exec_time")
-  private Long execTime;
+    @NotNull
+    @Column(name = "exec_time")
+    private Long execTime;
 
-  @NotNull
-  private Long memory;
+    @NotNull
+    private Long memory;
 
-  @NotNull
-  private String strategy;
+    @NotNull
+    private String strategy;
 
-  @NotNull
-  @Column(name = "is_success")
-  private Boolean isSuccess;
+    @NotNull
+    @Column(name = "is_success")
+    private Boolean isSuccess;
 
-  @NotNull
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id")
-  private User user;
+    @NotNull
+    @Column(name = "view_count")
+    private Long viewCount;
 
-  @NotNull
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "program_problem_id")
-  private ProgramProblem programProblem;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "program_problem_id")
+    private ProgramProblem programProblem;
 
 }
