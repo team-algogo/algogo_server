@@ -3,11 +3,24 @@ package com.ssafy.algogo.problem.entity;
 import com.ssafy.algogo.common.utils.BaseTime;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemRequestDto;
 import com.ssafy.algogo.program.entity.Program;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
-
 import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
@@ -70,14 +83,28 @@ public class ProgramProblem {
     @JoinColumn(name = "problem_id")
     private Problem problem;
 
-    public static ProgramProblem create(Program program, Problem problem, ProgramProblemRequestDto programProblemRequestDto){
+    public static ProgramProblem create(Program program, Problem problem,
+        ProgramProblemRequestDto programProblemRequestDto) {
         return ProgramProblem.builder()
-                .program(program)
-                .problem(problem)
-                .startDate((programProblemRequestDto.getStartDate() != null) ? programProblemRequestDto.getStartDate() : LocalDateTime.now())
-                .endDate((programProblemRequestDto.getEndDate() != null) ? programProblemRequestDto.getEndDate() : BaseTime.MYSQL_TIMESTAMP_MAX)
-                .userDifficultyType((programProblemRequestDto.getUserDifficultyType() != null) ? programProblemRequestDto.getUserDifficultyType() : UserDifficultyType.MEDIUM)
-                .difficultyViewType((programProblemRequestDto.getDifficultyViewType() != null) ? programProblemRequestDto.getDifficultyViewType() : DifficultyViewType.PROBLEM_DIFFICULTY)
-                .build();
+            .program(program)
+            .problem(problem)
+            .startDate((programProblemRequestDto.getStartDate() != null)
+                ? programProblemRequestDto.getStartDate() : LocalDateTime.now())
+            .endDate((programProblemRequestDto.getEndDate() != null)
+                ? programProblemRequestDto.getEndDate() : BaseTime.MYSQL_TIMESTAMP_MAX)
+            .userDifficultyType((programProblemRequestDto.getUserDifficultyType() != null)
+                ? programProblemRequestDto.getUserDifficultyType() : UserDifficultyType.MEDIUM)
+            .difficultyViewType((programProblemRequestDto.getDifficultyViewType() != null)
+                ? programProblemRequestDto.getDifficultyViewType()
+                : DifficultyViewType.PROBLEM_DIFFICULTY)
+            .build();
+    }
+
+    public void increaseSubmissionCount() {
+        this.submissionCount++;
+    }
+
+    public void increaseSolvedCount() {
+        this.submissionCount++;
     }
 }

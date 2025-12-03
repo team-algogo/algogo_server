@@ -21,8 +21,6 @@ public class SubmissionRequestDto {
   @NotBlank(message = "사용 언어가 Null입니다.")
   private String language;
   @NotBlank(message = "제출 코드가 Null입니다.")
-  // 타입이나 max에 대해선 재고가 필요할듯..
-  @Length(max = 2000)
   private String code;
   @NotBlank(message = "전략이 Null입니다.")
   @Length(max = 255, message = "전략이 너무 깁니다.")
@@ -34,5 +32,5 @@ public class SubmissionRequestDto {
   @NotNull(message = "성공여부가 Null입니다.")
   private Boolean isSuccess;
   @NotNull(message = "알고리즘이 Null입니다.")
-  private List<String> algorithm;
+  private List<Long> algorithmList;
 }
