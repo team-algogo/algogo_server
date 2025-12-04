@@ -2,6 +2,10 @@ package com.ssafy.algogo.common.utils;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,11 +15,6 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -33,6 +32,9 @@ public class S3Service {
     @Value("${file.upload.profile-image-path}")
     private String profileImagePath;
 
+    @Value("${file.upload.submission-code-path}")
+    private String submissionCodePath;
+
     @Value("${file.upload.allowed-extensions}")
     private String allowedExtensions;
 
@@ -49,7 +51,7 @@ public class S3Service {
         validateFile(file);
 
         // 2. S3 key 생성 (profile/{userId}/{UUID}.{확장자})
-        String s3Key = generateS3Key(file, userId);
+        String s3Key = generateS3Key(file, userId, profileImagePath);
 
         // 3. S3 업로드
         uploadToS3(file, s3Key);
@@ -81,6 +83,22 @@ public class S3Service {
         }
     }
 
+    public String uploadText(Long userId, String text) {
+        if (text.isBlank()) {
+            throw new CustomException("text가 없습니다.", ErrorCode.FAILED_FILE_UPLOAD);
+        }
+
+        String s3Key = generateS3Key(userId, submissionCodePath);
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+            .bucket(bucketName)
+            .key(s3Key)
+            .contentType("text/plain; charset=UTF-8")
+            .build();
+
+        s3Client.putObject(putObjectRequest, RequestBody.fromString(text));
+        return convertToCloudFrontUrl(s3Key);
+    }
+
     // TODO : FileUploadException 발생 vs CustomException 발생 ?
     private void validateFile(MultipartFile file) {
 
@@ -107,12 +125,16 @@ public class S3Service {
     }
 
     // S3 key 생성
-    private String generateS3Key(MultipartFile file, Long userId) {
+    private String generateS3Key(MultipartFile file, Long userId, String path) {
         String originalFilename = file.getOriginalFilename();
         String extension = extractExtension(originalFilename);
         String uniqueFilename = UUID.randomUUID().toString() + "." + extension;
 
-        return profileImagePath + userId + "/" + uniqueFilename;
+        return path + userId + "/" + uniqueFilename;
+    }
+
+    private String generateS3Key(Long userId, String path) {
+        return path + userId + "/" + UUID.randomUUID().toString() + ".txt";
     }
 
     private void uploadToS3(MultipartFile file, String s3Key) {
