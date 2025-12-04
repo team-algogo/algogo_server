@@ -3,7 +3,6 @@ package com.ssafy.algogo.problem.dto.response;
 import com.ssafy.algogo.problem.entity.DifficultyViewType;
 import com.ssafy.algogo.problem.entity.ProgramProblem;
 import com.ssafy.algogo.problem.entity.UserDifficultyType;
-
 import java.time.LocalDateTime;
 
 public record ProgramProblemResponseDto(

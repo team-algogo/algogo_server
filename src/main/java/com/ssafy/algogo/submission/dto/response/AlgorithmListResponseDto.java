@@ -6,7 +6,7 @@ public record AlgorithmListResponseDto(
     List<AlgorithmResponseDto> algorithmList
 ) {
 
-  public AlgorithmListResponseDto from(List<AlgorithmResponseDto> algorithmList) {
+  public static AlgorithmListResponseDto from(List<AlgorithmResponseDto> algorithmList) {
     return new AlgorithmListResponseDto(algorithmList);
   }
 }
