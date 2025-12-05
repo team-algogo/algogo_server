@@ -1,6 +1,7 @@
 package com.ssafy.algogo.submission.utils;
 
 import com.ssafy.algogo.submission.dto.ReviewCandidateQueryDto;
+import com.ssafy.algogo.submission.entity.Algorithm;
 import com.ssafy.algogo.submission.entity.Submission;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -14,7 +15,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ReviewMatchRanker {
 
     private static final double WEIGHT_AGING = 5.0;
@@ -28,7 +31,7 @@ public class ReviewMatchRanker {
 
     public List<Submission> rankReviewerCandidates(
         Submission subjectSubmission,
-        Set<Long> subjectAlgorithmIds,
+        List<Algorithm> subjectAlgorithms,
         List<ReviewCandidateQueryDto> candidateList
     ) {
         long minAge = Long.MAX_VALUE;
@@ -45,6 +48,10 @@ public class ReviewMatchRanker {
         long maxRequireReviewCount = Long.MIN_VALUE;
 
         List<ScoredSubmission> scoredSubmissionList = new ArrayList<>(candidateList.size());
+
+        Set<Long> subjectAlgorithmIdSet = subjectAlgorithms.stream()
+            .map(Algorithm::getId)
+            .collect(Collectors.toSet());
 
         for (ReviewCandidateQueryDto candidate : candidateList) {
             Submission candidateSubmission = candidate.submission();
@@ -91,7 +98,7 @@ public class ReviewMatchRanker {
 
         // score 계산
         for (ScoredSubmission scoredSubmission : scoredSubmissionList) {
-            scoredSubmission.computeTotalScore(subjectSubmission, subjectAlgorithmIds, minAge,
+            scoredSubmission.computeTotalScore(subjectSubmission, subjectAlgorithmIdSet, minAge,
                 maxAge, maxExecDiff, maxMemDiff, minVieCount,
                 maxVieCount, minReviewCount, maxReviewCount, minRequireReviewCount,
                 maxRequireReviewCount);
@@ -168,7 +175,8 @@ public class ReviewMatchRanker {
                     + WEIGHT_EXEC_TIME * execTimeScore
                     + WEIGHT_MEMORY * memoryScore
                     + WEIGHT_VIEW_COUNT * viewCountScore
-            ;
+                    + WEIGHT_REVIEW_COUNT * reviewCountScore
+                    + WEIGHT_REQUIRE_REVIEW_COUNT * requireReviewCountScore;
         }
 
         // 각 개체의 option 들을 0~1 사이로 정규화 시킴

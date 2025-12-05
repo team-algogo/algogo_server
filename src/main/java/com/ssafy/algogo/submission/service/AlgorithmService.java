@@ -3,6 +3,6 @@ package com.ssafy.algogo.submission.service;
 import com.ssafy.algogo.submission.dto.response.AlgorithmListResponseDto;
 
 public interface AlgorithmService {
-  
-  public AlgorithmListResponseDto searchAlgorithmWithKeyword(String keyword);
+
+    AlgorithmListResponseDto searchAlgorithmWithKeyword(String keyword);
 }

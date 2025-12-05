@@ -1,16 +1,20 @@
 package com.ssafy.algogo.review.repository.query;
 
 
+import static com.querydsl.core.group.GroupBy.groupBy;
+import static com.querydsl.core.types.Projections.list;
 import static com.ssafy.algogo.problem.entity.QProblem.problem;
 import static com.ssafy.algogo.problem.entity.QProgramProblem.programProblem;
 import static com.ssafy.algogo.program.entity.QProgram.program;
 import static com.ssafy.algogo.review.entity.QRequireReview.requireReview;
 import static com.ssafy.algogo.submission.entity.QSubmission.submission;
+import static com.ssafy.algogo.submission.entity.QSubmissionAlgorithm.submissionAlgorithm;
 import static com.ssafy.algogo.user.entity.QUser.user;
 
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
+import com.ssafy.algogo.submission.dto.ReviewRematchTargetQueryDto;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -43,5 +47,27 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
             .where(requireReview.subjectUser.id.eq(userId))
             .where(requireReview.isDone.isFalse())
             .fetch();
+    }
+
+    @Override
+    public List<ReviewRematchTargetQueryDto> findAllReviewRematchTargets(Long submissionId) {
+        return query
+            .from(requireReview)
+            .join(requireReview.subjectSubmission).fetchJoin()
+            .leftJoin(submissionAlgorithm)
+            .on(submissionAlgorithm.submission.eq(requireReview.subjectSubmission))
+            .where(
+                requireReview.targetSubmission.id.eq(submissionId),
+                requireReview.isDone.eq(false)
+            )
+            .transform(
+                groupBy(requireReview.subjectSubmission.id).list(
+                    Projections.constructor(
+                        ReviewRematchTargetQueryDto.class,
+                        requireReview.subjectSubmission,
+                        list(submissionAlgorithm)
+                    )
+                )
+            );
     }
 }

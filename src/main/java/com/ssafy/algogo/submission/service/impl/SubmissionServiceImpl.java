@@ -8,6 +8,7 @@ import com.ssafy.algogo.problem.repository.ProgramProblemRepository;
 import com.ssafy.algogo.review.entity.RequireReview;
 import com.ssafy.algogo.review.repository.RequireReviewRepository;
 import com.ssafy.algogo.submission.dto.ReviewCandidateQueryDto;
+import com.ssafy.algogo.submission.dto.ReviewRematchTargetQueryDto;
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
@@ -22,6 +23,7 @@ import com.ssafy.algogo.submission.repository.AlgorithmRepository;
 import com.ssafy.algogo.submission.repository.SubmissionAlgorithmRepository;
 import com.ssafy.algogo.submission.repository.SubmissionRepository;
 import com.ssafy.algogo.submission.service.SubmissionService;
+import com.ssafy.algogo.submission.utils.ReviewMatchRanker;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
 import java.util.HashSet;
@@ -44,15 +46,15 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final ProgramProblemRepository programProblemRepository;
     private final SubmissionAlgorithmRepository submissionAlgorithmRepository;
     private final AlgorithmRepository algorithmRepository;
-
-    private final S3Service s3Service;
     private final RequireReviewRepository requireReviewRepository;
+
+    private final ReviewMatchRanker reviewMatchRanker;
+    private final S3Service s3Service;
 
     @Override
     public SubmissionResponseDto getSubmission(Long submissionId) {
-        Submission submission = submissionRepository.findById(submissionId)
-            .orElseThrow(
-                () -> new CustomException("제출 정보가 잘못 되었습니다.", ErrorCode.INVALID_PARAMETER));
+        Submission submission = submissionRepository.findById(submissionId).orElseThrow(
+            () -> new CustomException("존재하지 않는 제출입니다.", ErrorCode.SUBMISSION_NOT_FOUND));
 
         List<Algorithm> usedAlgorithmList = algorithmRepository.findAllAlgorithmsBySubmissionId(
             submission.getId());
@@ -70,15 +72,14 @@ public class SubmissionServiceImpl implements SubmissionService {
             .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
         ProgramProblem programProblem = programProblemRepository.findById(
             submissionRequestDto.getProgramProblemId()).orElseThrow(
-            () -> new CustomException("프로그램 문제 정보가 잘못 되었습니다.", ErrorCode.INVALID_PARAMETER));
+            () -> new CustomException("존재하지 않는 프로그램 문제입니다.", ErrorCode.PROGRAM_PROBLEM_NOT_FOUND));
 
         // 코드는 S3에 저장
         String s3CodeUrl = s3Service.uploadText(userId, submissionRequestDto.getCode());
 
         // 제출 저장
         Submission submission = submissionRepository.save(
-            Submission.builder().language(submissionRequestDto.getLanguage())
-                .code(s3CodeUrl)
+            Submission.builder().language(submissionRequestDto.getLanguage()).code(s3CodeUrl)
                 .execTime(submissionRequestDto.getExecTime())
                 .memory(submissionRequestDto.getMemory())
                 .strategy(submissionRequestDto.getStrategy())
@@ -94,72 +95,80 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
 
         // 제출 시 사용한 알고리즘 저장
-        List<Algorithm> usedAlgorithmList = createSubmissionAlgorithmAndFetch(
-            submissionRequestDto, submission);
+        List<Algorithm> usedAlgorithmList = createSubmissionAlgorithmAndFetch(submissionRequestDto,
+            submission);
 
         // 리뷰 매칭
-        matchReviewers(submission);
+        matchReviewers(submission, usedAlgorithmList, 2);
 
         return SubmissionResponseDto.from(submission, usedAlgorithmList);
-    }
-
-    private void matchReviewers(Submission subjectSubmission) {
-        List<ReviewCandidateQueryDto> reviewMatchCandidates = submissionRepository.findReviewMatchCandidates(
-            subjectSubmission.getId(),
-            subjectSubmission.getUser().getId(),
-            subjectSubmission.getProgramProblem().getId(),
-            subjectSubmission.getLanguage());
-        // 후보군에 후보가 존재할 때 (존재하지 않다면 패스)
-        if (!reviewMatchCandidates.isEmpty()) {
-            List<RequireReview> requireReviewList = reviewMatchCandidates.stream()
-                .map(candidate ->
-                    RequireReview.builder()
-                        .subjectSubmission(subjectSubmission)
-                        .subjectUser(subjectSubmission.getUser())
-                        .targetSubmission(candidate.submission())
-                        .build())
-                .toList();
-
-            if (reviewMatchCandidates.size() <= 2) {
-                // 0 < size <= 2   ->   바로 매칭
-                requireReviewRepository.saveAll(requireReviewList);
-            } else {
-                // size > 2   -> 상위 2개만 매칭
-                requireReviewRepository.saveAll(requireReviewList.subList(0, 2));
-            }
-        }
     }
 
     @Override
     public void deleteSubmission(Long userId, Long submissionId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(
-                () -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
 
-        Submission submission = submissionRepository.findById(submissionId)
-            .orElseThrow(
-                () -> new CustomException("잘못된 제출 ID 정보가 포함되어 있습니다.", ErrorCode.BAD_REQUEST));
+        Submission submission = submissionRepository.findById(submissionId).orElseThrow(
+            () -> new CustomException("존재하지 않는 제출입니다.", ErrorCode.SUBMISSION_NOT_FOUND));
+
+        if (!submission.getUser().equals(user)) {
+            throw new CustomException("제출과 회원 정보가 일치하지 않습니다.", ErrorCode.INVALID_PARAMETER);
+        }
 
         // ** 로직 설계
         // 요구된 리뷰 중 수행 X 조회
-        List<RequireReview> reRequireReviewList = requireReviewRepository.findAllByTargetSubmissionIdAndIsDone(
-            submission.getId(), false);
+        List<ReviewRematchTargetQueryDto> reviewRematchTargetList = requireReviewRepository.findAllReviewRematchTargets(
+            submission.getId());
         // 원 제출 삭제 -> 요구된 리뷰 삭제(@OnCascade.DELETE)
         submissionRepository.delete(submission);
         // 리뷰 리매칭
-        for (RequireReview reRequireReview : reRequireReviewList) {
-            matchReviewers(reRequireReview.getSubjectSubmission());
+        for (ReviewRematchTargetQueryDto target : reviewRematchTargetList) {
+            matchReviewers(target.submission(), target.algorithmList(), 1);
         }
     }
 
+    private void matchReviewers(Submission subjectSubmission, List<Algorithm> subjectAlgorithmList,
+        int assignCount) {
+        List<ReviewCandidateQueryDto> reviewMatchCandidates = submissionRepository.findReviewMatchCandidates(
+            subjectSubmission.getId(), subjectSubmission.getUser().getId(),
+            subjectSubmission.getProgramProblem().getId(), subjectSubmission.getLanguage());
+
+        // 후보군에 후보가 존재할 때 (존재하지 않다면 패스)
+        if (reviewMatchCandidates.isEmpty()) {
+            return;
+        }
+
+        List<Submission> targetSubmissions;
+        // 실제 할당할 개수
+        int actualAssignCount = Math.min(assignCount, reviewMatchCandidates.size());
+
+        // 후보군에 후보 수가 할당해야하는 수보다 작거나 같을 때
+        if (reviewMatchCandidates.size() <= actualAssignCount) {
+            targetSubmissions = reviewMatchCandidates.stream()
+                .map(ReviewCandidateQueryDto::submission).toList();
+        } else {
+            List<Submission> rankedSubmissions = reviewMatchRanker.rankReviewerCandidates(
+                subjectSubmission, subjectAlgorithmList, reviewMatchCandidates);
+
+            targetSubmissions = rankedSubmissions.subList(0, actualAssignCount);
+        }
+
+        List<RequireReview> requireReviewList = targetSubmissions.stream().map(
+                target -> RequireReview.builder().subjectSubmission(subjectSubmission)
+                    .subjectUser(subjectSubmission.getUser()).targetSubmission(target).build())
+            .toList();
+
+        requireReviewRepository.saveAll(requireReviewList);
+    }
+
     private List<Algorithm> createSubmissionAlgorithmAndFetch(
-        SubmissionRequestDto submissionRequestDto,
-        Submission submission) {
+        SubmissionRequestDto submissionRequestDto, Submission submission) {
         List<Long> usedAlgorithmRequestIdList = submissionRequestDto.getAlgorithmList();
 
         // SubmissionAlgorithm create 요청 알고리즘 검증을 위한 조회
-        List<Algorithm> usedAlgorithmList = algorithmRepository.findAllById(new HashSet<>(
-            usedAlgorithmRequestIdList));
+        List<Algorithm> usedAlgorithmList = algorithmRepository.findAllById(
+            new HashSet<>(usedAlgorithmRequestIdList));
 
         // 중복 제거 후 사이즈와 실제 DB 조회 사이즈가 다르면 없는 알고리즘이 요청에 섞인 경우임.
         if (new HashSet<>(usedAlgorithmRequestIdList).size() != usedAlgorithmList.size()) {
@@ -178,19 +187,16 @@ public class SubmissionServiceImpl implements SubmissionService {
     @Transactional(readOnly = true)
     public SubmissionListResponseDto getSubmissionHistories(Long userId, Long submissionId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(
-                () -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
 
-        Submission submission = submissionRepository.findById(submissionId)
-            .orElseThrow(
-                () -> new CustomException("프로그램 문제 정보가 잘못 되었습니다.", ErrorCode.BAD_REQUEST));
+        Submission submission = submissionRepository.findById(submissionId).orElseThrow(
+            () -> new CustomException("존재하지 않는 제출입니다.", ErrorCode.SUBMISSION_NOT_FOUND));
         // 해당 유저의 해당 프로그램 문제의 제출 모두 조회
         List<Submission> submissionHistories = submissionRepository.findAllByUserAndProgramProblemOrderByCreatedAtAsc(
-            user,
-            submission.getProgramProblem());
-        log.info("submissionHistories : {}", submissionHistories);
-        return new SubmissionListResponseDto(
-            submissionHistories.stream().map(history -> SubmissionResponseDto.from(history,
+            user, submission.getProgramProblem());
+
+        return new SubmissionListResponseDto(submissionHistories.stream().map(
+            history -> SubmissionResponseDto.from(history,
                 algorithmRepository.findAllAlgorithmsBySubmissionId(history.getId()))).toList());
     }
 
@@ -199,8 +205,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     public UserSubmissionPageResponseDto getSubmissionMe(Long userId,
         UserSubmissionRequestDto userSubmissionRequestDto, Pageable pageable) {
         User user = userRepository.findById(userId)
-            .orElseThrow(
-                () -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
 
         Page<UserSubmissionResponseDto> submissionMeList = submissionRepository.findAllUserSubmissionList(
             user.getId(), userSubmissionRequestDto, pageable);
