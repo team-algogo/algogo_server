@@ -6,6 +6,7 @@ import static com.ssafy.algogo.problem.entity.QProblem.problem;
 import static com.ssafy.algogo.problem.entity.QProgramProblem.programProblem;
 import static com.ssafy.algogo.program.entity.QProgram.program;
 import static com.ssafy.algogo.program.entity.QProgramType.programType;
+import static com.ssafy.algogo.review.entity.QRequireReview.requireReview;
 import static com.ssafy.algogo.review.entity.QReview.review;
 import static com.ssafy.algogo.submission.entity.QAlgorithm.algorithm;
 import static com.ssafy.algogo.submission.entity.QSubmission.submission;
@@ -18,6 +19,7 @@ import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.ssafy.algogo.problem.dto.response.ProblemResponseDto;
 import com.ssafy.algogo.problem.dto.response.ProgramProblemResponseDto;
@@ -28,7 +30,9 @@ import com.ssafy.algogo.program.dto.response.ProgramResponseDto;
 import com.ssafy.algogo.program.dto.response.ProgramTypeResponseDto;
 import com.ssafy.algogo.program.entity.QProgram;
 import com.ssafy.algogo.program.entity.QProgramType;
+import com.ssafy.algogo.review.entity.QRequireReview;
 import com.ssafy.algogo.review.entity.QReview;
+import com.ssafy.algogo.submission.dto.ReviewCandidateQueryDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.AlgorithmResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
@@ -39,7 +43,9 @@ import com.ssafy.algogo.submission.entity.QSubmissionAlgorithm;
 import com.ssafy.algogo.submission.repository.query.SubmissionQueryRepository;
 import com.ssafy.algogo.user.entity.QUser;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -158,83 +164,124 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
         return new PageImpl<>(contents, pageable, totalCount);
     }
 
-//    @Override
-//    public List<SubmissionPreviewResponseDto> findHottestSubmissions() {
-//
-//        return jpaQueryFactory
-//            .from(s)
-//            .join(s.user, u)
-//            .join(s.programProblem, pp)
-//            .join(pp.program, pg)
-//            .join(pp.problem, p)
-//            .leftJoin(pt).on(pg.programType.eq(pt))
-//            .leftJoin(sa).on(sa.submission.eq(s))
-//            .leftJoin(sa.algorithm, a)
-//            .leftJoin(r).on(
-//                r.submission.eq(s),
-//                r.createdAt.between(aWeekAgo, LocalDateTime.now())
-//            )
-////            .where(pt.name.ne("GROUP"))
-//            .orderBy(
-//                r.id.count().desc(),
-//                pp.submissionCount.desc()
-//            )
-//            .transform(
-//                groupBy(p.id).list(
-//                    Projections.constructor(
-//                        SubmissionPreviewResponseDto.class,
-//                        s.id,
-//                        s.language,
-//                        s.isSuccess,
-//                        s.createdAt,
-//
-//                        u.nickname,
-//
-//                        pg.title,
-//                        pg.thumbnail,
-//
-//                        pg.programType.name,
-//
-//                        pp.id,
-//                        pp.submissionCount,
-//                        pp.viewCount,
-//
-//                        p.platformType,
-//                        p.problemNo,
-//                        p.title,
-//                        p.difficultyType,
-//
-//                        r.id.count(),
-//
-//                        list(
-//                            Projections.constructor(
-//                                AlgorithmResponseDto.class,
-//                                a.id,
-//                                a.name
-//                            )
-//
-//                        )
-//                    )
-//                )
-//            );
-//    }
+    @Override
+    public List<ReviewCandidateQueryDto> findReviewMatchCandidates(Long subjectSubmissionId,
+        Long subjectUserId,
+        Long programProblemId,
+        String language) {
 
+        QRequireReview rr = requireReview;
 
-    public List<Long> findMostPopularProblemIds() {
+        Map<Long, ReviewCandidateQueryDto> result = jpaQueryFactory
+            .from(s)
+            .leftJoin(sa).on(sa.submission.eq(s))
+            .leftJoin(r).on(r.submission.eq(s),
+                r.parentReview.isNull())
+            .leftJoin(rr).on(rr.targetSubmission.eq(s))
+            .where(
+                s.programProblem.id.eq(programProblemId),
+                s.language.eq(language),
+                s.user.id.ne(subjectUserId),
+                s.id.ne(subjectSubmissionId),
+
+                JPAExpressions
+                    .selectOne()
+                    .from(r)
+                    .where(
+                        r.submission.eq(s),
+                        r.user.id.eq(subjectUserId),
+                        r.parentReview.isNull()
+                    )
+                    .notExists()
+            )
+            .transform(
+                groupBy(s.id).as(
+                    Projections.constructor(
+                        ReviewCandidateQueryDto.class,
+                        s,
+                        list(sa.algorithm.id),
+                        r.id.count(),
+                        rr.id.count()
+                    )
+                )
+            );
+        return new ArrayList<>(result.values());
+    }
+
+    @Override
+    public List<Long> findHotSubmissionIds() {
         return jpaQueryFactory
-            .select(p.id)
+            .select(s.id)
             .from(s)
             .join(s.programProblem, pp)
-            .join(pp.problem, p)
+            .join(pp.program, pg)
+            .join(pg.programType, pt)
+            .leftJoin(r).on(s.id.eq(r.submission.id))
+            .where(
+                s.createdAt.between(aWeekAgo, LocalDateTime.now()),
+                pt.name.lower().ne("group"),
+                pt.name.lower().ne("campaign")
+                    .or(
+                        pt.name.lower().eq("campaign")
+                            .and(pp.startDate.loe(LocalDateTime.now()))
+                            .and(pp.endDate.goe(LocalDateTime.now()))
+                    )
+            )
+            .groupBy(s.id)
+            .limit(10)
+            .orderBy(
+                r.id.count().desc(),
+                s.createdAt.max().desc(),
+                s.viewCount.max().desc())
+            .fetch();
+    }
+
+    @Override
+    public List<Long> findRecentSubmissionIds() {
+        return jpaQueryFactory
+            .select(s.id)
+            .from(s)
+            .join(s.programProblem, pp)
+            .join(pp.program, pg)
+            .join(pg.programType, pt)
+            .leftJoin(r).on(s.id.eq(r.submission.id))
+            .where(
+                s.createdAt.between(aWeekAgo, LocalDateTime.now()),
+                pt.name.lower().ne("group"),
+                pt.name.lower().ne("campaign")
+                    .or(
+                        pt.name.lower().eq("campaign")
+                            .and(pp.startDate.loe(LocalDateTime.now()))
+                            .and(pp.endDate.goe(LocalDateTime.now()))
+                    )
+            )
+            .groupBy(s.id)
+            .limit(10)
+            .orderBy(
+                r.createdAt.max().desc(),
+                s.createdAt.max().desc())
+            .fetch();
+    }
+
+    @Override
+    public List<Long> findTrendProgramProblemIds() {
+        return jpaQueryFactory
+            .select(pp.id)
+            .from(s)
+            .join(s.programProblem, pp)
             .join(pp.program, pg)
             .join(pg.programType, pt)
             .where(
                 s.createdAt.between(aWeekAgo, LocalDateTime.now()),
-                pt.name.ne("GROUP")
+                pt.name.lower().eq("problem-set")
             )
-            .groupBy(p.id)
-            .orderBy(s.id.count().desc())
+            .groupBy(pp.id)
+            .having(s.id.count().loe(3))
             .limit(10)
+            .orderBy(
+                s.id.count().asc(),
+                s.createdAt.max().asc(),
+                pp.viewCount.max().asc())
             .fetch();
     }
 

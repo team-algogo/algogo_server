@@ -49,6 +49,7 @@ public class Submission extends BaseTime {
     private Long memory;
 
     @NotNull
+    @Column(columnDefinition = "TEXT")
     private String strategy;
 
     @NotNull
@@ -57,7 +58,8 @@ public class Submission extends BaseTime {
 
     @NotNull
     @Column(name = "view_count")
-    private Long viewCount;
+    @Builder.Default
+    private Long viewCount = 0L;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
@@ -70,4 +72,7 @@ public class Submission extends BaseTime {
     @JoinColumn(name = "program_problem_id")
     private ProgramProblem programProblem;
 
+    public void increaseViewCount() {
+        this.viewCount++;
+    }
 }

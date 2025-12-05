@@ -5,10 +5,14 @@ import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.utils.S3Service;
 import com.ssafy.algogo.problem.entity.ProgramProblem;
 import com.ssafy.algogo.problem.repository.ProgramProblemRepository;
+import com.ssafy.algogo.review.entity.RequireReview;
+import com.ssafy.algogo.review.repository.RequireReviewRepository;
+import com.ssafy.algogo.submission.dto.ReviewCandidateQueryDto;
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
 import com.ssafy.algogo.submission.dto.response.UserSubmissionPageResponseDto;
 import com.ssafy.algogo.submission.dto.response.UserSubmissionResponseDto;
 import com.ssafy.algogo.submission.entity.Algorithm;
@@ -42,9 +46,9 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final AlgorithmRepository algorithmRepository;
 
     private final S3Service s3Service;
+    private final RequireReviewRepository requireReviewRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public SubmissionResponseDto getSubmission(Long submissionId) {
         Submission submission = submissionRepository.findById(submissionId)
             .orElseThrow(
@@ -52,6 +56,9 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         List<Algorithm> usedAlgorithmList = algorithmRepository.findAllAlgorithmsBySubmissionId(
             submission.getId());
+
+        submission.increaseViewCount();
+
         return SubmissionResponseDto.from(submission, usedAlgorithmList);
     }
 
@@ -90,7 +97,37 @@ public class SubmissionServiceImpl implements SubmissionService {
         List<Algorithm> usedAlgorithmList = createSubmissionAlgorithmAndFetch(
             submissionRequestDto, submission);
 
+        // 리뷰 매칭
+        matchReviewers(submission);
+
         return SubmissionResponseDto.from(submission, usedAlgorithmList);
+    }
+
+    private void matchReviewers(Submission subjectSubmission) {
+        List<ReviewCandidateQueryDto> reviewMatchCandidates = submissionRepository.findReviewMatchCandidates(
+            subjectSubmission.getId(),
+            subjectSubmission.getUser().getId(),
+            subjectSubmission.getProgramProblem().getId(),
+            subjectSubmission.getLanguage());
+        // 후보군에 후보가 존재할 때 (존재하지 않다면 패스)
+        if (!reviewMatchCandidates.isEmpty()) {
+            List<RequireReview> requireReviewList = reviewMatchCandidates.stream()
+                .map(candidate ->
+                    RequireReview.builder()
+                        .subjectSubmission(subjectSubmission)
+                        .subjectUser(subjectSubmission.getUser())
+                        .targetSubmission(candidate.submission())
+                        .build())
+                .toList();
+
+            if (reviewMatchCandidates.size() <= 2) {
+                // 0 < size <= 2   ->   바로 매칭
+                requireReviewRepository.saveAll(requireReviewList);
+            } else {
+                // size > 2   -> 상위 2개만 매칭
+                requireReviewRepository.saveAll(requireReviewList.subList(0, 2));
+            }
+        }
     }
 
     @Override
@@ -103,17 +140,16 @@ public class SubmissionServiceImpl implements SubmissionService {
             .orElseThrow(
                 () -> new CustomException("잘못된 제출 ID 정보가 포함되어 있습니다.", ErrorCode.BAD_REQUEST));
 
-        // submission <-> review의 삭제는 어플리케이션 레벨에서 먼저 지운 후 지우는게 좋을 것 같음
-        // onDelete를 사용하기에는 DB레벨에 보내버리게 되기도하고
-        // 요구된 리뷰 부분을 삭제할 때 비즈니스 로직이 추가되니까
-
         // ** 로직 설계
-        // 요구된 리뷰 조회
-        // 수행여부 x시 수정 필요
-        // 요구된 리뷰 삭제
-        // 리뷰 리매칭 요청
-
+        // 요구된 리뷰 중 수행 X 조회
+        List<RequireReview> reRequireReviewList = requireReviewRepository.findAllByTargetSubmissionIdAndIsDone(
+            submission.getId(), false);
+        // 원 제출 삭제 -> 요구된 리뷰 삭제(@OnCascade.DELETE)
         submissionRepository.delete(submission);
+        // 리뷰 리매칭
+        for (RequireReview reRequireReview : reRequireReviewList) {
+            matchReviewers(reRequireReview.getSubjectSubmission());
+        }
     }
 
     private List<Algorithm> createSubmissionAlgorithmAndFetch(
@@ -159,6 +195,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserSubmissionPageResponseDto getSubmissionMe(Long userId,
         UserSubmissionRequestDto userSubmissionRequestDto, Pageable pageable) {
         User user = userRepository.findById(userId)
@@ -170,15 +207,19 @@ public class SubmissionServiceImpl implements SubmissionService {
         return UserSubmissionPageResponseDto.from(submissionMeList);
     }
 
-//    @Override
-//    public TrendingSubmissionResponseDto getTrendingSubmission(String trendType) {
-//        return new TrendingSubmissionResponseDto(
-//            switch (trendType) {
-//                case "popular" -> submissionRepository.findMostParticipatedSubmissions();
-//                case "recent" -> submissionRepository.findRecentSubmissions();
-//                default -> submissionRepository.findHottestSubmissions();
-//            }
-//        );
-//    }
+    @Override
+    @Transactional(readOnly = true)
+    public TrendIdsResponseDto getTrendIds(String trendType) {
+        return switch (trendType) {
+            case "hot" ->
+                new TrendIdsResponseDto(submissionRepository.findHotSubmissionIds(), null);
+            case "recent" ->
+                new TrendIdsResponseDto(submissionRepository.findRecentSubmissionIds(), null);
+            case "join-in" ->
+                new TrendIdsResponseDto(null, submissionRepository.findTrendProgramProblemIds());
+            default ->
+                throw new CustomException("트렌드 조회 type이 잘못되었습니다.", ErrorCode.INVALID_PARAMETER);
+        };
+    }
 
 }

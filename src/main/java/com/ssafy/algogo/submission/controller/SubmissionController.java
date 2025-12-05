@@ -1,10 +1,12 @@
 package com.ssafy.algogo.submission.controller;
 
+import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
 import com.ssafy.algogo.submission.dto.response.UserSubmissionPageResponseDto;
 import com.ssafy.algogo.submission.service.SubmissionService;
 import jakarta.validation.Valid;
@@ -13,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,10 +41,11 @@ public class SubmissionController {
 
     @PostMapping
     public SuccessResponse createSubmission(
-//            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
         @RequestBody @Valid SubmissionRequestDto submissionRequestDto) {
         log.info("SubmissionRequestDto : {}", submissionRequestDto.toString());
-        SubmissionResponseDto submissionResponseDto = submissionService.createSubmission(6L,
+        SubmissionResponseDto submissionResponseDto = submissionService.createSubmission(
+            customUserDetails.getUserId(),
             submissionRequestDto);
 
         return new SuccessResponse("코드 제출을 성공했습니다.", submissionResponseDto);
@@ -49,25 +53,28 @@ public class SubmissionController {
 
     @DeleteMapping("/{submissionId}")
     public SuccessResponse deleteSubmission(
-//        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
         @PathVariable Long submissionId
     ) {
-        submissionService.deleteSubmission(6L, submissionId);
+        submissionService.deleteSubmission(
+            customUserDetails.getUserId(),
+            submissionId);
         return new SuccessResponse("제출 삭제를 성공했습니다.", null);
     }
 
     @GetMapping("/{submissionId}/histories")
     public SuccessResponse getSubmissionHistories(
-//            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
         @PathVariable Long submissionId) {
-        SubmissionListResponseDto submissionHistories = submissionService.getSubmissionHistories(6L,
+        SubmissionListResponseDto submissionHistories = submissionService.getSubmissionHistories(
+            customUserDetails.getUserId(),
             submissionId);
         return new SuccessResponse("제출 히스토리 조회를 성공했습니다.", submissionHistories);
     }
 
     @GetMapping("/me")
     public SuccessResponse getSubmissionMe(
-//            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
         @RequestParam(value = "language", required = false) String language,
         @RequestParam(value = "isSuccess", required = false) Boolean isSuccess,
         @RequestParam(value = "programType", required = false) String programType,
@@ -89,17 +96,18 @@ public class SubmissionController {
         Pageable pageable = PageRequest.of(page, size,
             Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
 
-        UserSubmissionPageResponseDto submissionMe = submissionService.getSubmissionMe(6L,
+        UserSubmissionPageResponseDto submissionMe = submissionService.getSubmissionMe(
+            customUserDetails.getUserId(),
             userSubmissionRequestDto, pageable);
         return new SuccessResponse("내 제출 조회를 성공했습니다.", submissionMe);
     }
 
-//    @GetMapping("/trending")
-//    public SuccessResponse getTrendingSubmissions(
-//        @RequestParam(value = "type", defaultValue = "hot") String trendType
-//    ) {
-//        TrendingSubmissionResponseDto trendingSubmissionResponseDto = submissionService.getTrendingSubmission(
-//            trendType);
-//        return new SuccessResponse("트렌드 제출 조회를 성공했습니다.", trendingSubmissionResponseDto);
-//    }
+    @GetMapping("/trends")
+    public SuccessResponse getTrendingSubmissions(
+        @RequestParam(value = "type", defaultValue = "hot") String trendType
+    ) {
+        TrendIdsResponseDto trendIdsResponseDto = submissionService.getTrendIds(
+            trendType.toLowerCase().trim());
+        return new SuccessResponse("트렌드 제출 조회를 성공했습니다.", trendIdsResponseDto);
+    }
 }

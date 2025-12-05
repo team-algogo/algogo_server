@@ -4,6 +4,7 @@ import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
 import com.ssafy.algogo.submission.dto.response.UserSubmissionPageResponseDto;
 import org.springframework.data.domain.Pageable;
 
@@ -20,5 +21,5 @@ public interface SubmissionService {
     UserSubmissionPageResponseDto getSubmissionMe(Long userId,
         UserSubmissionRequestDto userSubmissionRequestDto, Pageable pageable);
 
-//    TrendingSubmissionResponseDto getTrendingSubmission(String trendType);
+    TrendIdsResponseDto getTrendIds(String trendType);
 }
