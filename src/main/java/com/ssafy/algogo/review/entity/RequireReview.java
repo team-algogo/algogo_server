@@ -18,6 +18,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Getter
@@ -35,27 +37,29 @@ import lombok.NoArgsConstructor;
 )
 public class RequireReview {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  @Column(
-      name = "is_done",
-      columnDefinition = "TINYINT(1) NOT NULL DEFAULT 0"
-  )
-  private Boolean isDone;
+    @Column(
+        name = "is_done",
+        columnDefinition = "TINYINT(1) NOT NULL DEFAULT 0"
+    )
+    private Boolean isDone;
 
-  @NotNull
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id")
-  private User user;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "user_id")
+    private User user;
 
-  @NotNull
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "submission_id")
-  private Submission submission;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "submission_id")
+    private Submission submission;
 
-  public void updateRequireReview(Boolean isDone) {
-    this.isDone = isDone;
-  }
+    public void updateRequireReview(Boolean isDone) {
+        this.isDone = isDone;
+    }
 }
