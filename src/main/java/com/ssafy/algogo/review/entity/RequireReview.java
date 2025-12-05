@@ -31,7 +31,7 @@ import org.hibernate.annotations.OnDeleteAction;
     uniqueConstraints = {
         @UniqueConstraint(
             name = "uk_required_review_user_submission",
-            columnNames = {"user_id", "submission_id"}
+            columnNames = {"user_id", "target_submission_id"}
         )
     }
 )
@@ -53,11 +53,23 @@ public class RequireReview {
     @JoinColumn(name = "user_id")
     private User user;
 
+    /*
+     * 리뷰를 해야하는 쪽(리뷰어)의 제출
+     * */
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "submission_id")
-    private Submission submission;
+    @JoinColumn(name = "subject_submission_id")
+    private Submission subjectSubmission;
+
+    /*
+     * 리뷰를 받는 쪽(제출자)의 제출
+     * */
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "target_submission_id")
+    private Submission targetSubmission;
 
     public void updateRequireReview(Boolean isDone) {
         this.isDone = isDone;

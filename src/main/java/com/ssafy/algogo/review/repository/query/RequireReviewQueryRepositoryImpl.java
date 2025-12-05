@@ -35,7 +35,7 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
 
             ))
             .from(requireReview)
-            .join(requireReview.submission, submission)
+            .join(requireReview.targetSubmission, submission)
             .join(submission.programProblem, programProblem)
             .join(programProblem.problem, problem)
             .join(programProblem.program, program)

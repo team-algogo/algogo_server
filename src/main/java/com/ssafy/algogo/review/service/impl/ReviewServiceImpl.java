@@ -47,7 +47,7 @@ public class ReviewServiceImpl implements ReviewService {
     public CodeReviewTreeResponseDto createCodeReview(
         CreateCodeReviewRequestDto createCodeReviewRequestDto, Long userId) {
 
-        Submission submission = submissionRepository.findById(
+        Submission targetSubmission = submissionRepository.findById(
                 createCodeReviewRequestDto.getSubmissionId())
             .orElseThrow(() -> new CustomException("submission ID에 해당하는 데이터가 DB에 없습니다.",
                 ErrorCode.SUBMISSION_NOT_FOUND));
@@ -66,7 +66,7 @@ public class ReviewServiceImpl implements ReviewService {
             .codeLine(createCodeReviewRequestDto.getCodeLine())
             .likeCount(0L)
             .parentReview(parentReview)
-            .submission(submission)
+            .submission(targetSubmission)
             .user(user)
             .content(createCodeReviewRequestDto.getContent())
             .build();
@@ -78,7 +78,7 @@ public class ReviewServiceImpl implements ReviewService {
             // 내가 해야할 리뷰와 같은 제출 id에 리뷰 작성을 했다면
             // 해당 requireReview 를 가져옴
             requireReviewRepository
-                .findByUser_IdAndSubmission_Id(userId,
+                .findByUser_IdAndTargetSubmission_Id(userId,
                     saveReview.getSubmission().getId())
                 .ifPresent(requireReview -> {
                     requireReview.updateRequireReview(true);
@@ -159,7 +159,7 @@ public class ReviewServiceImpl implements ReviewService {
         reviewRepository.delete(review);
 
         // user 의 required_reviews 테이블에 해당 submissionId가 있는 지
-        requireReviewRepository.findByUser_IdAndSubmission_Id(userId, submissionId)
+        requireReviewRepository.findByUser_IdAndTargetSubmission_Id(userId, submissionId)
             .ifPresent(requireReview -> {
                 // 해당 submissionId로 작성된 review 가 있는지, 해당 리뷰의 parentId가 null 인지
                 if (!reviewRepository.existsByUser_IdAndSubmission_IdAndParentReviewIsNull(
