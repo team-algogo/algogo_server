@@ -78,7 +78,7 @@ public class ReviewServiceImpl implements ReviewService {
             // 내가 해야할 리뷰와 같은 제출 id에 리뷰 작성을 했다면
             // 해당 requireReview 를 가져옴
             requireReviewRepository
-                .findByUser_IdAndTargetSubmission_Id(userId,
+                .findBySubjectUserIdAndTargetSubmissionId(userId,
                     saveReview.getSubmission().getId())
                 .ifPresent(requireReview -> {
                     requireReview.updateRequireReview(true);
@@ -159,7 +159,7 @@ public class ReviewServiceImpl implements ReviewService {
         reviewRepository.delete(review);
 
         // user 의 required_reviews 테이블에 해당 submissionId가 있는 지
-        requireReviewRepository.findByUser_IdAndTargetSubmission_Id(userId, submissionId)
+        requireReviewRepository.findBySubjectUserIdAndTargetSubmissionId(userId, submissionId)
             .ifPresent(requireReview -> {
                 // 해당 submissionId로 작성된 review 가 있는지, 해당 리뷰의 parentId가 null 인지
                 if (!reviewRepository.existsByUser_IdAndSubmission_IdAndParentReviewIsNull(
