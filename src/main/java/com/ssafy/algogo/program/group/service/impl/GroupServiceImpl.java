@@ -25,6 +25,7 @@ import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GroupRoomPageResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.entity.GroupRoom;
@@ -46,6 +47,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +69,15 @@ public class GroupServiceImpl implements GroupService {
     private final ProgramJoinRepository programJoinRepository;
     private final ProgramInviteRepository programInviteRepository;
     private final ProgramUserRepository programUserRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public GroupRoomPageResponseDto getGroupRoomList(String keyword, Pageable pageable) {
+        Page<GroupRoomResponseDto> page =
+            groupRepository.findAllGroupRooms(keyword, pageable);
+
+        return GroupRoomPageResponseDto.from(page);
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -131,7 +142,9 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(
                 () -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
-        if (updateGroupRoomRequestDto.getTitle() != null) {
+        if (updateGroupRoomRequestDto.getTitle() != null &&
+            !updateGroupRoomRequestDto.getTitle().equals(groupRoom.getTitle())) {
+
             boolean isTitleConflict = programRepository.existsByTitle(
                 updateGroupRoomRequestDto.getTitle());
             if (isTitleConflict) {
@@ -140,14 +153,24 @@ public class GroupServiceImpl implements GroupService {
         }
 
         groupRoom.updateGroupRoom(
-            groupRoom.getTitle(),
-            groupRoom.getDescription(),
+            updateGroupRoomRequestDto.getTitle(),
+            updateGroupRoomRequestDto.getDescription(),
             updateGroupRoomRequestDto.getCapacity()
         );
 
         groupRepository.save(groupRoom);
 
         return groupRepository.getGroupRoomDetail(groupRoom.getId());
+    }
+
+    @Override
+    public void deleteGroupRoom(Long programId) {
+        GroupRoom groupRoom = groupRepository.findById(programId)
+            .orElseThrow(() -> new CustomException(
+                "해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
+
+        // 음 cascade를 전체에 걸거나, 삭제 이전에 관련된 테이블의 데이터를 모두 수동으로 삭제하는 로직 추가 <- 이건 추후 공부 후에 반영
+        groupRepository.delete(groupRoom);
     }
 
     @Override
