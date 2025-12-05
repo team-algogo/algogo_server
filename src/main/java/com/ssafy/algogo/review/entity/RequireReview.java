@@ -31,7 +31,7 @@ import org.hibernate.annotations.OnDeleteAction;
     uniqueConstraints = {
         @UniqueConstraint(
             name = "uk_required_review_user_submission",
-            columnNames = {"user_id", "target_submission_id"}
+            columnNames = {"subject_user_id", "target_submission_id"}
         )
     }
 )
@@ -50,8 +50,8 @@ public class RequireReview {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "subject_user_id")
+    private User subjectUser;
 
     /*
      * 리뷰를 해야하는 쪽(리뷰어)의 제출
