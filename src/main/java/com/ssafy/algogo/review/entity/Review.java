@@ -25,6 +25,7 @@ public class Review extends BaseTime {
     private Long id;
 
     @NotNull
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "code_line")

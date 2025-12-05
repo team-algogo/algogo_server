@@ -11,7 +11,6 @@ import com.ssafy.algogo.review.dto.response.UserCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.UserCodeReviewResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
-import com.ssafy.algogo.review.entity.RequireReview;
 import com.ssafy.algogo.review.entity.Review;
 import com.ssafy.algogo.review.entity.UserReviewReaction;
 import com.ssafy.algogo.review.repository.RequireReviewRepository;
@@ -22,7 +21,6 @@ import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.repository.SubmissionRepository;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -48,7 +47,7 @@ public class ReviewServiceImpl implements ReviewService {
     public CodeReviewTreeResponseDto createCodeReview(
         CreateCodeReviewRequestDto createCodeReviewRequestDto, Long userId) {
 
-        Submission submission = submissionRepository.findById(
+        Submission targetSubmission = submissionRepository.findById(
                 createCodeReviewRequestDto.getSubmissionId())
             .orElseThrow(() -> new CustomException("submission ID에 해당하는 데이터가 DB에 없습니다.",
                 ErrorCode.SUBMISSION_NOT_FOUND));
@@ -67,7 +66,7 @@ public class ReviewServiceImpl implements ReviewService {
             .codeLine(createCodeReviewRequestDto.getCodeLine())
             .likeCount(0L)
             .parentReview(parentReview)
-            .submission(submission)
+            .submission(targetSubmission)
             .user(user)
             .content(createCodeReviewRequestDto.getContent())
             .build();
@@ -79,7 +78,7 @@ public class ReviewServiceImpl implements ReviewService {
             // 내가 해야할 리뷰와 같은 제출 id에 리뷰 작성을 했다면
             // 해당 requireReview 를 가져옴
             requireReviewRepository
-                .findByUser_IdAndSubmission_Id(userId,
+                .findByUser_IdAndTargetSubmission_Id(userId,
                     saveReview.getSubmission().getId())
                 .ifPresent(requireReview -> {
                     requireReview.updateRequireReview(true);
@@ -91,6 +90,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CodeReviewListResponseDto getReviewsBySubmissionId(Long submissionId) {
 
         // 제출 코드 여부를 확인
@@ -159,7 +159,7 @@ public class ReviewServiceImpl implements ReviewService {
         reviewRepository.delete(review);
 
         // user 의 required_reviews 테이블에 해당 submissionId가 있는 지
-        requireReviewRepository.findByUser_IdAndSubmission_Id(userId, submissionId)
+        requireReviewRepository.findByUser_IdAndTargetSubmission_Id(userId, submissionId)
             .ifPresent(requireReview -> {
                 // 해당 submissionId로 작성된 review 가 있는지, 해당 리뷰의 parentId가 null 인지
                 if (!reviewRepository.existsByUser_IdAndSubmission_IdAndParentReviewIsNull(
@@ -260,6 +260,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public RequiredCodeReviewListResponseDto getRequiredReviews(Long userId) {
         List<RequiredCodeReviewResponseDto> requiredCodeReviewResponseDtos = requireReviewRepository.getRequiredReviews(
             userId);
@@ -268,6 +269,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserCodeReviewListResponseDto getReceiveReviews(Long userId, Integer page,
         Integer size) {
 
@@ -287,6 +289,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserCodeReviewListResponseDto getDoneReviews(Long userId, Integer page, Integer size) {
 
         // 디폴트 값 설정

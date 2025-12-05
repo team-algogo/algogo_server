@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record RequiredCodeReviewResponseDto(
-    Long submissionId,
+    Long targetSubmissionId,
     String problemTitle,
     String programType,
     String programTitle,

@@ -31,11 +31,11 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
                 problem.title,
                 program.programType.name,
                 program.title,
-                user.nickname
+                submission.user.nickname
 
             ))
             .from(requireReview)
-            .join(requireReview.submission, submission)
+            .join(requireReview.targetSubmission, submission)
             .join(submission.programProblem, programProblem)
             .join(programProblem.problem, problem)
             .join(programProblem.program, program)
