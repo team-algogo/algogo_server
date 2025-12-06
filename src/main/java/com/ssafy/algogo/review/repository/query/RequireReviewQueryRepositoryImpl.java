@@ -2,7 +2,7 @@ package com.ssafy.algogo.review.repository.query;
 
 
 import static com.querydsl.core.group.GroupBy.groupBy;
-import static com.querydsl.core.types.Projections.list;
+import static com.querydsl.core.group.GroupBy.list;
 import static com.ssafy.algogo.problem.entity.QProblem.problem;
 import static com.ssafy.algogo.problem.entity.QProgramProblem.programProblem;
 import static com.ssafy.algogo.program.entity.QProgram.program;
@@ -53,7 +53,7 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
     public List<ReviewRematchTargetQueryDto> findAllReviewRematchTargets(Long submissionId) {
         return query
             .from(requireReview)
-            .join(requireReview.subjectSubmission).fetchJoin()
+            .join(requireReview.subjectSubmission)
             .leftJoin(submissionAlgorithm)
             .on(submissionAlgorithm.submission.eq(requireReview.subjectSubmission))
             .where(
@@ -61,7 +61,7 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
                 requireReview.isDone.eq(false)
             )
             .transform(
-                groupBy(requireReview.subjectSubmission.id).list(
+                groupBy(requireReview.subjectSubmission).list(
                     Projections.constructor(
                         ReviewRematchTargetQueryDto.class,
                         requireReview.subjectSubmission,

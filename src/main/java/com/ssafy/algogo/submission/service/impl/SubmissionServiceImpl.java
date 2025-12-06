@@ -116,7 +116,6 @@ public class SubmissionServiceImpl implements SubmissionService {
             throw new CustomException("제출과 회원 정보가 일치하지 않습니다.", ErrorCode.INVALID_PARAMETER);
         }
 
-        // ** 로직 설계
         // 요구된 리뷰 중 수행 X 조회
         List<ReviewRematchTargetQueryDto> reviewRematchTargetList = requireReviewRepository.findAllReviewRematchTargets(
             submission.getId());
@@ -158,7 +157,6 @@ public class SubmissionServiceImpl implements SubmissionService {
                 target -> RequireReview.builder().subjectSubmission(subjectSubmission)
                     .subjectUser(subjectSubmission.getUser()).targetSubmission(target).build())
             .toList();
-
         requireReviewRepository.saveAll(requireReviewList);
     }
 
