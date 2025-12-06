@@ -45,7 +45,8 @@ public class RequireReview {
         name = "is_done",
         columnDefinition = "TINYINT(1) NOT NULL DEFAULT 0"
     )
-    private Boolean isDone;
+    @Builder.Default
+    private Boolean isDone = false;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
