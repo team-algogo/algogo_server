@@ -27,6 +27,8 @@ import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomPageResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
+import com.ssafy.algogo.program.group.dto.response.MyGroupRoomPageResponseDto;
+import com.ssafy.algogo.program.group.dto.response.MyGroupRoomResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.entity.GroupRoom;
 import com.ssafy.algogo.program.group.entity.GroupsUser;
@@ -472,4 +474,24 @@ public class GroupServiceImpl implements GroupService {
 
         programProblemService.deleteProgramProblem(programId, programProblemDeleteRequestDto);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MyGroupRoomPageResponseDto getMyGroupRooms(Long userId, Pageable pageable) {
+
+        List<Long> programIds =
+            groupUserRepository.findActiveProgramIdsByUserId(userId);
+
+        // 없으면 빈 pageable 객체 반환
+        if (programIds.isEmpty()) {
+            return MyGroupRoomPageResponseDto.from(Page.empty(pageable));
+        }
+
+        Page<MyGroupRoomResponseDto> page =
+            groupRepository.findMyGroupRooms(programIds, userId, pageable);
+
+        return MyGroupRoomPageResponseDto.from(page);
+    }
+
+    
 }

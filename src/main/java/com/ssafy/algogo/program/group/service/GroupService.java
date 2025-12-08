@@ -16,6 +16,7 @@ import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomPageResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
+import com.ssafy.algogo.program.group.dto.response.MyGroupRoomPageResponseDto;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 
@@ -66,4 +67,6 @@ public interface GroupService {
     void deleteGroupRoom(Long programId);
 
     GroupRoomPageResponseDto getGroupRoomList(String keyword, Pageable pageable);
+
+    MyGroupRoomPageResponseDto getMyGroupRooms(Long userId, Pageable pageable);
 }
