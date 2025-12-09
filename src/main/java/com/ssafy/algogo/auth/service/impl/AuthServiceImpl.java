@@ -3,6 +3,7 @@ package com.ssafy.algogo.auth.service.impl;
 import com.ssafy.algogo.auth.dto.request.LocalLoginRequestDto;
 import com.ssafy.algogo.auth.dto.response.AuthResultDto;
 import com.ssafy.algogo.auth.dto.response.LocalLoginResponseDto;
+import com.ssafy.algogo.auth.dto.response.MeResponseDto;
 import com.ssafy.algogo.auth.dto.response.TokenInfo;
 import com.ssafy.algogo.auth.service.AuthService;
 import com.ssafy.algogo.auth.service.jwt.JwtTokenProvider;
@@ -61,6 +62,15 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(Long userId) {
         redisJwtService.delete(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MeResponseDto me(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다", ErrorCode.ACCESS_DENIED));
+
+        return MeResponseDto.from(user);
     }
 
 }

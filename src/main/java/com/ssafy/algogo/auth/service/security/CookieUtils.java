@@ -37,7 +37,6 @@ public class CookieUtils {
     }
 
     public static void deleteTokenCookie(HttpServletResponse response) {
-        addTokenCookie(response, "accessToken", "", 0L);
         addTokenCookie(response, "refreshToken", "", 0L);
     }
 }

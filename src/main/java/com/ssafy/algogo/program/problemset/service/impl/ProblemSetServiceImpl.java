@@ -11,7 +11,6 @@ import com.ssafy.algogo.program.entity.ProgramUser;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
 import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponseDto;
-import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
@@ -43,17 +42,9 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 	private final ProgramUserRepository programUserRepository;
 
 	@Override
-	@Transactional(readOnly = true)
-	public ProblemSetListResponseDto getProblemSetList(String keyword, String category,
+	public List<ProblemSetResponseDto> getProblemSetList(String keyword, String category,
 		String sortBy, String sortDirection) {
-
-		ProgramType problemSetType = programTypeRepository.findByName("probelmset")
-			.orElseThrow(
-				() -> new CustomException("probelmset 타입 없음", ErrorCode.PROGRAM_TYPE_NOT_FOUND));
-
-		List<Program> programs = programRepository.findByProgramType(problemSetType);
-
-		return new ProblemSetListResponseDto(programs);
+		return null;
 	}
 
 
