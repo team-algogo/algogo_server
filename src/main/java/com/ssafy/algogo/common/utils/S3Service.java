@@ -85,7 +85,7 @@ public class S3Service {
 
     public String uploadText(Long userId, String text) {
         if (text.isBlank()) {
-            throw new CustomException("text가 없습니다.", ErrorCode.FAILED_FILE_UPLOAD);
+            throw new CustomException("제출 code text가 비어있습니다.", ErrorCode.FAILED_FILE_UPLOAD);
         }
 
         String s3Key = generateS3Key(userId, submissionCodePath);

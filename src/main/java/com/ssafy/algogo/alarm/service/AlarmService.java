@@ -107,6 +107,11 @@ public class AlarmService {
         sendNotification(userId, AlarmResponseDto.from(alarm));
     }
 
+    @Transactional
+    public void deleteAlarmAndSend(Long alarmId) {
+        alarmRepository.deleteById(alarmId);
+    }
+
     /**
      * 특정 유저의 모든 SSE 연결에 알람 전송
      */

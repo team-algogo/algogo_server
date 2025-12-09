@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -18,7 +19,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
-    name = "alarm_types"
+    name = "alarm_types",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_alarm_type_name", columnNames = {"name"})
+    }
 )
 public class AlarmType {
 

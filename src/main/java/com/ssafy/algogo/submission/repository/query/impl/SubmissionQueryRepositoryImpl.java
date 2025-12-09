@@ -1,7 +1,7 @@
 package com.ssafy.algogo.submission.repository.query.impl;
 
 import static com.querydsl.core.group.GroupBy.groupBy;
-import static com.querydsl.core.types.Projections.list;
+import static com.querydsl.core.group.GroupBy.list;
 import static com.ssafy.algogo.problem.entity.QProblem.problem;
 import static com.ssafy.algogo.problem.entity.QProgramProblem.programProblem;
 import static com.ssafy.algogo.program.entity.QProgram.program;
@@ -11,7 +11,6 @@ import static com.ssafy.algogo.review.entity.QReview.review;
 import static com.ssafy.algogo.submission.entity.QAlgorithm.algorithm;
 import static com.ssafy.algogo.submission.entity.QSubmission.submission;
 import static com.ssafy.algogo.submission.entity.QSubmissionAlgorithm.submissionAlgorithm;
-import static com.ssafy.algogo.user.entity.QUser.user;
 
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Order;
@@ -40,10 +39,9 @@ import com.ssafy.algogo.submission.dto.response.UserSubmissionResponseDto;
 import com.ssafy.algogo.submission.entity.QAlgorithm;
 import com.ssafy.algogo.submission.entity.QSubmission;
 import com.ssafy.algogo.submission.entity.QSubmissionAlgorithm;
+import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.repository.query.SubmissionQueryRepository;
-import com.ssafy.algogo.user.entity.QUser;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -67,7 +65,6 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
     QProblem p = problem;
     QProgram pg = program;
     QProgramType pt = programType;
-    QUser u = user;
     QReview r = review;
 
     LocalDateTime aWeekAgo = LocalDateTime.now().minusDays(7);
@@ -171,8 +168,10 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
         String language) {
 
         QRequireReview rr = requireReview;
+        QReview rSub = new QReview("rSub");
+        QRequireReview rrSub = new QRequireReview("rrSub");
 
-        Map<Long, ReviewCandidateQueryDto> result = jpaQueryFactory
+        Map<Submission, ReviewCandidateQueryDto> result = jpaQueryFactory
             .from(s)
             .leftJoin(sa).on(sa.submission.eq(s))
             .leftJoin(r).on(r.submission.eq(s),
@@ -184,18 +183,30 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                 s.user.id.ne(subjectUserId),
                 s.id.ne(subjectSubmissionId),
 
+                // 이미 리뷰를 단 제출건은 제외
                 JPAExpressions
                     .selectOne()
-                    .from(r)
+                    .from(rSub)
                     .where(
-                        r.submission.eq(s),
-                        r.user.id.eq(subjectUserId),
-                        r.parentReview.isNull()
+                        rSub.submission.eq(s),
+                        rSub.user.id.eq(subjectUserId),
+                        rSub.parentReview.isNull()
+                    )
+                    .notExists(),
+
+                // 이미 매칭된 매칭은 제외
+                JPAExpressions
+                    .selectOne()
+                    .from(rrSub)
+                    .where(
+                        rrSub.subjectUser.id.eq(subjectUserId),
+                        rrSub.targetSubmission.eq(s)
                     )
                     .notExists()
+
             )
             .transform(
-                groupBy(s.id).as(
+                groupBy(s).as(
                     Projections.constructor(
                         ReviewCandidateQueryDto.class,
                         s,
@@ -205,7 +216,16 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                     )
                 )
             );
-        return new ArrayList<>(result.values());
+        return result.entrySet().stream()
+            .filter(
+                e -> e.getKey() != null)
+            .map(
+                e -> new ReviewCandidateQueryDto(
+                    e.getKey(),
+                    e.getValue().algorithmIdList(),
+                    e.getValue().reviewCount(),
+                    e.getValue().requireReviewCount())
+            ).toList();
     }
 
     @Override
@@ -273,7 +293,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
             .join(pg.programType, pt)
             .where(
                 s.createdAt.between(aWeekAgo, LocalDateTime.now()),
-                pt.name.lower().eq("problem-set")
+                pt.name.lower().eq("problemset")
             )
             .groupBy(pp.id)
             .having(s.id.count().loe(3))

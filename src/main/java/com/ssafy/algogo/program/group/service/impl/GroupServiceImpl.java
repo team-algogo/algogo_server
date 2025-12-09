@@ -1,5 +1,7 @@
 package com.ssafy.algogo.program.group.service.impl;
 
+import com.ssafy.algogo.alarm.entity.AlarmPayload;
+import com.ssafy.algogo.alarm.service.AlarmService;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemCreateRequestDto;
@@ -27,6 +29,8 @@ import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomPageResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
+import com.ssafy.algogo.program.group.dto.response.MyGroupRoomPageResponseDto;
+import com.ssafy.algogo.program.group.dto.response.MyGroupRoomResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.entity.GroupRoom;
 import com.ssafy.algogo.program.group.entity.GroupsUser;
@@ -60,6 +64,7 @@ public class GroupServiceImpl implements GroupService {
 
     private final ProgramService programService;
     private final ProgramProblemService programProblemService;
+    private final AlarmService alarmService;
 
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
@@ -169,7 +174,6 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(() -> new CustomException(
                 "해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
-        // 음 cascade를 전체에 걸거나, 삭제 이전에 관련된 테이블의 데이터를 모두 수동으로 삭제하는 로직 추가 <- 이건 추후 공부 후에 반영
         groupRepository.delete(groupRoom);
     }
 
@@ -181,7 +185,17 @@ public class GroupServiceImpl implements GroupService {
 
         programService.applyProgramJoin(userId, programId);
 
-        // 방장에게 알람 보내는 로직 나중에 추가
+        User admin = groupUserRepository.findAdminByProgramId(programId)
+            .orElseThrow(
+                () -> new CustomException("방장을 찾을 수 없습니다.", ErrorCode.GROUP_USER_NOT_FOUND));
+
+        // 그룹의 방장에게 알람 전송
+        alarmService.createAndSendAlarm(
+            admin.getId(),
+            "GROUP_JOIN_APPLY",
+            new AlarmPayload(null, null, null, programId, userId),
+            "새로운 참여 신청이 도착했습니다."
+        );
     }
 
     @Override
@@ -238,7 +252,13 @@ public class GroupServiceImpl implements GroupService {
 
         }
 
-        // 신청한 사람한테 알람 보내는 로직 나중에 추가
+        // 신청한 사람한테 알람 전송
+        alarmService.createAndSendAlarm(
+            applicant.getId(),
+            "GROUP_JOIN_UPDATE",
+            new AlarmPayload(null, null, null, programId, null),
+            "참여 신청이 '" + updateGroupJoinStateRequestDto.getIsAccepted() + "' 처리되었습니다."
+        );
     }
 
     @Override
@@ -259,6 +279,14 @@ public class GroupServiceImpl implements GroupService {
                 () -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
         programService.applyProgramInvite(programId, applyProgramInviteRequestDto);
+
+        // 초대 받은 사람한테 알람 전송
+        alarmService.createAndSendAlarm(
+            applyProgramInviteRequestDto.getUserId(),
+            "GROUP_INVITE_APPLY",
+            new AlarmPayload(null, null, null, programId, null),
+            "그룹 초대가 도착했습니다."
+        );
     }
 
     @Override
@@ -320,7 +348,17 @@ public class GroupServiceImpl implements GroupService {
             programInviteRepository.save(programInvite);
         }
 
-        // 방장한테 알람 보내는 로직 나중에 추가
+        User admin = groupUserRepository.findAdminByProgramId(programId)
+            .orElseThrow(
+                () -> new CustomException("방장을 찾을 수 없습니다.", ErrorCode.GROUP_USER_NOT_FOUND));
+
+        // 방장한테 알람 전송
+        alarmService.createAndSendAlarm(
+            admin.getId(),
+            "GROUP_INVITE_UPDATE",
+            new AlarmPayload(null, null, null, programId, userId),
+            "초대받은 사용자가 초대를 '" + updateGroupInviteStateRequestDto.getIsAccepted() + "' 처리했습니다."
+        );
     }
 
     @Override
@@ -472,4 +510,24 @@ public class GroupServiceImpl implements GroupService {
 
         programProblemService.deleteProgramProblem(programId, programProblemDeleteRequestDto);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MyGroupRoomPageResponseDto getMyGroupRooms(Long userId, Pageable pageable) {
+
+        List<Long> programIds =
+            groupUserRepository.findActiveProgramIdsByUserId(userId);
+
+        // 없으면 빈 pageable 객체 반환
+        if (programIds.isEmpty()) {
+            return MyGroupRoomPageResponseDto.from(Page.empty(pageable));
+        }
+
+        Page<MyGroupRoomResponseDto> page =
+            groupRepository.findMyGroupRooms(programIds, userId, pageable);
+
+        return MyGroupRoomPageResponseDto.from(page);
+    }
+
+
 }

@@ -10,15 +10,16 @@ import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
+import com.ssafy.algogo.program.group.dto.response.MyGroupRoomResponseDto;
+import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
+import com.ssafy.algogo.program.group.entity.QGroupsUser;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -89,6 +90,52 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
             .fetchOne();
     }
 
+    @Override
+    public Page<MyGroupRoomResponseDto> findMyGroupRooms(
+        List<Long> programIds,
+        Long userId,
+        Pageable pageable
+    ) {
+
+        QGroupsUser selfUser = new QGroupsUser("selfUser"); // 내 role 조회용 별칭
+
+        List<MyGroupRoomResponseDto> content = query
+            .select(Projections.constructor(
+                MyGroupRoomResponseDto.class,
+                groupRoom.id,
+                groupRoom.title,
+                groupRoom.description,
+                groupRoom.createdAt,
+                groupRoom.modifiedAt,
+                groupRoom.capacity,
+                groupsUser.id.countDistinct(),
+                programProblem.id.countDistinct(),
+                selfUser.groupRole      // role
+            ))
+            .from(groupRoom)
+            .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
+            .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
+            .leftJoin(selfUser).on(
+                selfUser.program.id.eq(groupRoom.id)
+                    .and(selfUser.user.id.eq(userId))
+                    .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
+            )
+            .where(groupRoom.id.in(programIds))
+            .groupBy(groupRoom.id)
+            .orderBy(getOrderSpecifiers(pageable))
+            .offset(pageable.getOffset())
+            .limit(pageable.getPageSize())
+            .fetch();
+
+        Long total = query
+            .select(groupRoom.countDistinct())
+            .from(groupRoom)
+            .where(groupRoom.id.in(programIds))
+            .fetchOne();
+
+        return new PageImpl<>(content, pageable, total == null ? 0L : total);
+    }
+
 
     // pageable 기반 OrderSpecifier 가져오는 로직 음 좀 더러운 거 같은데, 이거 공부하고 추후 보완
     private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable) {
@@ -122,4 +169,5 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
         return groupRoom.title.containsIgnoreCase(keyword)
             .or(groupRoom.description.containsIgnoreCase(keyword));
     }
+
 }
