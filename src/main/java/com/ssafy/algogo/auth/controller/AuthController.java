@@ -2,6 +2,7 @@ package com.ssafy.algogo.auth.controller;
 
 import com.ssafy.algogo.auth.dto.request.LocalLoginRequestDto;
 import com.ssafy.algogo.auth.dto.response.AuthResultDto;
+import com.ssafy.algogo.auth.dto.response.MeResponseDto;
 import com.ssafy.algogo.auth.service.AuthService;
 import com.ssafy.algogo.auth.service.jwt.JwtTokenProvider;
 import com.ssafy.algogo.auth.service.security.CookieUtils;
@@ -41,6 +42,14 @@ public class AuthController {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
         authService.logout(userId);
         return SuccessResponse.success("로그웃에 성공했습니다.", null);
+    }
+
+    @GetMapping("/me")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse me(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
+        MeResponseDto meResponseDto = authService.me(userId);
+        return SuccessResponse.success("유저 확인에 성공했습니다.", meResponseDto);
     }
 
 }

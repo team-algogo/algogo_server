@@ -17,6 +17,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -28,14 +29,26 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
+    private static final int BEARER_PREFIX_COUNT = 7;
+
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisJwtService redisJwtService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        String accessToken = CookieUtils.getTokenFromCookies("accessToken", request);
+        String authHeader = request.getHeader("Authorization");
+        String accessToken = null;
         String refreshToken = CookieUtils.getTokenFromCookies("refreshToken", request);
+
+        if (request.getRequestURI().equals("/api/v1/auths/login")) {
+            filterChain.doFilter(request, response);
+            return; // 나중에 삭제할 method - login시 rt를 꺼내면 안됨 - (만약 rt가 기존에 있다면 오류가 남) - login이 필터를 들어옴 securityConfig 설정 안함
+        }
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            accessToken = authHeader.substring(BEARER_PREFIX_COUNT);
+        }
 
         /**
          *  Security Config 부분에서 만약 Token이 필요한 로직이라면 해당 Filter를 탄다.
@@ -142,9 +155,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         // Redis 업데이트
         redisJwtService.save(userId, newRefreshToken, currentIp);
 
-        // 쿠키에 새 토큰 설정
-        CookieUtils.addTokenCookie(response, "accessToken", newAccessToken,
-                jwtTokenProvider.getAccessTokenValidTime());
+        // 쿠키/헤더에 새 토큰 설정
+        response.setHeader("Authorization", newAccessToken);
         CookieUtils.addTokenCookie(response, "refreshToken", newRefreshToken,
                 jwtTokenProvider.getRefreshTokenValidTime());
 
