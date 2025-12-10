@@ -5,9 +5,7 @@ import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.utils.S3Service;
 import com.ssafy.algogo.problem.entity.ProgramProblem;
 import com.ssafy.algogo.problem.repository.ProgramProblemRepository;
-import com.ssafy.algogo.review.entity.RequireReview;
 import com.ssafy.algogo.review.repository.RequireReviewRepository;
-import com.ssafy.algogo.submission.dto.ReviewCandidateQueryDto;
 import com.ssafy.algogo.submission.dto.ReviewRematchTargetQueryDto;
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
@@ -19,17 +17,19 @@ import com.ssafy.algogo.submission.dto.response.UserSubmissionResponseDto;
 import com.ssafy.algogo.submission.entity.Algorithm;
 import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.entity.SubmissionAlgorithm;
+import com.ssafy.algogo.submission.event.SubmissionEvent;
 import com.ssafy.algogo.submission.repository.AlgorithmRepository;
 import com.ssafy.algogo.submission.repository.SubmissionAlgorithmRepository;
 import com.ssafy.algogo.submission.repository.SubmissionRepository;
+import com.ssafy.algogo.submission.service.ReviewMatchService;
 import com.ssafy.algogo.submission.service.SubmissionService;
-import com.ssafy.algogo.submission.utils.ReviewMatchRanker;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
 import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -48,7 +48,8 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final AlgorithmRepository algorithmRepository;
     private final RequireReviewRepository requireReviewRepository;
 
-    private final ReviewMatchRanker reviewMatchRanker;
+    private final ApplicationEventPublisher applicationEventPublisher;
+    private final ReviewMatchService reviewMatchService;
     private final S3Service s3Service;
 
     @Override
@@ -98,8 +99,12 @@ public class SubmissionServiceImpl implements SubmissionService {
         List<Algorithm> usedAlgorithmList = createSubmissionAlgorithmAndFetch(submissionRequestDto,
             submission);
 
-        // 리뷰 매칭
-        matchReviewers(submission, usedAlgorithmList, 2);
+//        // 리뷰 매칭
+//        reviewMatchService.matchReviewers(submission, usedAlgorithmList, 2);
+
+        // 비동기 적용을 위해 Event 발행
+        applicationEventPublisher.publishEvent(
+            new SubmissionEvent(submission, usedAlgorithmList, 2));
 
         return SubmissionResponseDto.from(submission, usedAlgorithmList);
     }
@@ -123,41 +128,8 @@ public class SubmissionServiceImpl implements SubmissionService {
         submissionRepository.delete(submission);
         // 리뷰 리매칭
         for (ReviewRematchTargetQueryDto target : reviewRematchTargetList) {
-            matchReviewers(target.submission(), target.algorithmList(), 1);
+            reviewMatchService.matchReviewers(target.submission(), target.algorithmList(), 1);
         }
-    }
-
-    private void matchReviewers(Submission subjectSubmission, List<Algorithm> subjectAlgorithmList,
-        int assignCount) {
-        List<ReviewCandidateQueryDto> reviewMatchCandidates = submissionRepository.findReviewMatchCandidates(
-            subjectSubmission.getId(), subjectSubmission.getUser().getId(),
-            subjectSubmission.getProgramProblem().getId(), subjectSubmission.getLanguage());
-
-        // 후보군에 후보가 존재할 때 (존재하지 않다면 패스)
-        if (reviewMatchCandidates.isEmpty()) {
-            return;
-        }
-
-        List<Submission> targetSubmissions;
-        // 실제 할당할 개수
-        int actualAssignCount = Math.min(assignCount, reviewMatchCandidates.size());
-
-        // 후보군에 후보 수가 할당해야하는 수보다 작거나 같을 때
-        if (reviewMatchCandidates.size() <= actualAssignCount) {
-            targetSubmissions = reviewMatchCandidates.stream()
-                .map(ReviewCandidateQueryDto::submission).toList();
-        } else {
-            List<Submission> rankedSubmissions = reviewMatchRanker.rankReviewerCandidates(
-                subjectSubmission, subjectAlgorithmList, reviewMatchCandidates);
-
-            targetSubmissions = rankedSubmissions.subList(0, actualAssignCount);
-        }
-
-        List<RequireReview> requireReviewList = targetSubmissions.stream().map(
-                target -> RequireReview.builder().subjectSubmission(subjectSubmission)
-                    .subjectUser(subjectSubmission.getUser()).targetSubmission(target).build())
-            .toList();
-        requireReviewRepository.saveAll(requireReviewList);
     }
 
     private List<Algorithm> createSubmissionAlgorithmAndFetch(
