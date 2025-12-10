@@ -15,7 +15,7 @@ public class CookieUtils {
     public static void addTokenCookie(HttpServletResponse response, String name, String value, long maxAgeMs) {
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .httpOnly(true) // js접근 차단 (XSS 방어)
-                .secure(true) // HTTPS만 가능, 일단 쿠키에 넣으면 안되려나,
+                .secure(true) // HTTPS만 가능
                 .sameSite("Strict")
                 .path("/")
                 .maxAge(maxAgeMs / 1000)

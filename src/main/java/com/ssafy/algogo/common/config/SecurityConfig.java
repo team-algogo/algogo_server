@@ -27,14 +27,13 @@ import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
-@EnableWebSecurity// ?
+@EnableWebSecurity
 public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisJwtService redisJwtService;
 
-    // SecurityFilterChain Logic 구현
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -47,9 +46,12 @@ public class SecurityConfig {
                 .addFilterBefore(new JwtAuthenticationTokenFilter(jwtTokenProvider, redisJwtService),
                         UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/v1/auths/login",
+                                "/api/v1/groups/lists/**").permitAll()
                         .requestMatchers("/test/auth/admin").hasRole("ADMIN") // 유저권한 테스트용
                         .requestMatchers("/test/auth/user").hasRole("USER")
-                        .anyRequest().permitAll()) // 일단 Security 로직 적용되기 전까진 모두 열어두겠습니다.
+                        .anyRequest().authenticated()) // 일단 Security 로직 적용되기 전까진 모두 열어두겠습니다.
                 .build();
     }
 
