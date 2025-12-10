@@ -226,4 +226,9 @@ gradle-app.setting
 # Java heap dump
 *.hprof
 
+### Elastic APM, Log
+logs
+*.xml
+docker
+
 # End of https://www.toptal.com/developers/gitignore/api/gradle,intellij,cmake,macos,java
