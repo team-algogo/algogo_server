@@ -7,6 +7,7 @@ import com.ssafy.algogo.auth.service.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -46,12 +47,27 @@ public class SecurityConfig {
                 .addFilterBefore(new JwtAuthenticationTokenFilter(jwtTokenProvider, redisJwtService),
                         UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
+
                         .requestMatchers(
                                 "/api/v1/auths/login",
-                                "/api/v1/groups/lists/**").permitAll()
+                                "/api/v1/groups/lists/**",
+                                "/api/v1/users/signup",
+                                "/api/v1/users/check/**",
+                                "/api/v1/auths/forgot-password"
+                                ).permitAll()
+
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/problem-sets/**",
+                                "/api/v1/groups/lists",
+                                "/api/v1/problems/**",
+                                "/api/v1/submissions/**",
+                                "/api/v1/submissions/trends").permitAll()
+                        // /api/v1/groups/lists/me -> ?? || /api/v1/problem-sets/me -> ??
+                        // /api/v1/submissions/me -> ??
+
                         .requestMatchers("/test/auth/admin").hasRole("ADMIN") // 유저권한 테스트용
                         .requestMatchers("/test/auth/user").hasRole("USER")
-                        .anyRequest().authenticated()) // 일단 Security 로직 적용되기 전까진 모두 열어두겠습니다.
+                        .anyRequest().authenticated())
                 .build();
     }
 
