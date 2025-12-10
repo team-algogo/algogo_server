@@ -37,9 +37,13 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
                 program.title,
                 review.user.nickname,
                 Expressions.stringTemplate(
-                    "CONCAT(SUBSTRING({0}, 1, 15), '...')",
+                    "CASE " +
+                        "WHEN LENGTH({0}) > 15 THEN CONCAT(SUBSTRING({0}, 1, 15), '...') " +
+                        "ELSE {0} " +
+                        "END",
                     review.content
-                ),
+                )
+                ,
                 review.modifiedAt
             ))
             .from(review)
@@ -82,9 +86,13 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
                 program.title,
                 review.user.nickname,
                 Expressions.stringTemplate(
-                    "CONCAT(SUBSTRING({0}, 1, 15), '...')",
+                    "CASE " +
+                        "WHEN LENGTH({0}) > 15 THEN CONCAT(SUBSTRING({0}, 1, 15), '...') " +
+                        "ELSE {0} " +
+                        "END",
                     review.content
-                ),
+                )
+                ,
                 review.modifiedAt
             ))
             .from(review)

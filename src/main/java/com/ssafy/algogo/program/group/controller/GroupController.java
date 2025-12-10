@@ -18,7 +18,9 @@ import com.ssafy.algogo.program.group.dto.request.UpdateGroupMemberRoleRequestDt
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GroupRoomPageResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
+import com.ssafy.algogo.program.group.dto.response.MyGroupRoomPageResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.service.GroupService;
 import jakarta.validation.Valid;
@@ -48,6 +50,28 @@ import org.springframework.web.bind.annotation.RestController;
 public class GroupController {
 
     private final GroupService groupService;
+
+    @GetMapping("/lists")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse getGroupRoomDetail(
+        @RequestParam(value = "keyword", required = false) String keyword,
+        @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+        @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
+        @RequestParam(value = "size", defaultValue = "10") Integer size,
+        @RequestParam(value = "page", defaultValue = "0") Integer page
+    ) {
+
+        Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by(Sort.Direction.fromString(sortDirection), sortBy)
+        );
+
+        GroupRoomPageResponseDto groupRoomPageResponseDto =
+            groupService.getGroupRoomList(keyword, pageable);
+
+        return new SuccessResponse("그룹방 리스트 조회 성공", groupRoomPageResponseDto);
+    }
 
     @GetMapping("/{programId}")
     @ResponseStatus(HttpStatus.OK)
@@ -100,6 +124,17 @@ public class GroupController {
             updateGroupRoomRequestDto);
 
         return new SuccessResponse("그룹방 수정 성공", groupRoomResponseDto);
+    }
+
+    @DeleteMapping("/{programId}")
+    @ResponseStatus(HttpStatus.OK)
+    @GroupAuthorize(minRole = GroupRole.MANAGER)
+    public SuccessResponse deleteGroupRoom(
+        @PathVariable @GroupId Long programId
+    ) {
+        groupService.deleteGroupRoom(programId);
+
+        return new SuccessResponse("그룹방 삭제를 성공했습니다.", null);
     }
 
     @PostMapping("/{programId}/join")
@@ -270,5 +305,28 @@ public class GroupController {
         groupService.deleteGroupProblems(programId, programProblemDeleteRequestDto);
         return new SuccessResponse("그룹문제 삭제를 성공했습니다.", null);
     }
+
+    @GetMapping("/lists/me")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse getMyGroupRooms(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+        @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
+        @RequestParam(value = "size", defaultValue = "10") Integer size,
+        @RequestParam(value = "page", defaultValue = "0") Integer page
+    ) {
+
+        Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by(Sort.Direction.fromString(sortDirection), sortBy)
+        );
+
+        MyGroupRoomPageResponseDto response =
+            groupService.getMyGroupRooms(customUserDetails.getUserId(), pageable);
+
+        return new SuccessResponse("내 그룹 조회 성공", response);
+    }
+
 
 }

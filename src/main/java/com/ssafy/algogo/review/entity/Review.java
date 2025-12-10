@@ -35,8 +35,8 @@ public class Review extends BaseTime {
     @Column(name = "like_count")
     private Long likeCount;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "user_id")
     private User user;
 

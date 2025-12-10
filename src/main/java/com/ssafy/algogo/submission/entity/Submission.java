@@ -18,6 +18,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Getter
@@ -47,6 +49,7 @@ public class Submission extends BaseTime {
     private Long memory;
 
     @NotNull
+    @Column(columnDefinition = "TEXT")
     private String strategy;
 
     @NotNull
@@ -55,16 +58,21 @@ public class Submission extends BaseTime {
 
     @NotNull
     @Column(name = "view_count")
-    private Long viewCount;
+    @Builder.Default
+    private Long viewCount = 0L;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "user_id")
     private User user;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "program_problem_id")
     private ProgramProblem programProblem;
 
+    public void increaseViewCount() {
+        this.viewCount++;
+    }
 }

@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/algorithms")
 public class AlgorithmController {
 
-  private final AlgorithmService algorithmService;
+    private final AlgorithmService algorithmService;
 
-  @GetMapping("/search")
-  public SuccessResponse searchAlgorithm(@RequestParam String keyword) {
-    AlgorithmListResponseDto algorithmListResponseDto = algorithmService.searchAlgorithmWithKeyword(
-        keyword);
-    return new SuccessResponse("알고리즘 검색에 성공했습니다.", algorithmListResponseDto);
-  }
+    @GetMapping("/search")
+    public SuccessResponse searchAlgorithm(@RequestParam String keyword) {
+        AlgorithmListResponseDto algorithmListResponseDto = algorithmService.searchAlgorithmWithKeyword(
+            keyword);
+        return new SuccessResponse("알고리즘 검색에 성공했습니다.", algorithmListResponseDto);
+    }
 }

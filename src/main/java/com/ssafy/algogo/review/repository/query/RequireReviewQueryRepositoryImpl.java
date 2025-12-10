@@ -1,16 +1,20 @@
 package com.ssafy.algogo.review.repository.query;
 
 
+import static com.querydsl.core.group.GroupBy.groupBy;
+import static com.querydsl.core.group.GroupBy.list;
 import static com.ssafy.algogo.problem.entity.QProblem.problem;
 import static com.ssafy.algogo.problem.entity.QProgramProblem.programProblem;
 import static com.ssafy.algogo.program.entity.QProgram.program;
 import static com.ssafy.algogo.review.entity.QRequireReview.requireReview;
 import static com.ssafy.algogo.submission.entity.QSubmission.submission;
+import static com.ssafy.algogo.submission.entity.QSubmissionAlgorithm.submissionAlgorithm;
 import static com.ssafy.algogo.user.entity.QUser.user;
 
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
+import com.ssafy.algogo.submission.dto.ReviewRematchTargetQueryDto;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -35,13 +39,35 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
 
             ))
             .from(requireReview)
-            .join(requireReview.submission, submission)
+            .join(requireReview.targetSubmission, submission)
             .join(submission.programProblem, programProblem)
             .join(programProblem.problem, problem)
             .join(programProblem.program, program)
-            .join(requireReview.user, user)
-            .where(requireReview.user.id.eq(userId))
+            .join(requireReview.subjectUser, user)
+            .where(requireReview.subjectUser.id.eq(userId))
             .where(requireReview.isDone.isFalse())
             .fetch();
+    }
+
+    @Override
+    public List<ReviewRematchTargetQueryDto> findAllReviewRematchTargets(Long submissionId) {
+        return query
+            .from(requireReview)
+            .join(requireReview.subjectSubmission)
+            .leftJoin(submissionAlgorithm)
+            .on(submissionAlgorithm.submission.eq(requireReview.subjectSubmission))
+            .where(
+                requireReview.targetSubmission.id.eq(submissionId),
+                requireReview.isDone.eq(false)
+            )
+            .transform(
+                groupBy(requireReview.subjectSubmission).list(
+                    Projections.constructor(
+                        ReviewRematchTargetQueryDto.class,
+                        requireReview.subjectSubmission,
+                        list(submissionAlgorithm)
+                    )
+                )
+            );
     }
 }

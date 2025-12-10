@@ -61,8 +61,12 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 	public ProblemSetResponseDto createProblemSet(
 		ProblemSetCreateRequestDto problemSetCreateRequestDto) {
 
-		ProgramType programType = programTypeRepository.findByName("probelmset").orElseThrow(
-			() -> new CustomException("problem_set에 해당하는 데이터가 DB에 없습니다.",
+		if (programRepository.existsByTitle(problemSetCreateRequestDto.getTitle())) {
+			throw new CustomException("이미 존재하는 문제집 제목입니다.",
+				ErrorCode.PROBLEM_SET_ALREADY_EXISTS);
+		}
+		ProgramType programType = programTypeRepository.findByName("problemset").orElseThrow(
+			() -> new CustomException("problemset 타입 데이터가 DB에 존재하지 않습니다.",
 				ErrorCode.PROGRAM_TYPE_NOT_FOUND));
 
 		Program program = Program.builder()
@@ -114,18 +118,28 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 		int size,
 		int page
 	) {
+		if (!programRepository.existsById(programId)) {
+			throw new CustomException("해당 문제집을 찾을 수 없습니다.", ErrorCode.PROGRAM_ID_NOT_FOUND);
+		}
+
 		Sort sort = Sort.by(
 			"desc".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC,
 			sortBy
 		);
 		Pageable pageable = PageRequest.of(page, size, sort);
 
-		Page<ProgramProblem> programProblems =
-			programProblemRepository.findAllByProgramId(programId, pageable);
+		try {
+			Page<ProgramProblem> programProblems =
+				programProblemRepository.findAllByProgramId(programId, pageable);
 
-		return ProblemSetProblemsPageResponseDto.of(
-			isLogined, programProblems, sortBy, sortDirection
-		);
+			return ProblemSetProblemsPageResponseDto.of(
+				isLogined, programProblems, sortBy, sortDirection
+			);
+
+		} catch (org.springframework.data.mapping.PropertyReferenceException e) {
+			// 잘못된 필드명으로 정렬 시도 했을경우
+			throw new CustomException("유효하지 않은 정렬 기준입니다: " + sortBy, ErrorCode.INVALID_PARAMETER);
+		}
 	}
 
 	@Override

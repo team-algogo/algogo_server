@@ -18,6 +18,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Getter
@@ -29,7 +31,7 @@ import lombok.NoArgsConstructor;
     uniqueConstraints = {
         @UniqueConstraint(
             name = "uk_required_review_user_submission",
-            columnNames = {"user_id", "submission_id"}
+            columnNames = {"subject_user_id", "target_submission_id"}
         )
     }
 )
@@ -43,17 +45,32 @@ public class RequireReview {
         name = "is_done",
         columnDefinition = "TINYINT(1) NOT NULL DEFAULT 0"
     )
-    private Boolean isDone;
+    @Builder.Default
+    private Boolean isDone = false;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "subject_user_id")
+    private User subjectUser;
 
+    /*
+     * 리뷰를 해야하는 쪽(리뷰어)의 제출
+     * */
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "submission_id")
-    private Submission submission;
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "subject_submission_id")
+    private Submission subjectSubmission;
+
+    /*
+     * 리뷰를 받는 쪽(제출자)의 제출
+     * */
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "target_submission_id")
+    private Submission targetSubmission;
 
     public void updateRequireReview(Boolean isDone) {
         this.isDone = isDone;
