@@ -31,6 +31,7 @@ public class AuthController {
         AuthResultDto authResultDto = authService.login(requestDto, request, response);
 
         response.setHeader("Authorization", authResultDto.getTokenInfo().getAccessToken());
+        CookieUtils.deleteTokenCookie(response); // 이미 RT 쿠키가 존재한다면 삭제
         CookieUtils.addTokenCookie(response, "refreshToken", authResultDto.getTokenInfo().getRefreshToken(), jwtTokenProvider.getRefreshTokenValidTime());
 
         return SuccessResponse.success("로그인에 성공했습니다.", authResultDto.getLocalLoginResponseDto());
