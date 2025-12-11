@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,9 +32,19 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
     private final RedisJwtService redisJwtService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public AuthResultDto login(LocalLoginRequestDto dto, HttpServletRequest request, HttpServletResponse response) {
+
+        User user = null;
+
+        user = userRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new CustomException("존재하는 이메일이 없습니다.", ErrorCode.INVALID_LOGIN_CREDENTIALS));
+
+        if(!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
+            throw new CustomException("비밀번호가 일치하지 않습니다.", ErrorCode.INVALID_LOGIN_CREDENTIALS);
+        }
 
         // 이 부분이, email, pwd로 토큰을 만들고
         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken
@@ -50,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         redisJwtService.save(customUserDetails.getUserId(), refreshToken, ip); // redist에 rt저장
 
-        User user = userRepository.findById(((CustomUserDetails) authentication.getPrincipal()).getUserId())
+        user = userRepository.findById(((CustomUserDetails) authentication.getPrincipal()).getUserId())
                 .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다", ErrorCode.ACCESS_DENIED));
 
         return AuthResultDto.builder()
