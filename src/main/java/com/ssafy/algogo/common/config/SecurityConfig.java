@@ -48,6 +48,11 @@ public class SecurityConfig {
                         UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
 
+                        // 김성훈 프론트 체크 패스 API
+                        .requestMatchers(
+                                "/api/v1/groups/**"
+                        ).permitAll()
+
                         .requestMatchers(
                                 "/api/v1/auths/login",
                                 "/api/v1/groups/lists/**",
