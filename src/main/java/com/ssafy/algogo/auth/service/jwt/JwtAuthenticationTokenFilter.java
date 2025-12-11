@@ -37,6 +37,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
+        log.info("[REQUEST] IP: {} | Method: {} | URI: {}", jwtTokenProvider.getIpFromRequest(request), request.getMethod(), request.getRequestURI());
+
         String authHeader = request.getHeader("Authorization");
         String accessToken = null;
         String refreshToken = CookieUtils.getTokenFromCookies("refreshToken", request);
