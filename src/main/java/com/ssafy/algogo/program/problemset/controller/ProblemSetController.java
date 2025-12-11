@@ -51,10 +51,10 @@ public class ProblemSetController {
 	@GetMapping("/lists")
 	@ResponseStatus(HttpStatus.OK)
 	public SuccessResponse getProblemSetList(
-		@RequestParam String keyWord,
-		@RequestParam String category,
-		@RequestParam String sortBy,
-		@RequestParam String sortDirection
+		@RequestParam(required = false) String keyWord,
+		@RequestParam(required = false) String category,
+		@RequestParam(required = false) String sortBy,
+		@RequestParam(required = false) String sortDirection
 	) {
 
 		List<ProblemSetResponseDto> data = problemSetService.getProblemSetList(
