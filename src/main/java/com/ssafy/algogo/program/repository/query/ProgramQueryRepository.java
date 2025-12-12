@@ -1,0 +1,18 @@
+package com.ssafy.algogo.program.repository.query;
+
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
+import java.util.List;
+
+public interface ProgramQueryRepository {
+
+	/**
+	 * 자율 문제집(problemset) 리스트 조회 - keyword: Program.title 에 대한 검색 - categoryName: Category.name 필터 -
+	 * sortBy: createdAt | popular(참여자수 합) | title - sortDirection: asc | desc
+	 */
+	List<ProblemSetResponseDto> findProblemSetWithCategoriesAndPopularity(
+		String keyword,
+		String categoryName,
+		String sortBy,
+		String sortDirection
+	);
+}
