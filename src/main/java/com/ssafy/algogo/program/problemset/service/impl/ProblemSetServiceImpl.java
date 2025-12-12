@@ -18,6 +18,7 @@ import com.ssafy.algogo.program.problemset.service.ProblemSetService;
 import com.ssafy.algogo.program.repository.ProgramRepository;
 import com.ssafy.algogo.program.repository.ProgramTypeRepository;
 import com.ssafy.algogo.program.repository.ProgramUserRepository;
+import com.ssafy.algogo.program.repository.query.ProgramQueryRepository;
 import com.ssafy.algogo.user.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -41,19 +42,32 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 	private final ProgramTypeRepository programTypeRepository;
 	private final ProgramRepository programRepository;
 	private final ProgramUserRepository programUserRepository;
+	private final ProgramQueryRepository programQueryRepository;
 
 	@Override
 	@Transactional(readOnly = true)
-	public ProblemSetListResponseDto getProblemSetList(String keyword, String category,
-		String sortBy, String sortDirection) {
-
-		ProgramType problemSetType = programTypeRepository.findByName("problemset")
+	public ProblemSetListResponseDto getProblemSetList(
+		String keyword,
+		String category,
+		String sortBy,
+		String sortDirection
+	) {
+		// problemset 타입 존재 여부만 체크 (없으면 예외)
+		programTypeRepository.findByName("problemset")
 			.orElseThrow(
-				() -> new CustomException("problemset 타입 없음", ErrorCode.PROGRAM_TYPE_NOT_FOUND));
+				() -> new CustomException(
+					"problemset 타입 없음",
+					ErrorCode.PROGRAM_TYPE_NOT_FOUND
+				)
+			);
 
-		List<Program> programs = programRepository.findByProgramType(problemSetType);
+		List<ProblemSetResponseDto> list =
+			programQueryRepository.findProblemSetWithCategoriesAndPopularity(
+				keyword, category, sortBy, sortDirection
+			);
 
-		return new ProblemSetListResponseDto(programs);
+		// record ProblemSetListResponseDto(List<ProblemSetResponseDto> problemSetList)
+		return new ProblemSetListResponseDto(list);
 	}
 
 
