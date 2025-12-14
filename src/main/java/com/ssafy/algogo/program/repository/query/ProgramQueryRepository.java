@@ -23,4 +23,7 @@ public interface ProgramQueryRepository {
 		String categoryName
 	);
 
+	ProblemSetResponseDto findProblemSetDetail(Long programId);
+
+
 }

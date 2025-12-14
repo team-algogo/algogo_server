@@ -124,6 +124,49 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 		return count != null ? count : 0L;
 	}
 
+	@Override
+	public ProblemSetResponseDto findProblemSetDetail(Long programId) {
+
+		NumberExpression<Long> popularityScore =
+			programProblem.participantCount.sum().coalesce(0L);
+
+		NumberExpression<Long> problemCountExpr =
+			programProblem.id.countDistinct().coalesce(0L);
+
+		return queryFactory
+			.from(program)
+			.join(program.programType, programType)
+			.leftJoin(programProblem).on(programProblem.program.eq(program))
+			.leftJoin(programCategory).on(programCategory.program.eq(program))
+			.leftJoin(programCategory.category, category)
+			.where(
+				program.id.eq(programId),
+				program.programType.name.eq("problemset")
+			)
+			.groupBy(program.id, programType.id)
+			.transform(
+				groupBy(program.id).list(
+					Projections.constructor(
+						ProblemSetResponseDto.class,
+						program.id,
+						program.title,
+						program.description,
+						program.thumbnail,
+						program.createdAt,
+						program.modifiedAt,
+						programType.name,
+						list(category.name),
+						popularityScore,
+						problemCountExpr
+					)
+				)
+			)
+			.stream()
+			.findFirst()
+			.orElse(null);
+	}
+
+
 	private boolean hasText(String value) {
 		return StringUtils.hasText(value);
 	}
