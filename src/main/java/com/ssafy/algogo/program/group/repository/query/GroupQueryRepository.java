@@ -15,4 +15,7 @@ public interface GroupQueryRepository {
 
     Page<MyGroupRoomResponseDto> findMyGroupRooms(List<Long> programIds, Long userId,
         Pageable pageable);
+
+    Page<GroupRoomResponseDto> findAllGroupRoomsWithMemberFlag(String keyword, Pageable pageable,
+        Long userId);
 }

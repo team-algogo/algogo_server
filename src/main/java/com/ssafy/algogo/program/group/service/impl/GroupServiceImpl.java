@@ -77,11 +77,19 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     @Transactional(readOnly = true)
-    public GroupRoomPageResponseDto getGroupRoomList(String keyword, Pageable pageable) {
-        Page<GroupRoomResponseDto> page =
-            groupRepository.findAllGroupRooms(keyword, pageable);
+    public GroupRoomPageResponseDto getGroupRoomList(String keyword, Pageable pageable,
+        Long userId) {
+        if (userId != null) {
+            Page<GroupRoomResponseDto> page =
+                groupRepository.findAllGroupRoomsWithMemberFlag(keyword, pageable, userId);
 
-        return GroupRoomPageResponseDto.from(page);
+            return GroupRoomPageResponseDto.from(page, true);
+        } else {
+            Page<GroupRoomResponseDto> page =
+                groupRepository.findAllGroupRooms(keyword, pageable);
+
+            return GroupRoomPageResponseDto.from(page, false);
+        }
     }
 
     @Override
