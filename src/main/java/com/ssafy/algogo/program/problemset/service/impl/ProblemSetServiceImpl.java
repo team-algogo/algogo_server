@@ -98,19 +98,27 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 			sortDirection.toUpperCase()
 		);
 
-		// 7) isUser는 인증 여부에 맞게 세팅 (지금은 true 예시)
 		return new ProblemSetListResponseDto(pageInfo, sortInfo, list);
 	}
 
 
 	@Override
+	@Transactional(readOnly = true)
 	public ProblemSetResponseDto getProblemSet(Long programId) {
 
-		Program program = programRepository.findById(programId).orElseThrow(() ->
-			new CustomException("해당 문제집을 찾을 수 없습니다.", ErrorCode.PROGRAM_ID_NOT_FOUND));
+		ProblemSetResponseDto dto =
+			programQueryRepository.findProblemSetDetail(programId);
 
-		return ProblemSetResponseDto.from(program);
+		if (dto == null) {
+			throw new CustomException(
+				"해당 문제집을 찾을 수 없습니다.",
+				ErrorCode.PROGRAM_ID_NOT_FOUND
+			);
+		}
+
+		return dto;
 	}
+
 
 	@Override
 	public ProblemSetResponseDto createProblemSet(
