@@ -1,6 +1,8 @@
 package com.ssafy.algogo.alarm.service;
 
-import com.ssafy.algogo.alarm.dto.response.AlarmResponseDto;
+import com.ssafy.algogo.alarm.dto.response.GetAlarmListResponseDto;
+import com.ssafy.algogo.alarm.dto.response.GetAlarmResponseDto;
+import com.ssafy.algogo.alarm.dto.response.GetUnreadAlarmCountResponseDto;
 import com.ssafy.algogo.alarm.entity.Alarm;
 import com.ssafy.algogo.alarm.entity.AlarmPayload;
 import com.ssafy.algogo.alarm.entity.AlarmType;
@@ -13,7 +15,6 @@ import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class AlarmService {
     private final UserRepository userRepository;
     private final SseEmitterRepository emitterRepository;
 
+    // lastEventId는 연결이 끊긴 경우 마지막 이벤트를 확인해서 후처리 하기 위함인데, 나중에 더 알아보고 추가
     public SseEmitter subscribe(Long userId, String lastEventId) {
         SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT);
 
@@ -64,7 +66,7 @@ public class AlarmService {
         sendToEmitter(
             emitter,
             "INIT",
-            new AlarmResponseDto(
+            new GetAlarmResponseDto(
                 0L,
                 "SYSTEM",
                 null,
@@ -104,7 +106,7 @@ public class AlarmService {
 
         alarmRepository.save(alarm);
 
-        sendNotification(userId, AlarmResponseDto.from(alarm));
+        sendNotification(userId, GetAlarmResponseDto.from(alarm));
     }
 
     @Transactional
@@ -115,7 +117,7 @@ public class AlarmService {
     /**
      * 특정 유저의 모든 SSE 연결에 알람 전송
      */
-    public void sendNotification(Long userId, AlarmResponseDto dto) {
+    public void sendNotification(Long userId, GetAlarmResponseDto dto) {
 
         List<SseEmitter> emitters = emitterRepository.get(userId);
         if (emitters.isEmpty()) {
@@ -140,7 +142,7 @@ public class AlarmService {
         }
     }
 
-    private void sendToEmitter(SseEmitter emitter, String eventName, AlarmResponseDto data) {
+    private void sendToEmitter(SseEmitter emitter, String eventName, GetAlarmResponseDto data) {
         try {
             emitter.send(
                 SseEmitter.event()
@@ -151,5 +153,26 @@ public class AlarmService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public GetAlarmListResponseDto getMyAlarms(Long userId) {
+        return new GetAlarmListResponseDto(
+            alarmRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(GetAlarmResponseDto::from)
+                .toList()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public GetUnreadAlarmCountResponseDto getUnreadAlarmCount(Long userId) {
+        return new GetUnreadAlarmCountResponseDto(
+            alarmRepository.countByUserIdAndIsReadFalse(userId));
+    }
+
+    @Transactional
+    public void deleteAlarms(Long userId, List<Long> alarmIds) {
+        alarmRepository.deleteAllByIdsAndUserId(alarmIds, userId);
     }
 }

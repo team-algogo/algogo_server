@@ -1,20 +1,28 @@
 package com.ssafy.algogo.alarm.controller;
 
+import com.ssafy.algogo.alarm.dto.request.DeleteAlarmRequestDto;
+import com.ssafy.algogo.alarm.dto.response.GetAlarmListResponseDto;
+import com.ssafy.algogo.alarm.dto.response.GetAlarmResponseDto;
+import com.ssafy.algogo.alarm.dto.response.GetUnreadAlarmCountResponseDto;
 import com.ssafy.algogo.alarm.entity.AlarmPayload;
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.alarm.service.AlarmService;
+import com.ssafy.algogo.common.advice.SuccessResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
-@RequestMapping("/api/v1/notifications")
+@RequestMapping("/api/v1/alarm")
 @RequiredArgsConstructor
 public class AlarmController {
 
@@ -52,6 +60,35 @@ public class AlarmController {
             payload,
             "테스트 알람이 도착했습니다!"
         );
+    }
+
+    @GetMapping("/lists")
+    public SuccessResponse getMyAlarms(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        GetAlarmListResponseDto getAlarmListResponseDto = alarmService.getMyAlarms(
+            customUserDetails.getUserId());
+        return new SuccessResponse("알림 리스트 조회를 성공했습니다.", getAlarmListResponseDto);
+    }
+
+    @GetMapping("/counts")
+    public SuccessResponse getUnreadAlarmCount(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        GetUnreadAlarmCountResponseDto getUnreadAlarmCountResponseDto = alarmService.getUnreadAlarmCount(
+            customUserDetails.getUserId());
+        return new SuccessResponse("알림 배지 조회를 성공했습니다.", getUnreadAlarmCountResponseDto
+        );
+    }
+
+    @DeleteMapping
+    public SuccessResponse deleteAlarms(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @RequestBody DeleteAlarmRequestDto request
+    ) {
+        alarmService.deleteAlarms(customUserDetails.getUserId(), request.getAlarmIds());
+
+        return new SuccessResponse("알림 삭제를 성공했습니다.", null);
     }
 
 }
