@@ -17,4 +17,10 @@ public interface ProgramQueryRepository {
 		int size,
 		int page
 	);
+
+	long countProblemSetWithFilter(
+		String keyword,
+		String categoryName
+	);
+
 }
