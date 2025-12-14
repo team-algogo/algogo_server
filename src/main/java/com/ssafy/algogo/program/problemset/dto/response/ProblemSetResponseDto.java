@@ -3,17 +3,20 @@ package com.ssafy.algogo.program.problemset.dto.response;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.ssafy.algogo.program.entity.Program;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ProblemSetResponseDto(
-
 	Long programId,
 	String title,
 	String description,
 	String thumbnail,
 	LocalDateTime createAt,
 	LocalDateTime modifiedAt,
-	String programType
+	String programType,
+	List<String> categories,
+	Long totalParticipants,
+	Long problemCount
 ) {
 
 	public static ProblemSetResponseDto from(Program program) {
@@ -24,7 +27,10 @@ public record ProblemSetResponseDto(
 			program.getThumbnail(),
 			program.getCreatedAt(),
 			program.getModifiedAt(),
-			program.getProgramType().getName()
+			program.getProgramType().getName(),
+			List.of(),
+			0L,        // totalParticipants (쿼리에서 채움)
+			0L         // problemCount (쿼리에서 채움)
 		);
 	}
 }

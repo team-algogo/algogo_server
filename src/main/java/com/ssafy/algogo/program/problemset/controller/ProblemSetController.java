@@ -12,6 +12,7 @@ import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDt
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProgramProblemsDeleteRequestDto;
 import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
@@ -51,14 +52,17 @@ public class ProblemSetController {
 	@GetMapping("/lists")
 	@ResponseStatus(HttpStatus.OK)
 	public SuccessResponse getProblemSetList(
-		@RequestParam String keyWord,
-		@RequestParam String category,
-		@RequestParam String sortBy,
-		@RequestParam String sortDirection
+		@RequestParam(required = false) String keyWord,
+		@RequestParam(required = false) String category,
+		@RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+		@RequestParam(required = false, defaultValue = "desc") String sortDirection,
+		@RequestParam(defaultValue = "10") int size,
+		@RequestParam(defaultValue = "0") int page
 	) {
-
-		List<ProblemSetResponseDto> data = problemSetService.getProblemSetList(
-			keyWord, category, sortBy, sortDirection);
+		ProblemSetListResponseDto data =
+			problemSetService.getProblemSetList(
+				keyWord, category, sortBy, sortDirection, size, page
+			);
 
 		return new SuccessResponse("자율 문제집 리스트 조회를 성공했습니다.", data);
 	}

@@ -3,6 +3,7 @@ package com.ssafy.algogo.program.problemset.service;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
 import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import java.util.List;
@@ -10,9 +11,10 @@ import java.util.List;
 public interface ProblemSetService {
 
 	// 문제집 리스트 조회
-	public List<ProblemSetResponseDto> getProblemSetList(String keyWord, String category,
+	public ProblemSetListResponseDto getProblemSetList(String keyWord, String category,
 		String sortBy,
-		String sortDirection);
+		String sortDirection, int size,
+		int page);
 
 	// 자율 문제집 조회
 	public ProblemSetResponseDto getProblemSet(Long programId);
