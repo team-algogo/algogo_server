@@ -13,6 +13,8 @@ public interface ProgramQueryRepository {
 		String keyword,
 		String categoryName,
 		String sortBy,
-		String sortDirection
+		String sortDirection,
+		int size,
+		int page
 	);
 }

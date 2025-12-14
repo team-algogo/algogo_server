@@ -50,26 +50,33 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 		String keyword,
 		String category,
 		String sortBy,
-		String sortDirection
+		String sortDirection,
+		int size,
+		int page
 	) {
-		// problemset 타입 존재 여부만 체크 (없으면 예외)
+		// 예외처리로 빼버릴까 고민중;;
+		if (size < 1) {
+			size = 1;
+		}
+		if (size > 100) {
+			size = 100;
+		}
+		if (page < 0) {
+			page = 0;
+		}
+
 		programTypeRepository.findByName("problemset")
-			.orElseThrow(
-				() -> new CustomException(
-					"problemset 타입 없음",
-					ErrorCode.PROGRAM_TYPE_NOT_FOUND
-				)
-			);
+			.orElseThrow(() -> new CustomException(
+				"problemset 타입 없음", ErrorCode.PROGRAM_TYPE_NOT_FOUND
+			));
 
 		List<ProblemSetResponseDto> list =
 			programQueryRepository.findProblemSetWithCategoriesAndPopularity(
-				keyword, category, sortBy, sortDirection
+				keyword, category, sortBy, sortDirection, size, page
 			);
 
-		// record ProblemSetListResponseDto(List<ProblemSetResponseDto> problemSetList)
 		return new ProblemSetListResponseDto(list);
 	}
-
 
 	@Override
 	public ProblemSetResponseDto getProblemSet(Long programId) {

@@ -54,13 +54,16 @@ public class ProblemSetController {
 	public SuccessResponse getProblemSetList(
 		@RequestParam(required = false) String keyWord,
 		@RequestParam(required = false) String category,
-		@RequestParam(required = false) String sortBy,
-		@RequestParam(required = false) String sortDirection
+		@RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+		@RequestParam(required = false, defaultValue = "desc") String sortDirection,
+		@RequestParam(defaultValue = "10") int size,
+		@RequestParam(defaultValue = "0") int page
 	) {
-
 		ProblemSetListResponseDto data =
-			problemSetService.getProblemSetList(keyWord, category, sortBy, sortDirection);
-		log.info("problem-sets/lists 호출됨");
+			problemSetService.getProblemSetList(
+				keyWord, category, sortBy, sortDirection, size, page
+			);
+
 		return new SuccessResponse("자율 문제집 리스트 조회를 성공했습니다.", data);
 	}
 

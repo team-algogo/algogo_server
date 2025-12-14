@@ -13,7 +13,8 @@ public interface ProblemSetService {
 	// 문제집 리스트 조회
 	public ProblemSetListResponseDto getProblemSetList(String keyWord, String category,
 		String sortBy,
-		String sortDirection);
+		String sortDirection, int size,
+		int page);
 
 	// 자율 문제집 조회
 	public ProblemSetResponseDto getProblemSet(Long programId);
