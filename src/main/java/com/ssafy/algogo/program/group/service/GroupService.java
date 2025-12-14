@@ -66,7 +66,7 @@ public interface GroupService {
 
     void deleteGroupRoom(Long programId);
 
-    GroupRoomPageResponseDto getGroupRoomList(String keyword, Pageable pageable);
+    GroupRoomPageResponseDto getGroupRoomList(String keyword, Pageable pageable, Long userId);
 
     MyGroupRoomPageResponseDto getMyGroupRooms(Long userId, Pageable pageable);
 }

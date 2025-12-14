@@ -53,12 +53,13 @@ public class GroupController {
 
     @GetMapping("/lists")
     @ResponseStatus(HttpStatus.OK)
-    public SuccessResponse getGroupRoomDetail(
+    public SuccessResponse getGroupRoomList(
         @RequestParam(value = "keyword", required = false) String keyword,
         @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
         @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
         @RequestParam(value = "size", defaultValue = "10") Integer size,
-        @RequestParam(value = "page", defaultValue = "0") Integer page
+        @RequestParam(value = "page", defaultValue = "0") Integer page,
+        @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
 
         Pageable pageable = PageRequest.of(
@@ -67,8 +68,10 @@ public class GroupController {
             Sort.by(Sort.Direction.fromString(sortDirection), sortBy)
         );
 
+        Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
+
         GroupRoomPageResponseDto groupRoomPageResponseDto =
-            groupService.getGroupRoomList(keyword, pageable);
+            groupService.getGroupRoomList(keyword, pageable, userId);
 
         return new SuccessResponse("그룹방 리스트 조회 성공", groupRoomPageResponseDto);
     }

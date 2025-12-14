@@ -11,12 +11,14 @@ import com.ssafy.algogo.program.entity.ProgramUser;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
 import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
 import com.ssafy.algogo.program.repository.ProgramRepository;
 import com.ssafy.algogo.program.repository.ProgramTypeRepository;
 import com.ssafy.algogo.program.repository.ProgramUserRepository;
+import com.ssafy.algogo.program.repository.query.ProgramQueryRepository;
 import com.ssafy.algogo.user.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -40,11 +42,32 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 	private final ProgramTypeRepository programTypeRepository;
 	private final ProgramRepository programRepository;
 	private final ProgramUserRepository programUserRepository;
+	private final ProgramQueryRepository programQueryRepository;
 
 	@Override
-	public List<ProblemSetResponseDto> getProblemSetList(String keyword, String category,
-		String sortBy, String sortDirection) {
-		return null;
+	@Transactional(readOnly = true)
+	public ProblemSetListResponseDto getProblemSetList(
+		String keyword,
+		String category,
+		String sortBy,
+		String sortDirection
+	) {
+		// problemset 타입 존재 여부만 체크 (없으면 예외)
+		programTypeRepository.findByName("problemset")
+			.orElseThrow(
+				() -> new CustomException(
+					"problemset 타입 없음",
+					ErrorCode.PROGRAM_TYPE_NOT_FOUND
+				)
+			);
+
+		List<ProblemSetResponseDto> list =
+			programQueryRepository.findProblemSetWithCategoriesAndPopularity(
+				keyword, category, sortBy, sortDirection
+			);
+
+		// record ProblemSetListResponseDto(List<ProblemSetResponseDto> problemSetList)
+		return new ProblemSetListResponseDto(list);
 	}
 
 
