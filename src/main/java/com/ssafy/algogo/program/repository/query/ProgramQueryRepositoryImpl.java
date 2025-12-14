@@ -97,6 +97,33 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 	}
 
 
+	@Override
+	public long countProblemSetWithFilter(String keyword, String categoryName) {
+		BooleanExpression isProblemSet =
+			program.programType.name.eq("problemset");
+
+		BooleanExpression titleContains =
+			StringUtils.hasText(keyword)
+				? program.title.containsIgnoreCase(keyword.trim())
+				: null;
+
+		BooleanExpression categoryEq =
+			StringUtils.hasText(categoryName)
+				? category.name.eq(categoryName.trim())
+				: null;
+
+		Long count = queryFactory
+			.select(program.id.countDistinct())
+			.from(program)
+			.join(program.programType, programType)
+			.leftJoin(programCategory).on(programCategory.program.eq(program))
+			.leftJoin(programCategory.category, category)
+			.where(isProblemSet, titleContains, categoryEq)
+			.fetchOne();
+
+		return count != null ? count : 0L;
+	}
+
 	private boolean hasText(String value) {
 		return StringUtils.hasText(value);
 	}

@@ -2,6 +2,8 @@ package com.ssafy.algogo.program.problemset.service.impl;
 
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
+import com.ssafy.algogo.common.dto.PageInfo;
+import com.ssafy.algogo.common.dto.SortInfo;
 import com.ssafy.algogo.problem.entity.ProgramProblem;
 import com.ssafy.algogo.problem.repository.ProblemRepository;
 import com.ssafy.algogo.problem.repository.ProgramProblemRepository;
@@ -54,7 +56,7 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 		int size,
 		int page
 	) {
-		// 예외처리로 빼버릴까 고민중;;
+		// 1) size, page 보정
 		if (size < 1) {
 			size = 1;
 		}
@@ -65,18 +67,41 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 			page = 0;
 		}
 
+		// 2) problemset 타입 존재 여부 체크
 		programTypeRepository.findByName("problemset")
 			.orElseThrow(() -> new CustomException(
 				"problemset 타입 없음", ErrorCode.PROGRAM_TYPE_NOT_FOUND
 			));
 
+		// 3) 리스트 조회
 		List<ProblemSetResponseDto> list =
 			programQueryRepository.findProblemSetWithCategoriesAndPopularity(
 				keyword, category, sortBy, sortDirection, size, page
 			);
 
-		return new ProblemSetListResponseDto(list);
+		// 4) 전체 개수 조회
+		long totalElements =
+			programQueryRepository.countProblemSetWithFilter(keyword, category);
+
+		// 5) PageInfo 직접 생성
+		int totalPages = (int) Math.ceil((double) totalElements / size);
+		PageInfo pageInfo = new PageInfo(
+			page,          // number
+			size,          // size
+			totalElements, // totalElements
+			totalPages     // totalPages
+		);
+
+		// 6) SortInfo 직접 생성
+		SortInfo sortInfo = new SortInfo(
+			sortBy,
+			sortDirection.toUpperCase()
+		);
+
+		// 7) isUser는 인증 여부에 맞게 세팅 (지금은 true 예시)
+		return new ProblemSetListResponseDto(pageInfo, sortInfo, list);
 	}
+
 
 	@Override
 	public ProblemSetResponseDto getProblemSet(Long programId) {
