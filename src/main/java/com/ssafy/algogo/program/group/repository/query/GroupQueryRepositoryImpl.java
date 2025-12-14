@@ -192,7 +192,7 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 groupRoom.capacity,
                 groupsUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
-                selfUser.id.countDistinct().gt(0)   // ⭐ isMember
+                selfUser.id.countDistinct().gt(0) // 멤버 여부
             ))
             .from(groupRoom)
             .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
