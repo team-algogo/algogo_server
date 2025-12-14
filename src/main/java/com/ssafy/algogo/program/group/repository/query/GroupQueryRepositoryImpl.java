@@ -10,6 +10,7 @@ import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.dto.response.MyGroupRoomResponseDto;
@@ -43,7 +44,8 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 groupRoom.modifiedAt,
                 groupRoom.capacity,
                 groupsUser.id.countDistinct(),
-                programProblem.id.countDistinct()
+                programProblem.id.countDistinct(),
+                Expressions.nullExpression(Boolean.class)
             ))
             .from(groupRoom)
             .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
@@ -79,7 +81,8 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 program.modifiedAt,
                 groupRoom.capacity,
                 programUser.id.countDistinct(),
-                programProblem.id.countDistinct()
+                programProblem.id.countDistinct(),
+                Expressions.nullExpression(Boolean.class)
             ))
             .from(program)
             .join(groupRoom).on(groupRoom.id.eq(program.id))
@@ -170,4 +173,50 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
             .or(groupRoom.description.containsIgnoreCase(keyword));
     }
 
+    @Override
+    public Page<GroupRoomResponseDto> findAllGroupRoomsWithMemberFlag(String keyword,
+        Pageable pageable, Long userId) {
+
+        BooleanExpression condition = buildSearchCondition(keyword);
+
+        QGroupsUser selfUser = new QGroupsUser("selfUser"); // 현재 유저 확인용 별칭
+
+        List<GroupRoomResponseDto> content = query
+            .select(Projections.constructor(
+                GroupRoomResponseDto.class,
+                groupRoom.id,
+                groupRoom.title,
+                groupRoom.description,
+                groupRoom.createdAt,
+                groupRoom.modifiedAt,
+                groupRoom.capacity,
+                groupsUser.id.countDistinct(),
+                programProblem.id.countDistinct(),
+                selfUser.id.countDistinct().gt(0)   // ⭐ isMember
+            ))
+            .from(groupRoom)
+            .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
+            .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
+            .leftJoin(selfUser).on(
+                selfUser.program.id.eq(groupRoom.id)
+                    .and(selfUser.user.id.eq(userId))
+                    .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
+            )
+            .where(condition)
+            .groupBy(groupRoom.id)
+            .orderBy(getOrderSpecifiers(pageable))
+            .offset(pageable.getOffset())
+            .limit(pageable.getPageSize())
+            .fetch();
+
+        Long totalCount = query
+            .select(groupRoom.countDistinct())
+            .from(groupRoom)
+            .where(condition)
+            .fetchOne();
+
+        long total = totalCount != null ? totalCount : 0L;
+
+        return new PageImpl<>(content, pageable, total);
+    }
 }

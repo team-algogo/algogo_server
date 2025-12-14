@@ -13,7 +13,8 @@ public record GroupRoomResponseDto(
     LocalDateTime modifiedAt,
     Long capacity,
     Long memberCount,
-    Long programProblemCount
+    Long programProblemCount,
+    Boolean isMember
 ) {
 
 }
