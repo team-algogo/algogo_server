@@ -50,7 +50,8 @@ public class SecurityConfig {
 
                         // 김성훈 프론트 체크 패스 API
                         .requestMatchers(
-                                "/api/v1/groups/**"
+                                "/api/v1/groups/**",
+                                "/api/v1/auths/logout"
                         ).permitAll()
 
                         .requestMatchers(

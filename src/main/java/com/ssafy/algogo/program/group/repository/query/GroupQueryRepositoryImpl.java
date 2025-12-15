@@ -82,12 +82,14 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 groupRoom.capacity,
                 programUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
-                Expressions.nullExpression(Boolean.class)
+                Expressions.nullExpression(Boolean.class),
+                groupsUser.groupRole
             ))
             .from(program)
             .join(groupRoom).on(groupRoom.id.eq(program.id))
             .leftJoin(programUser).on(programUser.program.id.eq(programId))
             .leftJoin(programProblem).on(programProblem.program.id.eq(programId))
+            .leftJoin(groupsUser).on(groupsUser.id.eq(groupRoom.id))
             .where(program.id.eq(programId))
             .groupBy(program.id, groupRoom.capacity)
             .fetchOne();
