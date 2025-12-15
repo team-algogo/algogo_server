@@ -31,7 +31,9 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 		String keyword,
 		String categoryName,
 		String sortBy,
-		String sortDirection
+		String sortDirection,
+		int size,
+		int page
 	) {
 		BooleanExpression isProblemSet =
 			program.programType.name.eq("problemset");
@@ -46,9 +48,13 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 				? category.name.eq(categoryName.trim())
 				: null;
 
-		// 총 참여자 수 = 해당 프로그램의 모든 ProgramProblem.participant_count 합
+		// 총 참여자 수
 		NumberExpression<Long> popularityScore =
 			programProblem.participantCount.sum().coalesce(0L);
+
+		// 프로그램별 문제 개수 (중복 방지하려면 countDistinct)
+		NumberExpression<Long> problemCountExpr =
+			programProblem.id.countDistinct().coalesce(0L);
 
 		Order direction =
 			"asc".equalsIgnoreCase(sortDirection) ? Order.ASC : Order.DESC;
@@ -63,16 +69,14 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 		return queryFactory
 			.from(program)
 			.join(program.programType, programType)
-			// Program ↔ ProgramProblem (직접 on 조인)
-			.leftJoin(programProblem)
-			.on(programProblem.program.eq(program))
-			// Program ↔ ProgramCategory ↔ Category (역시 on 조인)
-			.leftJoin(programCategory)
-			.on(programCategory.program.eq(program))
+			.leftJoin(programProblem).on(programProblem.program.eq(program))
+			.leftJoin(programCategory).on(programCategory.program.eq(program))
 			.leftJoin(programCategory.category, category)
 			.where(isProblemSet, titleContains, categoryEq)
 			.groupBy(program.id, programType.id)
 			.orderBy(orderSpecifier)
+			.offset((long) page * size)
+			.limit(size)
 			.transform(
 				groupBy(program.id).list(
 					Projections.constructor(
@@ -85,10 +89,81 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 						program.modifiedAt,
 						programType.name,
 						list(category.name),
-						popularityScore       // totalParticipants
+						popularityScore,    // totalParticipants
+						problemCountExpr    // problemCount (record 마지막 필드)
 					)
 				)
 			);
+	}
+
+
+	@Override
+	public long countProblemSetWithFilter(String keyword, String categoryName) {
+		BooleanExpression isProblemSet =
+			program.programType.name.eq("problemset");
+
+		BooleanExpression titleContains =
+			StringUtils.hasText(keyword)
+				? program.title.containsIgnoreCase(keyword.trim())
+				: null;
+
+		BooleanExpression categoryEq =
+			StringUtils.hasText(categoryName)
+				? category.name.eq(categoryName.trim())
+				: null;
+
+		Long count = queryFactory
+			.select(program.id.countDistinct())
+			.from(program)
+			.join(program.programType, programType)
+			.leftJoin(programCategory).on(programCategory.program.eq(program))
+			.leftJoin(programCategory.category, category)
+			.where(isProblemSet, titleContains, categoryEq)
+			.fetchOne();
+
+		return count != null ? count : 0L;
+	}
+
+	@Override
+	public ProblemSetResponseDto findProblemSetDetail(Long programId) {
+
+		NumberExpression<Long> popularityScore =
+			programProblem.participantCount.sum().coalesce(0L);
+
+		NumberExpression<Long> problemCountExpr =
+			programProblem.id.countDistinct().coalesce(0L);
+
+		return queryFactory
+			.from(program)
+			.join(program.programType, programType)
+			.leftJoin(programProblem).on(programProblem.program.eq(program))
+			.leftJoin(programCategory).on(programCategory.program.eq(program))
+			.leftJoin(programCategory.category, category)
+			.where(
+				program.id.eq(programId),
+				program.programType.name.eq("problemset")
+			)
+			.groupBy(program.id, programType.id)
+			.transform(
+				groupBy(program.id).list(
+					Projections.constructor(
+						ProblemSetResponseDto.class,
+						program.id,
+						program.title,
+						program.description,
+						program.thumbnail,
+						program.createdAt,
+						program.modifiedAt,
+						programType.name,
+						list(category.name),
+						popularityScore,
+						problemCountExpr
+					)
+				)
+			)
+			.stream()
+			.findFirst()
+			.orElse(null);
 	}
 
 

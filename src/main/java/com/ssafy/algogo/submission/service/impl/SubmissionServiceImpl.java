@@ -18,6 +18,7 @@ import com.ssafy.algogo.submission.entity.Algorithm;
 import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.entity.SubmissionAlgorithm;
 import com.ssafy.algogo.submission.event.SubmissionEvent;
+import com.ssafy.algogo.submission.event.SubmissionRematchEvent;
 import com.ssafy.algogo.submission.repository.AlgorithmRepository;
 import com.ssafy.algogo.submission.repository.SubmissionAlgorithmRepository;
 import com.ssafy.algogo.submission.repository.SubmissionRepository;
@@ -126,10 +127,14 @@ public class SubmissionServiceImpl implements SubmissionService {
             submission.getId());
         // 원 제출 삭제 -> 요구된 리뷰 삭제(@OnCascade.DELETE)
         submissionRepository.delete(submission);
+
         // 리뷰 리매칭
-        for (ReviewRematchTargetQueryDto target : reviewRematchTargetList) {
-            reviewMatchService.matchReviewers(target.submission(), target.algorithmList(), 1);
-        }
+//        for (ReviewRematchTargetQueryDto target : reviewRematchTargetList) {
+//            reviewMatchService.matchReviewers(target.submission(), target.algorithmList(), 1);
+//        }
+        
+        // 리매칭 트랜잭션 분리
+        applicationEventPublisher.publishEvent(new SubmissionRematchEvent(reviewRematchTargetList));
     }
 
     private List<Algorithm> createSubmissionAlgorithmAndFetch(

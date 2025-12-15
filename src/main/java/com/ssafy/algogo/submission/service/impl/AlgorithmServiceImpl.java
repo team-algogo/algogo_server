@@ -15,16 +15,16 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AlgorithmServiceImpl implements AlgorithmService {
 
-  private final AlgorithmRepository algorithmRepository;
+    private final AlgorithmRepository algorithmRepository;
 
-  @Override
-  @Transactional(readOnly = true)
-  public AlgorithmListResponseDto searchAlgorithmWithKeyword(String keyword) {
-    // 키워드에 가장 유사한 알고리즘 찾기
-    List<Algorithm> searchedAlgorithms = algorithmRepository.findByKeyword(
-        keyword.toLowerCase().trim());
-    List<AlgorithmResponseDto> searchedAlgorithmResponses = searchedAlgorithms.stream()
-        .map(AlgorithmResponseDto::from).toList();
-    return AlgorithmListResponseDto.from(searchedAlgorithmResponses);
-  }
+    @Override
+    @Transactional(readOnly = true)
+    public AlgorithmListResponseDto searchAlgorithmWithKeyword(String keyword) {
+        // 키워드에 가장 유사한 알고리즘 찾기
+        List<Algorithm> searchedAlgorithms = algorithmRepository.findByKeyword(
+            keyword.toLowerCase().trim().replaceAll(" ", ""));
+        List<AlgorithmResponseDto> searchedAlgorithmResponses = searchedAlgorithms.stream()
+            .map(AlgorithmResponseDto::from).toList();
+        return AlgorithmListResponseDto.from(searchedAlgorithmResponses);
+    }
 }

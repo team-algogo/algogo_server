@@ -15,7 +15,8 @@ public record ProblemSetResponseDto(
 	LocalDateTime modifiedAt,
 	String programType,
 	List<String> categories,
-	Long totalParticipants
+	Long totalParticipants,
+	Long problemCount
 ) {
 
 	public static ProblemSetResponseDto from(Program program) {
@@ -28,7 +29,8 @@ public record ProblemSetResponseDto(
 			program.getModifiedAt(),
 			program.getProgramType().getName(),
 			List.of(),
-			0L           // totalParticipants 도 쿼리에서 채움
+			0L,        // totalParticipants (쿼리에서 채움)
+			0L         // problemCount (쿼리에서 채움)
 		);
 	}
 }

@@ -13,6 +13,17 @@ public interface ProgramQueryRepository {
 		String keyword,
 		String categoryName,
 		String sortBy,
-		String sortDirection
+		String sortDirection,
+		int size,
+		int page
 	);
+
+	long countProblemSetWithFilter(
+		String keyword,
+		String categoryName
+	);
+
+	ProblemSetResponseDto findProblemSetDetail(Long programId);
+
+
 }
