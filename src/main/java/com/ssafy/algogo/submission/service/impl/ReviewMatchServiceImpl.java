@@ -1,5 +1,7 @@
 package com.ssafy.algogo.submission.service.impl;
 
+import com.ssafy.algogo.alarm.entity.AlarmPayload;
+import com.ssafy.algogo.alarm.service.AlarmService;
 import com.ssafy.algogo.review.entity.RequireReview;
 import com.ssafy.algogo.review.repository.RequireReviewRepository;
 import com.ssafy.algogo.submission.dto.ReviewCandidateQueryDto;
@@ -21,6 +23,7 @@ public class ReviewMatchServiceImpl implements ReviewMatchService {
     private final ReviewMatchRanker reviewMatchRanker;
     private final SubmissionRepository submissionRepository;
     private final RequireReviewRepository requireReviewRepository;
+    private final AlarmService alarmService;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -57,5 +60,18 @@ public class ReviewMatchServiceImpl implements ReviewMatchService {
                     .subjectUser(subjectSubmission.getUser()).targetSubmission(target).build())
             .toList();
         requireReviewRepository.saveAll(requireReviewList);
+
+        for (RequireReview requireReview : requireReviewList) {
+            alarmService.createAndSendAlarm(
+                subjectSubmission.getUser().getId(),
+                "REQUIRED_REVIEW",
+                new AlarmPayload(requireReview.getTargetSubmission().getId(), null,
+                    subjectSubmission.getProgramProblem().getId(), null, null),
+                String.format(
+                    "유저(user_id = %d)에게 제출(target_submission_id = %d)건에 요구된 리뷰가 매칭되었습니다. ",
+                    subjectSubmission.getUser().getId(),
+                    requireReview.getTargetSubmission().getId())
+            );
+        }
     }
 }
