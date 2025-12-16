@@ -45,11 +45,13 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 groupRoom.capacity,
                 groupsUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
-                Expressions.nullExpression(Boolean.class)
+                Expressions.nullExpression(Boolean.class),
+                groupsUser.groupRole
             ))
             .from(groupRoom)
             .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
             .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
+            .leftJoin(groupsUser).on(groupsUser.id.eq(groupRoom.id))
             .where(condition)
             .groupBy(groupRoom.id)
             .orderBy(getOrderSpecifiers(pageable))
@@ -194,7 +196,8 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 groupRoom.capacity,
                 groupsUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
-                selfUser.id.countDistinct().gt(0) // 멤버 여부
+                selfUser.id.countDistinct().gt(0), // 멤버 여부
+                groupsUser.groupRole
             ))
             .from(groupRoom)
             .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
