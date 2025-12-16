@@ -1,5 +1,7 @@
 package com.ssafy.algogo.review.service.impl;
 
+import com.ssafy.algogo.alarm.entity.AlarmPayload;
+import com.ssafy.algogo.alarm.service.AlarmService;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.dto.PageInfo;
@@ -37,6 +39,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
 
+    private final AlarmService alarmService;
+
     private final ReviewRepository reviewRepository;
     private final RequireReviewRepository requireReviewRepository;
     private final UserReviewReactionRepository userReviewReactionRepository;
@@ -72,6 +76,13 @@ public class ReviewServiceImpl implements ReviewService {
             .build();
 
         Review saveReview = reviewRepository.save(newReview);
+
+        alarmService.createAndSendAlarm(
+            targetSubmission.getId(),
+            "REVIEW_CREATED",
+            new AlarmPayload(targetSubmission.getId(), saveReview.getId(), null, null, userId),
+            "내 제출물에 새로운 리뷰가 등록되었습니다."
+        );
 
         // 해당 리뷰가 루트 리뷰면..
         if (saveReview.getParentReview() == null) {
