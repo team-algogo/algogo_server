@@ -4,19 +4,24 @@ import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.dto.PageInfo;
 import com.ssafy.algogo.common.dto.SortInfo;
+import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.problem.entity.ProgramProblem;
 import com.ssafy.algogo.problem.repository.ProblemRepository;
 import com.ssafy.algogo.problem.repository.ProgramProblemRepository;
+import com.ssafy.algogo.problem.service.ProgramProblemService;
 import com.ssafy.algogo.program.entity.Program;
 import com.ssafy.algogo.program.entity.ProgramType;
 import com.ssafy.algogo.program.entity.ProgramUser;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
+import com.ssafy.algogo.program.problemset.dto.response.CategoryListResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.CategoryResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
+import com.ssafy.algogo.program.repository.CategoryRepository;
 import com.ssafy.algogo.program.repository.ProgramRepository;
 import com.ssafy.algogo.program.repository.ProgramTypeRepository;
 import com.ssafy.algogo.program.repository.ProgramUserRepository;
@@ -45,6 +50,8 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 	private final ProgramRepository programRepository;
 	private final ProgramUserRepository programUserRepository;
 	private final ProgramQueryRepository programQueryRepository;
+	private final CategoryRepository categoryRepository;
+	private final ProgramProblemService programProblemService;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -173,37 +180,17 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public ProblemSetProblemsPageResponseDto getProgramProblemsPage(
+	public ProgramProblemPageResponseDto getProgramProblemsPage(
 		Long programId,
-		boolean isLogined,
-		String sortBy,
-		String sortDirection,
-		int size,
-		int page
+		Pageable pageable
 	) {
 		if (!programRepository.existsById(programId)) {
 			throw new CustomException("해당 문제집을 찾을 수 없습니다.", ErrorCode.PROGRAM_ID_NOT_FOUND);
 		}
 
-		Sort sort = Sort.by(
-			"desc".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC,
-			sortBy
-		);
-		Pageable pageable = PageRequest.of(page, size, sort);
-
-		try {
-			Page<ProgramProblem> programProblems =
-				programProblemRepository.findAllByProgramId(programId, pageable);
-
-			return ProblemSetProblemsPageResponseDto.of(
-				isLogined, programProblems, sortBy, sortDirection
-			);
-
-		} catch (org.springframework.data.mapping.PropertyReferenceException e) {
-			// 잘못된 필드명으로 정렬 시도 했을경우
-			throw new CustomException("유효하지 않은 정렬 기준입니다: " + sortBy, ErrorCode.INVALID_PARAMETER);
-		}
+		return programProblemService.getAllProgramProblems(programId, pageable);
 	}
+
 
 	@Override
 	@Transactional(readOnly = true)
@@ -219,5 +206,13 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 			.toList();
 
 		return new MyProblemSetListResponseDto(programList);
+	}
+
+	@Override
+	public CategoryListResponseDto getCategoryList() {
+		List<CategoryResponseDto> categoryResponseDtoList = categoryRepository.findAll()
+			.stream()
+			.map(CategoryResponseDto::from).toList();
+		return new CategoryListResponseDto(categoryResponseDtoList);
 	}
 }

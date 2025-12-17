@@ -6,25 +6,23 @@ import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemCreateRequestDto;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemDeleteRequestDto;
+import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.problem.service.impl.ProgramProblemServiceImpl;
-
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
-import com.ssafy.algogo.program.problemset.dto.request.ProgramProblemsDeleteRequestDto;
 import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
-import com.ssafy.algogo.user.entity.UserRole;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.graphql.GraphQlProperties.Http;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -122,14 +120,18 @@ public class ProblemSetController {
 		@RequestParam(defaultValue = "10") int size,
 		@RequestParam(defaultValue = "0") int page
 	) {
-		boolean isLogined = (user != null);
+		//boolean isLogined = (user != null);
 
-		ProblemSetProblemsPageResponseDto data =
-			problemSetService.getProgramProblemsPage(
-				program_id, isLogined, sortBy, sortDirection, size, page
-			);
+		Pageable pageable = PageRequest.of(
+			page,
+			size,
+			Sort.by(Sort.Direction.fromString(sortDirection), sortBy)
+		);
 
-		return new SuccessResponse("문제집 문제 리스트 조회에 성공했습니다.", data);
+		ProgramProblemPageResponseDto response =
+			problemSetService.getProgramProblemsPage(program_id, pageable);
+
+		return new SuccessResponse("문제집 문제 리스트 조회에 성공했습니다.", response);
 	}
 
 
@@ -184,4 +186,9 @@ public class ProblemSetController {
 		System.out.println(authentication.getAuthorities());
 		return "ok";
 	}*/
+
+	@GetMapping("/categories")
+	public SuccessResponse getCategories() {
+		return new SuccessResponse("카테고리 리스트 조회에 성공했습니다.", problemSetService.getCategoryList());
+	}
 }

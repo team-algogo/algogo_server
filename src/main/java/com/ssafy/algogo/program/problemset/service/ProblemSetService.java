@@ -1,12 +1,14 @@
 package com.ssafy.algogo.program.problemset.service;
 
+import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
+import com.ssafy.algogo.program.problemset.dto.response.CategoryListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 public interface ProblemSetService {
 
@@ -30,16 +32,14 @@ public interface ProblemSetService {
 	public void deleteProblemSet(Long programId);
 
 	// 문제집 문제 리스트 조회
-	public ProblemSetProblemsPageResponseDto getProgramProblemsPage(
+	ProgramProblemPageResponseDto getProgramProblemsPage(
 		Long programId,
-		boolean isLogined,
-		String sortBy,
-		String sortDirection,
-		int size,
-		int page
+		Pageable pageable
 	);
 
 	// 내가 참여한 문제집리스트 조회
 	public MyProblemSetListResponseDto getMeJoinProblemSet(Long userId);
 
+	// 문제집 카테고리 조회
+	CategoryListResponseDto getCategoryList();
 }
