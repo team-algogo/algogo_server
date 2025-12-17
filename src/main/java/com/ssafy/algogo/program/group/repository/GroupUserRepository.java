@@ -18,7 +18,7 @@ public interface GroupUserRepository extends JpaRepository<GroupsUser, Long> {
             FROM GroupsUser gu
             JOIN FETCH gu.user u
             WHERE gu.program.id = :programId
-              AND gu.programUserStatus = :status
+              AND gu.programUserStatus = :programUserStatus
         """)
     List<GroupsUser> findByProgramIdAndProgramUserStatusWithUser(Long programId,
         ProgramUserStatus programUserStatus);
