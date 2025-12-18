@@ -74,29 +74,68 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
     }
 
     @Override
-    public GroupRoomResponseDto getGroupRoomDetail(Long programId) {
+    public GroupRoomResponseDto getGroupRoomDetailWithUser(Long programId, Long userId) {
+        QGroupsUser memberUser = new QGroupsUser("memberUser");
+        QGroupsUser selfUser = new QGroupsUser("selfUser");
 
         return query
             .select(Projections.constructor(
                 GroupRoomResponseDto.class,
-                program.id,
+                groupRoom.id,
                 program.title,
                 program.description,
                 program.createdAt,
                 program.modifiedAt,
                 groupRoom.capacity,
-                programUser.id.countDistinct(),
+                memberUser.id.countDistinct(),
+                programProblem.id.countDistinct(),
+                selfUser.id.isNotNull(),
+                selfUser.groupRole
+            ))
+            .from(groupRoom)
+            .join(program).on(program.id.eq(groupRoom.id))
+            .leftJoin(memberUser).on(memberUser.program.id.eq(groupRoom.id)
+                .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
+            .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
+            .leftJoin(selfUser).on(selfUser.program.id.eq(groupRoom.id)
+                .and(selfUser.user.id.eq(userId))
+                .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
+            .where(groupRoom.id.eq(programId))
+            .groupBy(
+                groupRoom.id,
+                program.id,
+                selfUser.id,
+                selfUser.groupRole
+            )
+            .fetchOne();
+    }
+
+    @Override
+    public GroupRoomResponseDto getGroupRoomDetail(Long programId) {
+
+        QGroupsUser memberUser = new QGroupsUser("memberUser");
+
+        return query
+            .select(Projections.constructor(
+                GroupRoomResponseDto.class,
+                groupRoom.id,
+                program.title,
+                program.description,
+                program.createdAt,
+                program.modifiedAt,
+                groupRoom.capacity,
+                memberUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
                 Expressions.nullExpression(Boolean.class),
-                groupsUser.groupRole
+                Expressions.nullExpression(GroupRole.class)
             ))
-            .from(program) // 이거 왜 problem? 그냥 groupRoom 해도 되지않나
-            .join(groupRoom).on(groupRoom.id.eq(program.id))
-            .leftJoin(programUser).on(programUser.program.id.eq(programId))
-            .leftJoin(programProblem).on(programProblem.program.id.eq(programId))
-            .leftJoin(groupsUser).on(groupsUser.id.eq(groupRoom.id))
-            .where(program.id.eq(programId))
-            .groupBy(program.id, groupRoom.capacity)
+            .from(groupRoom)
+            .join(program).on(program.id.eq(groupRoom.id))
+            .leftJoin(memberUser).on(memberUser.program.id.eq(groupRoom.id)
+                .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
+            .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
+            .where(groupRoom.id.eq(programId))
+            .groupBy(groupRoom.id, program.id)
             .fetchOne();
     }
 

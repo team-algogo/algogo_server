@@ -94,8 +94,14 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     @Transactional(readOnly = true)
-    public GroupRoomResponseDto getGroupRoomDetail(Long programId) {
-        GroupRoomResponseDto groupRoomResponseDto = groupRepository.getGroupRoomDetail(programId);
+    public GroupRoomResponseDto getGroupRoomDetail(Long programId, Long userId) {
+        GroupRoomResponseDto groupRoomResponseDto;
+
+        if (userId != null) {
+            groupRoomResponseDto = groupRepository.getGroupRoomDetailWithUser(programId, userId);
+        } else {
+            groupRoomResponseDto = groupRepository.getGroupRoomDetail(programId);
+        }
 
         if (groupRoomResponseDto == null) {
             throw new CustomException("해당 그룹방이 존재하지 않습니다.", ErrorCode.GROUP_NOT_FOUND);
