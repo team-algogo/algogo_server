@@ -14,6 +14,7 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.dto.response.MyGroupRoomResponseDto;
+import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
 import com.ssafy.algogo.program.group.entity.QGroupsUser;
 import java.util.List;
@@ -34,6 +35,8 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
 
         BooleanExpression condition = buildSearchCondition(keyword);
 
+        QGroupsUser memberUser = new QGroupsUser("memberUser");
+
         List<GroupRoomResponseDto> content = query
             .select(Projections.constructor(
                 GroupRoomResponseDto.class,
@@ -43,15 +46,15 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 groupRoom.createdAt,
                 groupRoom.modifiedAt,
                 groupRoom.capacity,
-                groupsUser.id.countDistinct(),
+                memberUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
                 Expressions.nullExpression(Boolean.class),
-                groupsUser.groupRole
+                Expressions.nullExpression(GroupRole.class)
             ))
             .from(groupRoom)
-            .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
+            .leftJoin(memberUser).on(memberUser.program.id.eq(groupRoom.id)
+                .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
             .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
-            .leftJoin(groupsUser).on(groupsUser.id.eq(groupRoom.id))
             .where(condition)
             .groupBy(groupRoom.id)
             .orderBy(getOrderSpecifiers(pageable))
@@ -87,7 +90,7 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 Expressions.nullExpression(Boolean.class),
                 groupsUser.groupRole
             ))
-            .from(program)
+            .from(program) // 이거 왜 problem? 그냥 groupRoom 해도 되지않나
             .join(groupRoom).on(groupRoom.id.eq(program.id))
             .leftJoin(programUser).on(programUser.program.id.eq(programId))
             .leftJoin(programProblem).on(programProblem.program.id.eq(programId))
@@ -183,7 +186,8 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
 
         BooleanExpression condition = buildSearchCondition(keyword);
 
-        QGroupsUser selfUser = new QGroupsUser("selfUser"); // 현재 유저 확인용 별칭
+        QGroupsUser memberUser = new QGroupsUser("memberUser"); // 전체 멤버 수용
+        QGroupsUser selfUser = new QGroupsUser("selfUser"); // 로그인 유저 전용
 
         List<GroupRoomResponseDto> content = query
             .select(Projections.constructor(
@@ -194,21 +198,24 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 groupRoom.createdAt,
                 groupRoom.modifiedAt,
                 groupRoom.capacity,
-                groupsUser.id.countDistinct(),
+                memberUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
-                selfUser.id.countDistinct().gt(0), // 멤버 여부
-                groupsUser.groupRole
+                selfUser.id.isNotNull(),  // 멤버 여부
+                selfUser.groupRole
             ))
             .from(groupRoom)
-            .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
+            .leftJoin(memberUser).on(memberUser.program.id.eq(groupRoom.id)
+                .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
             .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
-            .leftJoin(selfUser).on(
-                selfUser.program.id.eq(groupRoom.id)
-                    .and(selfUser.user.id.eq(userId))
-                    .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
-            )
+            .leftJoin(selfUser).on(selfUser.program.id.eq(groupRoom.id)
+                .and(selfUser.user.id.eq(userId))
+                .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
             .where(condition)
-            .groupBy(groupRoom.id)
+            .groupBy(
+                groupRoom.id,
+                selfUser.id,
+                selfUser.groupRole
+            )
             .orderBy(getOrderSpecifiers(pageable))
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
