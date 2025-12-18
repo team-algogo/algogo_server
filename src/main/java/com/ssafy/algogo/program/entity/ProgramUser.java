@@ -16,7 +16,13 @@ import org.hibernate.annotations.OnDeleteAction;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(
-    name = "programs_users"
+    name = "programs_users",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_programs_users_program_user",
+            columnNames = {"program_id", "user_id"}
+        )
+    }
 )
 public class ProgramUser extends BaseTime {
 
