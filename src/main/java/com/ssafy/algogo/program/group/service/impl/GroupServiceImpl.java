@@ -117,8 +117,8 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(() -> new CustomException("userId에 해당하는 데이터가 DB에 없습니다.",
                 ErrorCode.USER_NOT_FOUND));
 
-        ProgramType programType = programTypeRepository.findByName("group")
-            .orElseThrow(() -> new CustomException("group에 해당하는 데이터가 DB에 없습니다.",
+        ProgramType programType = programTypeRepository.findByName("GROUP")
+            .orElseThrow(() -> new CustomException("GROUP에 해당하는 데이터가 DB에 없습니다.",
                 ErrorCode.PROGRAM_TYPE_NOT_FOUND));
 
         boolean isTitleConflict = programRepository.existsByTitle(
@@ -247,6 +247,9 @@ public class GroupServiceImpl implements GroupService {
                 programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(
                     applicantId, programId, ProgramUserStatus.ACTIVE);
             if (existingUserInProgram.isPresent()) {
+                // 현재 요청을 ACCEPTED로 바꾸고 이미 참여한 회원임을 알림
+                programJoin.updateJoinStatus(JoinStatus.ACCEPTED);
+                programJoinRepository.save(programJoin);
                 throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
             }
 
@@ -339,6 +342,9 @@ public class GroupServiceImpl implements GroupService {
                 programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(
                     userId, programId, ProgramUserStatus.ACTIVE);
             if (existingUserInProgram.isPresent()) {
+
+                programInvite.updateInviteStatus(InviteStatus.ACCEPTED);
+                programInviteRepository.save(programInvite);
                 throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
             }
 
@@ -485,7 +491,7 @@ public class GroupServiceImpl implements GroupService {
             || tryUser.getGroupRole() == GroupRole.MANAGER) {
             // 자신만 삭제 가능
             if (!tryUser.getId().equals(targetUser.getId())) {
-                throw new CustomException("관라지가 아닌 멤버는 자기 자신만 삭제할 수 있습니다.", ErrorCode.BAD_REQUEST);
+                throw new CustomException("관리자가 아닌 멤버는 자기 자신만 삭제할 수 있습니다.", ErrorCode.BAD_REQUEST);
             }
 
             targetUser.updateProgramUserStatus(ProgramUserStatus.WITHDRAW);

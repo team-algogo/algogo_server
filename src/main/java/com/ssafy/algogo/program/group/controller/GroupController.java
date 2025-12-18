@@ -121,7 +121,7 @@ public class GroupController {
 
     @PutMapping("/{programId}")
     @ResponseStatus(HttpStatus.OK)
-    @GroupAuthorize(minRole = GroupRole.MANAGER)
+    @GroupAuthorize(minRole = GroupRole.ADMIN)
     public SuccessResponse updateGroupRoom(
         @PathVariable @GroupId Long programId,
         @RequestBody UpdateGroupRoomRequestDto updateGroupRoomRequestDto
@@ -135,7 +135,7 @@ public class GroupController {
     @DeleteMapping("/{programId}")
     @ResponseStatus(HttpStatus.OK)
     @GroupAuthorize(minRole = GroupRole.MANAGER)
-    public SuccessResponse deleteGroupRoom( // cascade 문제없는 지 검증
+    public SuccessResponse deleteGroupRoom(
         @PathVariable @GroupId Long programId
     ) {
         groupService.deleteGroupRoom(programId);
@@ -145,7 +145,7 @@ public class GroupController {
 
     @PostMapping("/{programId}/join")
     @ResponseStatus(HttpStatus.OK)
-    public SuccessResponse applyGroupJoin( // 검증
+    public SuccessResponse applyGroupJoin(
         @AuthenticationPrincipal CustomUserDetails customUserDetails,
         @PathVariable Long programId
     ) {
@@ -157,7 +157,7 @@ public class GroupController {
     @PutMapping("/{programId}/join/{joinId}")
     @ResponseStatus(HttpStatus.OK)
     @GroupAuthorize(minRole = GroupRole.ADMIN)
-    public SuccessResponse updateGroupJoinState( // 검증
+    public SuccessResponse updateGroupJoinState(
         @AuthenticationPrincipal CustomUserDetails customUserDetails,
         @PathVariable @GroupId Long programId,
         @PathVariable Long joinId,
@@ -172,7 +172,7 @@ public class GroupController {
     @GetMapping("/{programId}/join/lists")
     @ResponseStatus(HttpStatus.OK)
     @GroupAuthorize(minRole = GroupRole.ADMIN)
-    public SuccessResponse getGroupJoinState( // 검증
+    public SuccessResponse getGroupJoinState(
         @PathVariable @GroupId Long programId
     ) {
         GetProgramJoinStateListResponseDto getProgramJoinStateListResponseDto = groupService.getGroupJoinState(
@@ -185,7 +185,7 @@ public class GroupController {
     @PostMapping("/{programId}/invite")
     @ResponseStatus(HttpStatus.OK)
     @GroupAuthorize(minRole = GroupRole.ADMIN)
-    public SuccessResponse applyGroupInvite( // 검증
+    public SuccessResponse applyGroupInvite(
         @PathVariable @GroupId Long programId,
         @RequestBody @Valid ApplyProgramInviteRequestDto applyProgramInviteRequestDto
     ) {
@@ -196,7 +196,7 @@ public class GroupController {
 
     @PutMapping("/{programId}/invite/{inviteId}")
     @ResponseStatus(HttpStatus.OK)
-    public SuccessResponse updateGroupInviteState( // 검증
+    public SuccessResponse updateGroupInviteState(
         @AuthenticationPrincipal CustomUserDetails customUserDetails,
         @PathVariable Long programId,
         @PathVariable Long inviteId,
@@ -211,7 +211,7 @@ public class GroupController {
     @DeleteMapping("/{programId}/invite/{inviteId}")
     @ResponseStatus(HttpStatus.OK)
     @GroupAuthorize(minRole = GroupRole.ADMIN)
-    public SuccessResponse deleteGroupInvite( // 검증
+    public SuccessResponse deleteGroupInvite(
         @PathVariable @GroupId Long programId,
         @PathVariable Long inviteId
     ) {
@@ -223,7 +223,7 @@ public class GroupController {
     @GetMapping("/{programId}/invite/lists")
     @ResponseStatus(HttpStatus.OK)
     @GroupAuthorize(minRole = GroupRole.ADMIN)
-    public SuccessResponse getGroupInviteState( // 검증
+    public SuccessResponse getGroupInviteState(
         @PathVariable @GroupId Long programId
     ) {
         GetProgramInviteStateListResponseDto getProgramInviteStateListResponseDto = groupService.getGroupInviteState(
@@ -236,7 +236,7 @@ public class GroupController {
     @GetMapping("/{programId}/users")
     @ResponseStatus(HttpStatus.OK)
     @GroupAuthorize(minRole = GroupRole.USER)
-    public SuccessResponse getGroupMember( // 검증
+    public SuccessResponse getGroupMember(
         @PathVariable @GroupId Long programId
     ) {
         GetGroupMemberListResponseDto getGroupMemberListResponseDto = groupService.getGroupMember(
@@ -248,7 +248,7 @@ public class GroupController {
     @PutMapping("/{programId}/users/{programUserId}/role")
     @ResponseStatus(HttpStatus.OK)
     @GroupAuthorize(minRole = GroupRole.ADMIN)
-    public SuccessResponse updateGroupMemberRole( // 검증
+    public SuccessResponse updateGroupMemberRole(
         @PathVariable @GroupId Long programId,
         @PathVariable Long programUserId,
         @RequestBody @Valid UpdateGroupMemberRoleRequestDto updateGroupMemberRoleRequestDto

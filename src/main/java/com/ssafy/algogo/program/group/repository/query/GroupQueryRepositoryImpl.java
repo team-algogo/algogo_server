@@ -146,7 +146,8 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
         Pageable pageable
     ) {
 
-        QGroupsUser selfUser = new QGroupsUser("selfUser"); // 내 role 조회용 별칭
+        QGroupsUser memberUser = new QGroupsUser("memberUser");
+        QGroupsUser selfUser = new QGroupsUser("selfUser");
 
         List<MyGroupRoomResponseDto> content = query
             .select(Projections.constructor(
@@ -157,20 +158,22 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 groupRoom.createdAt,
                 groupRoom.modifiedAt,
                 groupRoom.capacity,
-                groupsUser.id.countDistinct(),
+                memberUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
-                selfUser.groupRole      // role
+                selfUser.groupRole
             ))
             .from(groupRoom)
-            .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
+            .join(selfUser).on(selfUser.program.id.eq(groupRoom.id)
+                .and(selfUser.user.id.eq(userId))
+                .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
+            .leftJoin(memberUser).on(memberUser.program.id.eq(groupRoom.id)
+                .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
             .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
-            .leftJoin(selfUser).on(
-                selfUser.program.id.eq(groupRoom.id)
-                    .and(selfUser.user.id.eq(userId))
-                    .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
-            )
             .where(groupRoom.id.in(programIds))
-            .groupBy(groupRoom.id)
+            .groupBy(
+                groupRoom.id,
+                selfUser.groupRole
+            )
             .orderBy(getOrderSpecifiers(pageable))
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
@@ -225,7 +228,7 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
 
         BooleanExpression condition = buildSearchCondition(keyword);
 
-        QGroupsUser memberUser = new QGroupsUser("memberUser"); // 전체 멤버 수용
+        QGroupsUser memberUser = new QGroupsUser("memberUser"); // 전체 멤버 카운트용
         QGroupsUser selfUser = new QGroupsUser("selfUser"); // 로그인 유저 전용
 
         List<GroupRoomResponseDto> content = query
