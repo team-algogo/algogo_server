@@ -9,4 +9,6 @@ public interface RequireReviewQueryRepository {
     List<RequiredCodeReviewResponseDto> getRequiredReviews(Long userId);
 
     List<ReviewRematchTargetQueryDto> findAllReviewRematchTargets(Long submissionId);
+
+    void deleteRequiredReviewsByUserAndProgram(Long userId, Long programId);
 }
