@@ -9,9 +9,11 @@ import org.springframework.stereotype.Repository;
 
 public interface ProgramUserRepository extends JpaRepository<ProgramUser, Long> {
 
-	Optional<ProgramUser> findByUserIdAndProgramIdAndProgramUserStatus(Long userId, Long programId,
-		ProgramUserStatus programUserStatus);
+    Optional<ProgramUser> findByUserIdAndProgramIdAndProgramUserStatus(Long userId, Long programId,
+        ProgramUserStatus programUserStatus);
 
-	// 특정 유저가 참여한 프로그램들 전부
-	List<ProgramUser> findAllByUserId(Long userId);
+    // 특정 유저가 참여한 프로그램들 전부
+    List<ProgramUser> findAllByUserId(Long userId);
+
+    Optional<ProgramUser> findByUserIdAndProgramId(Long userId, Long programId);
 }
