@@ -44,6 +44,7 @@ import com.ssafy.algogo.program.repository.ProgramRepository;
 import com.ssafy.algogo.program.repository.ProgramTypeRepository;
 import com.ssafy.algogo.program.repository.ProgramUserRepository;
 import com.ssafy.algogo.program.service.ProgramService;
+import com.ssafy.algogo.review.repository.RequireReviewRepository;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
 import java.util.List;
@@ -74,6 +75,7 @@ public class GroupServiceImpl implements GroupService {
     private final ProgramJoinRepository programJoinRepository;
     private final ProgramInviteRepository programInviteRepository;
     private final ProgramUserRepository programUserRepository;
+    private final RequireReviewRepository requireReviewRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -94,8 +96,14 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     @Transactional(readOnly = true)
-    public GroupRoomResponseDto getGroupRoomDetail(Long programId) {
-        GroupRoomResponseDto groupRoomResponseDto = groupRepository.getGroupRoomDetail(programId);
+    public GroupRoomResponseDto getGroupRoomDetail(Long programId, Long userId) {
+        GroupRoomResponseDto groupRoomResponseDto;
+
+        if (userId != null) {
+            groupRoomResponseDto = groupRepository.getGroupRoomDetailWithUser(programId, userId);
+        } else {
+            groupRoomResponseDto = groupRepository.getGroupRoomDetail(programId);
+        }
 
         if (groupRoomResponseDto == null) {
             throw new CustomException("해당 그룹방이 존재하지 않습니다.", ErrorCode.GROUP_NOT_FOUND);
@@ -111,8 +119,8 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(() -> new CustomException("userId에 해당하는 데이터가 DB에 없습니다.",
                 ErrorCode.USER_NOT_FOUND));
 
-        ProgramType programType = programTypeRepository.findByName("group")
-            .orElseThrow(() -> new CustomException("group에 해당하는 데이터가 DB에 없습니다.",
+        ProgramType programType = programTypeRepository.findByName("GROUP")
+            .orElseThrow(() -> new CustomException("GROUP에 해당하는 데이터가 DB에 없습니다.",
                 ErrorCode.PROGRAM_TYPE_NOT_FOUND));
 
         boolean isTitleConflict = programRepository.existsByTitle(
@@ -234,30 +242,49 @@ public class GroupServiceImpl implements GroupService {
         // 처리 로직
         Program program = programJoin.getProgram();
         User applicant = programJoin.getUser();
-        if (updateGroupJoinStateRequestDto.getIsAccepted().equals("ACCEPTED")) {
 
-            // 신청자가 이미 ACTIVE 상태인지 검사
-            Optional<ProgramUser> existingUserInProgram =
-                programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(
-                    applicantId, programId, ProgramUserStatus.ACTIVE);
-            if (existingUserInProgram.isPresent()) {
-                throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
+        if ("ACCEPTED".equals(updateGroupJoinStateRequestDto.getIsAccepted())) {
+
+            Optional<ProgramUser> existingProgramUser =
+                programUserRepository.findByUserIdAndProgramId(
+                    applicant.getId(), programId
+                );
+
+            if (existingProgramUser.isPresent()) {
+                ProgramUser programUser = existingProgramUser.get();
+
+                //이미 참여한 회원인 경우
+                if (programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE) {
+                    programJoin.updateJoinStatus(JoinStatus.ACCEPTED);
+                    programJoinRepository.save(programJoin);
+                    throw new CustomException(
+                        "이미 프로그램에 참여한 회원입니다.",
+                        ErrorCode.PROGRAM_ALREADY_JOINED
+                    );
+                }
+
+                // 이전에 참여했던 회원인 경우
+                programUser.updateProgramUserStatus(ProgramUserStatus.ACTIVE);
+                programUserRepository.save(programUser);
+
+            } else {
+                // 최초 참여 → 신규 생성
+                GroupsUser groupsUser = GroupsUser.create(
+                    ProgramUserStatus.ACTIVE,
+                    program,
+                    applicant,
+                    GroupRole.USER
+                );
+                groupUserRepository.save(groupsUser);
             }
 
-            // 신청 승인 → 프로그램 유저 등록
-            GroupsUser groupsUser = GroupsUser.create(ProgramUserStatus.ACTIVE, program, applicant,
-                GroupRole.USER);
-            groupUserRepository.save(groupsUser);
-
-            // program_join 상태 업데이트
             programJoin.updateJoinStatus(JoinStatus.ACCEPTED);
             programJoinRepository.save(programJoin);
 
-        } else if (updateGroupJoinStateRequestDto.getIsAccepted().equals("DENIED")) {
+        } else if ("DENIED".equals(updateGroupJoinStateRequestDto.getIsAccepted())) {
 
             programJoin.updateJoinStatus(JoinStatus.DENIED);
             programJoinRepository.save(programJoin);
-
         }
 
         // 신청한 사람한테 알람 전송
@@ -326,32 +353,46 @@ public class GroupServiceImpl implements GroupService {
         }
 
         // 처리 로직
-        if (updateGroupInviteStateRequestDto.getIsAccepted().equals("ACCEPTED")) {
+        if ("ACCEPTED".equals(updateGroupInviteStateRequestDto.getIsAccepted())) {
 
-            // 신청자가 이미 ACTIVE 상태인지 검사
-            Optional<ProgramUser> existingUserInProgram =
-                programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(
-                    userId, programId, ProgramUserStatus.ACTIVE);
-            if (existingUserInProgram.isPresent()) {
-                throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
+            Optional<ProgramUser> existingProgramUser =
+                programUserRepository.findByUserIdAndProgramId(userId, programId);
+
+            if (existingProgramUser.isPresent()) {
+                ProgramUser programUser = existingProgramUser.get();
+
+                if (programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE) {
+                    programInvite.updateInviteStatus(InviteStatus.ACCEPTED);
+                    programInviteRepository.save(programInvite);
+                    throw new CustomException(
+                        "이미 프로그램에 참여한 회원입니다.",
+                        ErrorCode.PROGRAM_ALREADY_JOINED
+                    );
+                }
+
+                // WITHDRAW → ACTIVE 복구
+                programUser.updateProgramUserStatus(ProgramUserStatus.ACTIVE);
+                programUserRepository.save(programUser);
+
+            } else {
+                // 최초 참여 → 신규 생성
+                Program program = programInvite.getProgram();
+                User user = programInvite.getUser();
+
+                GroupsUser groupsUser = GroupsUser.create(
+                    ProgramUserStatus.ACTIVE,
+                    program,
+                    user,
+                    GroupRole.USER
+                );
+                programUserRepository.save(groupsUser);
             }
 
-            // 초대 승인 → 프로그램에 사용자를 추가
-            Program program = programInvite.getProgram();
-            User user = programInvite.getUser();
-
-            // ProgramUser 생성 (사용자가 그룹에 참여하도록 설정)
-            GroupsUser groupsUser = GroupsUser.create(ProgramUserStatus.ACTIVE, program, user,
-                GroupRole.USER);
-            programUserRepository.save(groupsUser);
-
-            // 초대 상태를 ACCEPTED로 변경
             programInvite.updateInviteStatus(InviteStatus.ACCEPTED);
             programInviteRepository.save(programInvite);
 
-        } else if (updateGroupInviteStateRequestDto.getIsAccepted().equals("DENIED")) {
+        } else if ("DENIED".equals(updateGroupInviteStateRequestDto.getIsAccepted())) {
 
-            // 초대 거절 → 상태만 변경
             programInvite.updateInviteStatus(InviteStatus.DENIED);
             programInviteRepository.save(programInvite);
         }
@@ -465,26 +506,28 @@ public class GroupServiceImpl implements GroupService {
             throw new CustomException("이미 삭제된 사용자 입니다.", ErrorCode.DUPLICATE_RESOURCE);
         }
 
+        // === 권한 체크 ===
         if (tryUser.getGroupRole() == GroupRole.ADMIN) {
-            // 관리자는 자신을 제외한 다른 유저 삭제 가능
             if (tryUser.getId().equals(targetUser.getId())) {
-                throw new CustomException("관리자는 자신을 삭제할 수 없습니다.", ErrorCode.BAD_REQUEST);
+                throw new CustomException("관리자는 자신을 삭제할 수 없습니다.", ErrorCode.BAD_REQUEST
+                );
             }
-
-            targetUser.updateProgramUserStatus(ProgramUserStatus.WITHDRAW);
-            groupUserRepository.save(targetUser);
-        }
-        // 일반 사용자(USER) 또는 관리자(MANAGER)일 경우
-        else if (tryUser.getGroupRole() == GroupRole.USER
-            || tryUser.getGroupRole() == GroupRole.MANAGER) {
-            // 자신만 삭제 가능
+        } else {
+            // USER / MANAGER
             if (!tryUser.getId().equals(targetUser.getId())) {
-                throw new CustomException("관라지가 아닌 멤버는 자기 자신만 삭제할 수 있습니다.", ErrorCode.BAD_REQUEST);
+                throw new CustomException("관리자가 아닌 멤버는 자기 자신만 삭제할 수 있습니다.", ErrorCode.BAD_REQUEST
+                );
             }
-
-            targetUser.updateProgramUserStatus(ProgramUserStatus.WITHDRAW);
-            groupUserRepository.save(targetUser);
         }
+
+        // 삭제되는 유저가 배정받은 요구된 리뷰 삭제
+        requireReviewRepository.deleteRequiredReviewsByUserAndProgram(
+            targetUser.getUser().getId(),
+            programId
+        );
+
+        targetUser.updateProgramUserStatus(ProgramUserStatus.WITHDRAW);
+        groupUserRepository.save(targetUser);
     }
 
     @Override

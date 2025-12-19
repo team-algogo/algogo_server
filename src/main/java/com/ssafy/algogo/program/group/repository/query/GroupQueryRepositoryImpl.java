@@ -14,6 +14,7 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.dto.response.MyGroupRoomResponseDto;
+import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
 import com.ssafy.algogo.program.group.entity.QGroupsUser;
 import java.util.List;
@@ -34,6 +35,8 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
 
         BooleanExpression condition = buildSearchCondition(keyword);
 
+        QGroupsUser memberUser = new QGroupsUser("memberUser");
+
         List<GroupRoomResponseDto> content = query
             .select(Projections.constructor(
                 GroupRoomResponseDto.class,
@@ -43,15 +46,15 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 groupRoom.createdAt,
                 groupRoom.modifiedAt,
                 groupRoom.capacity,
-                groupsUser.id.countDistinct(),
+                memberUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
                 Expressions.nullExpression(Boolean.class),
-                groupsUser.groupRole
+                Expressions.nullExpression(GroupRole.class)
             ))
             .from(groupRoom)
-            .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
+            .leftJoin(memberUser).on(memberUser.program.id.eq(groupRoom.id)
+                .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
             .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
-            .leftJoin(groupsUser).on(groupsUser.id.eq(groupRoom.id))
             .where(condition)
             .groupBy(groupRoom.id)
             .orderBy(getOrderSpecifiers(pageable))
@@ -71,29 +74,68 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
     }
 
     @Override
-    public GroupRoomResponseDto getGroupRoomDetail(Long programId) {
+    public GroupRoomResponseDto getGroupRoomDetailWithUser(Long programId, Long userId) {
+        QGroupsUser memberUser = new QGroupsUser("memberUser");
+        QGroupsUser selfUser = new QGroupsUser("selfUser");
 
         return query
             .select(Projections.constructor(
                 GroupRoomResponseDto.class,
-                program.id,
+                groupRoom.id,
                 program.title,
                 program.description,
                 program.createdAt,
                 program.modifiedAt,
                 groupRoom.capacity,
-                programUser.id.countDistinct(),
+                memberUser.id.countDistinct(),
+                programProblem.id.countDistinct(),
+                selfUser.id.isNotNull(),
+                selfUser.groupRole
+            ))
+            .from(groupRoom)
+            .join(program).on(program.id.eq(groupRoom.id))
+            .leftJoin(memberUser).on(memberUser.program.id.eq(groupRoom.id)
+                .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
+            .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
+            .leftJoin(selfUser).on(selfUser.program.id.eq(groupRoom.id)
+                .and(selfUser.user.id.eq(userId))
+                .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
+            .where(groupRoom.id.eq(programId))
+            .groupBy(
+                groupRoom.id,
+                program.id,
+                selfUser.id,
+                selfUser.groupRole
+            )
+            .fetchOne();
+    }
+
+    @Override
+    public GroupRoomResponseDto getGroupRoomDetail(Long programId) {
+
+        QGroupsUser memberUser = new QGroupsUser("memberUser");
+
+        return query
+            .select(Projections.constructor(
+                GroupRoomResponseDto.class,
+                groupRoom.id,
+                program.title,
+                program.description,
+                program.createdAt,
+                program.modifiedAt,
+                groupRoom.capacity,
+                memberUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
                 Expressions.nullExpression(Boolean.class),
-                groupsUser.groupRole
+                Expressions.nullExpression(GroupRole.class)
             ))
-            .from(program)
-            .join(groupRoom).on(groupRoom.id.eq(program.id))
-            .leftJoin(programUser).on(programUser.program.id.eq(programId))
-            .leftJoin(programProblem).on(programProblem.program.id.eq(programId))
-            .leftJoin(groupsUser).on(groupsUser.id.eq(groupRoom.id))
-            .where(program.id.eq(programId))
-            .groupBy(program.id, groupRoom.capacity)
+            .from(groupRoom)
+            .join(program).on(program.id.eq(groupRoom.id))
+            .leftJoin(memberUser).on(memberUser.program.id.eq(groupRoom.id)
+                .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
+            .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
+            .where(groupRoom.id.eq(programId))
+            .groupBy(groupRoom.id, program.id)
             .fetchOne();
     }
 
@@ -104,7 +146,8 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
         Pageable pageable
     ) {
 
-        QGroupsUser selfUser = new QGroupsUser("selfUser"); // 내 role 조회용 별칭
+        QGroupsUser memberUser = new QGroupsUser("memberUser");
+        QGroupsUser selfUser = new QGroupsUser("selfUser");
 
         List<MyGroupRoomResponseDto> content = query
             .select(Projections.constructor(
@@ -115,20 +158,22 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 groupRoom.createdAt,
                 groupRoom.modifiedAt,
                 groupRoom.capacity,
-                groupsUser.id.countDistinct(),
+                memberUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
-                selfUser.groupRole      // role
+                selfUser.groupRole
             ))
             .from(groupRoom)
-            .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
+            .join(selfUser).on(selfUser.program.id.eq(groupRoom.id)
+                .and(selfUser.user.id.eq(userId))
+                .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
+            .leftJoin(memberUser).on(memberUser.program.id.eq(groupRoom.id)
+                .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
             .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
-            .leftJoin(selfUser).on(
-                selfUser.program.id.eq(groupRoom.id)
-                    .and(selfUser.user.id.eq(userId))
-                    .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
-            )
             .where(groupRoom.id.in(programIds))
-            .groupBy(groupRoom.id)
+            .groupBy(
+                groupRoom.id,
+                selfUser.groupRole
+            )
             .orderBy(getOrderSpecifiers(pageable))
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
@@ -183,7 +228,8 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
 
         BooleanExpression condition = buildSearchCondition(keyword);
 
-        QGroupsUser selfUser = new QGroupsUser("selfUser"); // 현재 유저 확인용 별칭
+        QGroupsUser memberUser = new QGroupsUser("memberUser"); // 전체 멤버 카운트용
+        QGroupsUser selfUser = new QGroupsUser("selfUser"); // 로그인 유저 전용
 
         List<GroupRoomResponseDto> content = query
             .select(Projections.constructor(
@@ -194,21 +240,24 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
                 groupRoom.createdAt,
                 groupRoom.modifiedAt,
                 groupRoom.capacity,
-                groupsUser.id.countDistinct(),
+                memberUser.id.countDistinct(),
                 programProblem.id.countDistinct(),
-                selfUser.id.countDistinct().gt(0), // 멤버 여부
-                groupsUser.groupRole
+                selfUser.id.isNotNull(),  // 멤버 여부
+                selfUser.groupRole
             ))
             .from(groupRoom)
-            .leftJoin(groupsUser).on(groupsUser.program.id.eq(groupRoom.id))
+            .leftJoin(memberUser).on(memberUser.program.id.eq(groupRoom.id)
+                .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
             .leftJoin(programProblem).on(programProblem.program.id.eq(groupRoom.id))
-            .leftJoin(selfUser).on(
-                selfUser.program.id.eq(groupRoom.id)
-                    .and(selfUser.user.id.eq(userId))
-                    .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
-            )
+            .leftJoin(selfUser).on(selfUser.program.id.eq(groupRoom.id)
+                .and(selfUser.user.id.eq(userId))
+                .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)))
             .where(condition)
-            .groupBy(groupRoom.id)
+            .groupBy(
+                groupRoom.id,
+                selfUser.id,
+                selfUser.groupRole
+            )
             .orderBy(getOrderSpecifiers(pageable))
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())

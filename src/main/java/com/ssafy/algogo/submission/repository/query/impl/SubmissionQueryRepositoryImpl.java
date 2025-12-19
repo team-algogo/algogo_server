@@ -6,6 +6,7 @@ import static com.ssafy.algogo.problem.entity.QProblem.problem;
 import static com.ssafy.algogo.problem.entity.QProgramProblem.programProblem;
 import static com.ssafy.algogo.program.entity.QProgram.program;
 import static com.ssafy.algogo.program.entity.QProgramType.programType;
+import static com.ssafy.algogo.program.entity.QProgramUser.programUser;
 import static com.ssafy.algogo.review.entity.QRequireReview.requireReview;
 import static com.ssafy.algogo.review.entity.QReview.review;
 import static com.ssafy.algogo.submission.entity.QAlgorithm.algorithm;
@@ -29,6 +30,7 @@ import com.ssafy.algogo.program.dto.response.ProgramResponseDto;
 import com.ssafy.algogo.program.dto.response.ProgramTypeResponseDto;
 import com.ssafy.algogo.program.entity.QProgram;
 import com.ssafy.algogo.program.entity.QProgramType;
+import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
 import com.ssafy.algogo.review.entity.QRequireReview;
 import com.ssafy.algogo.review.entity.QReview;
 import com.ssafy.algogo.submission.dto.ReviewCandidateQueryDto;
@@ -305,6 +307,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
             .fetch();
     }
 
+
     private Predicate findUserSubmissionsDynamicConditions(
         UserSubmissionRequestDto userSubmissionRequestDto) {
         return ExpressionUtils.allOf(
@@ -314,6 +317,24 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
             eqPlatform(userSubmissionRequestDto.getPlatform()),
             eqProgramType(userSubmissionRequestDto.getProgramType())
         );
+    }
+
+    @Override
+    public Boolean isSubmissionAuthorActive(Long submissionId) {
+        return jpaQueryFactory
+            .select(
+                programUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)
+            )
+            .from(s)
+            .join(s.programProblem, pp)
+            .join(pp.program, pg)
+            .join(programUser)
+            .on(
+                programUser.user.id.eq(s.user.id)
+                    .and(programUser.program.id.eq(pg.id))
+            )
+            .where(s.id.eq(submissionId))
+            .fetchOne();
     }
 
     private BooleanExpression eqLanguage(String language) {

@@ -79,10 +79,13 @@ public class GroupController {
     @GetMapping("/{programId}")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse getGroupRoomDetail(
-        @PathVariable Long programId
+        @PathVariable Long programId,
+        @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
+        Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
 
-        GroupRoomResponseDto groupRoomResponseDto = groupService.getGroupRoomDetail(programId);
+        GroupRoomResponseDto groupRoomResponseDto = groupService.getGroupRoomDetail(programId,
+            userId);
 
         return new SuccessResponse("그룹방 상세 정보 조회 성공", groupRoomResponseDto);
     }
@@ -118,7 +121,7 @@ public class GroupController {
 
     @PutMapping("/{programId}")
     @ResponseStatus(HttpStatus.OK)
-    @GroupAuthorize(minRole = GroupRole.MANAGER)
+    @GroupAuthorize(minRole = GroupRole.ADMIN)
     public SuccessResponse updateGroupRoom(
         @PathVariable @GroupId Long programId,
         @RequestBody UpdateGroupRoomRequestDto updateGroupRoomRequestDto

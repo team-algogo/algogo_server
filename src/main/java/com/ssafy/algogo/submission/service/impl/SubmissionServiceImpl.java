@@ -9,6 +9,7 @@ import com.ssafy.algogo.review.repository.RequireReviewRepository;
 import com.ssafy.algogo.submission.dto.ReviewRematchTargetQueryDto;
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionAuthorActiveResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
 import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
@@ -132,7 +133,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 //        for (ReviewRematchTargetQueryDto target : reviewRematchTargetList) {
 //            reviewMatchService.matchReviewers(target.submission(), target.algorithmList(), 1);
 //        }
-        
+
         // 리매칭 트랜잭션 분리
         applicationEventPublisher.publishEvent(new SubmissionRematchEvent(reviewRematchTargetList));
     }
@@ -202,4 +203,18 @@ public class SubmissionServiceImpl implements SubmissionService {
         };
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public SubmissionAuthorActiveResponseDto getSubmissionAuthorActive(Long submissionId) {
+        Boolean isActive = submissionRepository.isSubmissionAuthorActive(submissionId);
+
+        if (isActive == null) {
+            throw new CustomException(
+                "해당 코드 제출이 존재하지 않습니다.",
+                ErrorCode.SUBMISSION_NOT_FOUND
+            );
+        }
+
+        return new SubmissionAuthorActiveResponseDto(isActive);
+    }
 }

@@ -12,12 +12,14 @@ import static com.ssafy.algogo.submission.entity.QSubmissionAlgorithm.submission
 import static com.ssafy.algogo.user.entity.QUser.user;
 
 import com.querydsl.core.types.Projections;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
 import com.ssafy.algogo.submission.dto.ReviewRematchTargetQueryDto;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 @RequiredArgsConstructor
@@ -69,5 +71,23 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
                     )
                 )
             );
+    }
+
+    @Override
+    @Transactional
+    public void deleteRequiredReviewsByUserAndProgram(Long userId, Long programId) {
+        query
+            .delete(requireReview)
+            .where(
+                requireReview.subjectUser.id.eq(userId),
+                requireReview.subjectSubmission.id.in(
+                    JPAExpressions
+                        .select(submission.id)
+                        .from(submission)
+                        .innerJoin(submission.programProblem, programProblem)
+                        .where(programProblem.program.id.eq(programId))
+                )
+            )
+            .execute();
     }
 }

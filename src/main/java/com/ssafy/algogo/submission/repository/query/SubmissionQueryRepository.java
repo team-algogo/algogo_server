@@ -21,4 +21,6 @@ public interface SubmissionQueryRepository {
     List<Long> findRecentSubmissionIds();
 
     List<Long> findTrendProgramProblemIds();
+
+    Boolean isSubmissionAuthorActive(Long submissionId);
 }

@@ -22,7 +22,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface GroupService {
 
-    GroupRoomResponseDto getGroupRoomDetail(Long programId);
+    GroupRoomResponseDto getGroupRoomDetail(Long programId, Long userId);
 
     GroupRoomResponseDto createGroupRoom(Long userId,
         CreateGroupRoomRequestDto createGroupRoomRequestDto);
