@@ -10,7 +10,13 @@ import lombok.*;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
-    name = "problems"
+    name = "problems",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_problems_platform_type_problem_no",
+            columnNames = {"platform_type", "problem_no"}
+        )
+    }
 )
 public class Problem {
 
