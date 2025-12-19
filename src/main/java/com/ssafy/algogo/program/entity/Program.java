@@ -6,14 +6,17 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(
+    name = "programs",
     uniqueConstraints = {
         @UniqueConstraint(name = "uk_program_title", columnNames = {"title"})
     }
@@ -34,6 +37,7 @@ public class Program extends BaseTime {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "program_type_id")
     private ProgramType programType;
 
@@ -42,5 +46,14 @@ public class Program extends BaseTime {
         this.description = description;
         this.thumbnail = thumbnail;
         this.programType = programType;
+    }
+
+    public void updateProgram(String title, String description) {
+        if (title != null) {
+            this.title = title;
+        }
+        if (description != null) {
+            this.description = description;
+        }
     }
 }

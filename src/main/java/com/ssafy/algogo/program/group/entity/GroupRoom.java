@@ -4,6 +4,7 @@ import com.ssafy.algogo.program.entity.Program;
 import com.ssafy.algogo.program.entity.ProgramType;
 import com.ssafy.algogo.program.group.dto.request.CreateGroupRoomRequestDto;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -11,6 +12,9 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(
+    name = "group_rooms"
+)
 public class GroupRoom extends Program {
 
     @NotNull
@@ -21,6 +25,16 @@ public class GroupRoom extends Program {
         this.capacity = capacity;
     }
 
-    public static GroupRoom create(String title, String description, ProgramType programType, Long capacity) {
+    public static GroupRoom create(String title, String description, ProgramType programType,
+        Long capacity) {
         return new GroupRoom(title, description, programType, capacity);
-    }}
+    }
+
+    // 그룹방 정보 변경 메서드
+    public void updateGroupRoom(String title, String description, Long capacity) {
+        super.updateProgram(title, description);
+        if (capacity != null) {
+            this.capacity = capacity;
+        }
+    }
+}

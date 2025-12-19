@@ -13,12 +13,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/problems")
 public class ProblemController {
+
     private final ProblemService problemService;
 
     @GetMapping("/{programProblemId}")
-    public ResponseEntity<SuccessResponse> getProblem(@PathVariable Long programProblemId){
+    public ResponseEntity<SuccessResponse> getProblem(@PathVariable Long programProblemId) {
         return ResponseEntity.ok(
-                SuccessResponse
-                        .success("Problem 조회 성공", problemService.getProblem(programProblemId)));
+            SuccessResponse
+                .success("Problem 조회 성공", problemService.getProblem(programProblemId)));
     }
 }

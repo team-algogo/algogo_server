@@ -11,6 +11,9 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(
+    name = "group_rooms_users"
+)
 public class GroupsUser extends ProgramUser {
 
     @NotNull
@@ -19,13 +22,19 @@ public class GroupsUser extends ProgramUser {
     private GroupRole groupRole;
 
     // 명시적 생성자 추가
-    private GroupsUser(ProgramStatus programStatus, Program program, User user, GroupRole groupRole) {
-        super(programStatus, program, user);
+    private GroupsUser(ProgramUserStatus programUserStatus, Program program, User user,
+        GroupRole groupRole) {
+        super(programUserStatus, program, user);
         this.groupRole = groupRole;
     }
 
     // 정적 팩토리 메서드 추가
-    public static GroupsUser create(ProgramStatus programStatus, Program program, User user, GroupRole groupRole) {
-        return new GroupsUser(programStatus, program, user, groupRole);
+    public static GroupsUser create(ProgramUserStatus programUserStatus, Program program, User user,
+        GroupRole groupRole) {
+        return new GroupsUser(programUserStatus, program, user, groupRole);
+    }
+
+    public void updateRole(GroupRole groupRole) {
+        this.groupRole = groupRole;
     }
 }

@@ -8,7 +8,13 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "program_types",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_program_type_name", columnNames = {"name"})
+    }
+)
 public class ProgramType {
 
     @Id

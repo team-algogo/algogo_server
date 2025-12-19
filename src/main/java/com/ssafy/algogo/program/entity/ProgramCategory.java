@@ -3,12 +3,17 @@ package com.ssafy.algogo.program.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "programs_categories"
+)
 public class ProgramCategory {
 
     @Id
@@ -17,11 +22,13 @@ public class ProgramCategory {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "program_id")
     private Program program;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "category_id")
     private Category category;
 

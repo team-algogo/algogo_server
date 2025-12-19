@@ -4,13 +4,19 @@ import com.ssafy.algogo.common.utils.BaseTime;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+        name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_user_email", columnNames = {"email"}),
+                @UniqueConstraint(name = "uk_user_nickname", columnNames = {"nickname"})
+        }
+)
 public class User extends BaseTime {
 
     @Id
@@ -37,5 +43,14 @@ public class User extends BaseTime {
     @Enumerated(EnumType.STRING)
     @Column(name = "user_role")
     private UserRole userRole;
+
+    public void updateUserInfo(String nickname, String description) {
+        this.nickname = nickname;
+        this.description = description;
+    }
+
+    public void updateProfileImage(String profileImage) {
+        this.profileImage = profileImage;
+    }
 
 }

@@ -4,12 +4,17 @@ import com.ssafy.algogo.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Table(
+    name = "program_joins"
+)
 public class ProgramJoin {
 
     @Id
@@ -17,17 +22,24 @@ public class ProgramJoin {
     private Long id;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "join_status")
     private JoinStatus joinStatus;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "program_id")
     private Program program;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public void updateJoinStatus(JoinStatus joinStatus) {
+        this.joinStatus = joinStatus;
+    }
 
 }
