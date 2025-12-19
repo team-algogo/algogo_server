@@ -4,6 +4,7 @@ import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionAuthorActiveResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
 import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
@@ -37,6 +38,20 @@ public class SubmissionController {
     public SuccessResponse getSubmission(@PathVariable Long submissionId) {
         SubmissionResponseDto submissionResponseDto = submissionService.getSubmission(submissionId);
         return new SuccessResponse("제출 조회를 성공했습니다.", submissionResponseDto);
+    }
+
+    @GetMapping("/{submissionId}/active")
+    public SuccessResponse getSubmissionAuthorActive(
+        @PathVariable Long submissionId) { // 아직 명확히 test는 안해봄. 추후 실제로 테스트 필요
+        SubmissionAuthorActiveResponseDto submissionAuthorActiveResponseDto = submissionService.getSubmissionAuthorActive(
+            submissionId);
+        String message = null;
+        if (submissionAuthorActiveResponseDto.isActive()) {
+            message = "작성자가 활성화 상태입니다.";
+        } else {
+            message = "작성자가 활성화 상태가 아닙니다.";
+        }
+        return new SuccessResponse(message, submissionAuthorActiveResponseDto);
     }
 
     @PostMapping
