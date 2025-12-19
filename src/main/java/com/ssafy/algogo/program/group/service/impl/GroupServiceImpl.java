@@ -242,33 +242,49 @@ public class GroupServiceImpl implements GroupService {
         // 처리 로직
         Program program = programJoin.getProgram();
         User applicant = programJoin.getUser();
-        if (updateGroupJoinStateRequestDto.getIsAccepted().equals("ACCEPTED")) {
 
-            // 신청자가 이미 ACTIVE 상태인지 검사
-            Optional<ProgramUser> existingUserInProgram =
-                programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(
-                    applicantId, programId, ProgramUserStatus.ACTIVE);
-            if (existingUserInProgram.isPresent()) {
-                // 현재 요청을 ACCEPTED로 바꾸고 이미 참여한 회원임을 알림
-                programJoin.updateJoinStatus(JoinStatus.ACCEPTED);
-                programJoinRepository.save(programJoin);
-                throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
+        if ("ACCEPTED".equals(updateGroupJoinStateRequestDto.getIsAccepted())) {
+
+            Optional<ProgramUser> existingProgramUser =
+                programUserRepository.findByUserIdAndProgramId(
+                    applicant.getId(), programId
+                );
+
+            if (existingProgramUser.isPresent()) {
+                ProgramUser programUser = existingProgramUser.get();
+
+                //이미 참여한 회원인 경우
+                if (programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE) {
+                    programJoin.updateJoinStatus(JoinStatus.ACCEPTED);
+                    programJoinRepository.save(programJoin);
+                    throw new CustomException(
+                        "이미 프로그램에 참여한 회원입니다.",
+                        ErrorCode.PROGRAM_ALREADY_JOINED
+                    );
+                }
+
+                // 이전에 참여했던 회원인 경우
+                programUser.updateProgramUserStatus(ProgramUserStatus.ACTIVE);
+                programUserRepository.save(programUser);
+
+            } else {
+                // 최초 참여 → 신규 생성
+                GroupsUser groupsUser = GroupsUser.create(
+                    ProgramUserStatus.ACTIVE,
+                    program,
+                    applicant,
+                    GroupRole.USER
+                );
+                groupUserRepository.save(groupsUser);
             }
 
-            // 신청 승인 → 프로그램 유저 등록
-            GroupsUser groupsUser = GroupsUser.create(ProgramUserStatus.ACTIVE, program, applicant,
-                GroupRole.USER);
-            groupUserRepository.save(groupsUser);
-
-            // program_join 상태 업데이트
             programJoin.updateJoinStatus(JoinStatus.ACCEPTED);
             programJoinRepository.save(programJoin);
 
-        } else if (updateGroupJoinStateRequestDto.getIsAccepted().equals("DENIED")) {
+        } else if ("DENIED".equals(updateGroupJoinStateRequestDto.getIsAccepted())) {
 
             programJoin.updateJoinStatus(JoinStatus.DENIED);
             programJoinRepository.save(programJoin);
-
         }
 
         // 신청한 사람한테 알람 전송
@@ -337,35 +353,46 @@ public class GroupServiceImpl implements GroupService {
         }
 
         // 처리 로직
-        if (updateGroupInviteStateRequestDto.getIsAccepted().equals("ACCEPTED")) {
+        if ("ACCEPTED".equals(updateGroupInviteStateRequestDto.getIsAccepted())) {
 
-            // 신청자가 이미 ACTIVE 상태인지 검사
-            Optional<ProgramUser> existingUserInProgram =
-                programUserRepository.findByUserIdAndProgramIdAndProgramUserStatus(
-                    userId, programId, ProgramUserStatus.ACTIVE);
-            if (existingUserInProgram.isPresent()) {
+            Optional<ProgramUser> existingProgramUser =
+                programUserRepository.findByUserIdAndProgramId(userId, programId);
 
-                programInvite.updateInviteStatus(InviteStatus.ACCEPTED);
-                programInviteRepository.save(programInvite);
-                throw new CustomException("이미 프로그램에 참여한 회원입니다.", ErrorCode.PROGRAM_ALREADY_JOINED);
+            if (existingProgramUser.isPresent()) {
+                ProgramUser programUser = existingProgramUser.get();
+
+                if (programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE) {
+                    programInvite.updateInviteStatus(InviteStatus.ACCEPTED);
+                    programInviteRepository.save(programInvite);
+                    throw new CustomException(
+                        "이미 프로그램에 참여한 회원입니다.",
+                        ErrorCode.PROGRAM_ALREADY_JOINED
+                    );
+                }
+
+                // WITHDRAW → ACTIVE 복구
+                programUser.updateProgramUserStatus(ProgramUserStatus.ACTIVE);
+                programUserRepository.save(programUser);
+
+            } else {
+                // 최초 참여 → 신규 생성
+                Program program = programInvite.getProgram();
+                User user = programInvite.getUser();
+
+                GroupsUser groupsUser = GroupsUser.create(
+                    ProgramUserStatus.ACTIVE,
+                    program,
+                    user,
+                    GroupRole.USER
+                );
+                programUserRepository.save(groupsUser);
             }
 
-            // 초대 승인 → 프로그램에 사용자를 추가
-            Program program = programInvite.getProgram();
-            User user = programInvite.getUser();
-
-            // ProgramUser 생성 (사용자가 그룹에 참여하도록 설정)
-            GroupsUser groupsUser = GroupsUser.create(ProgramUserStatus.ACTIVE, program, user,
-                GroupRole.USER);
-            programUserRepository.save(groupsUser);
-
-            // 초대 상태를 ACCEPTED로 변경
             programInvite.updateInviteStatus(InviteStatus.ACCEPTED);
             programInviteRepository.save(programInvite);
 
-        } else if (updateGroupInviteStateRequestDto.getIsAccepted().equals("DENIED")) {
+        } else if ("DENIED".equals(updateGroupInviteStateRequestDto.getIsAccepted())) {
 
-            // 초대 거절 → 상태만 변경
             programInvite.updateInviteStatus(InviteStatus.DENIED);
             programInviteRepository.save(programInvite);
         }
