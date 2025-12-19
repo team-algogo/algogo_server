@@ -2,6 +2,7 @@ package com.ssafy.algogo.submission.service;
 
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionAuthorActiveResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
 import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
@@ -22,4 +23,6 @@ public interface SubmissionService {
         UserSubmissionRequestDto userSubmissionRequestDto, Pageable pageable);
 
     TrendIdsResponseDto getTrendIds(String trendType);
+
+    SubmissionAuthorActiveResponseDto getSubmissionAuthorActive(Long submissionId);
 }
