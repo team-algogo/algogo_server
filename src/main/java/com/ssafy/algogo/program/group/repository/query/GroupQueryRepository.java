@@ -18,4 +18,6 @@ public interface GroupQueryRepository {
 
     Page<GroupRoomResponseDto> findAllGroupRoomsWithMemberFlag(String keyword, Pageable pageable,
         Long userId);
+
+    GroupRoomResponseDto getGroupRoomDetailWithUser(Long programId, Long userId);
 }

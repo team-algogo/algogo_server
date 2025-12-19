@@ -78,7 +78,8 @@ public class ProgramServiceImpl implements ProgramService {
     @Override
     @Transactional(readOnly = true)
     public GetProgramJoinStateListResponseDto getProgramJoinState(Long programId) {
-        //만약 유저 신청 정보가 엄청 많은 경우는 어떻게 처리? <- 이 부분은 나중에 고민
+        // 만약 유저 신청 정보가 엄청 많은 경우는 어떻게 처리? <- 이 부분은 나중에 고민
+        // 이거 근데 지금은 ACCEPTED, PENDING, DENIED 다 보내는데, PENDING만 보내줘도 되는 거 아닌가?
 
         List<ProgramJoin> programJoins = programJoinRepository.findByProgramIdWithUser(programId);
 
