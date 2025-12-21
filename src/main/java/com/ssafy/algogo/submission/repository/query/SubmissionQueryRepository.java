@@ -23,4 +23,8 @@ public interface SubmissionQueryRepository {
     List<Long> findTrendProgramProblemIds();
 
     Boolean isSubmissionAuthorActive(Long submissionId);
+
+    Page<UserSubmissionResponseDto> findAllSubmissionsByProgramProblem(Long programProblemId,
+        UserSubmissionRequestDto userSubmissionRequestDto,
+        Pageable pageable);
 }

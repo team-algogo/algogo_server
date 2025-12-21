@@ -25,4 +25,8 @@ public interface SubmissionService {
     TrendIdsResponseDto getTrendIds(String trendType);
 
     SubmissionAuthorActiveResponseDto getSubmissionAuthorActive(Long submissionId);
+
+    UserSubmissionPageResponseDto getSubmissionsByProgramProblem(Long userId, Long programProblemId,
+        UserSubmissionRequestDto userSubmissionRequestDto, Pageable pageable);
+
 }
