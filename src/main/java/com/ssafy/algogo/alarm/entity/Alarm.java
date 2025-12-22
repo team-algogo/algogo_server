@@ -60,4 +60,7 @@ public class Alarm extends BaseTime {
     @JoinColumn(name = "user_id")
     private User user;
 
+    public void markAsRead() {
+        this.isRead = true;
+    }
 }

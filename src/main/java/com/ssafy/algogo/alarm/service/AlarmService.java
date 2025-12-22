@@ -155,14 +155,23 @@ public class AlarmService {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public GetAlarmListResponseDto getMyAlarms(Long userId) {
-        return new GetAlarmListResponseDto(
-            alarmRepository.findByUserIdOrderByCreatedAtDesc(userId)
-                .stream()
+
+        List<Alarm> alarms =
+            alarmRepository.findByUserIdOrderByCreatedAtDesc(userId);
+
+        List<GetAlarmResponseDto> responseDtos =
+            alarms.stream()
                 .map(GetAlarmResponseDto::from)
-                .toList()
-        );
+                .toList();
+
+        alarms.stream()
+            .filter(a -> !a.getIsRead())
+            .forEach(Alarm::markAsRead);
+
+        return new GetAlarmListResponseDto(responseDtos);
+
     }
 
     @Transactional(readOnly = true)

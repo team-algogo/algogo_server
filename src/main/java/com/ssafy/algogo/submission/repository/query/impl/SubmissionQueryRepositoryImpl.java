@@ -12,6 +12,7 @@ import static com.ssafy.algogo.review.entity.QReview.review;
 import static com.ssafy.algogo.submission.entity.QAlgorithm.algorithm;
 import static com.ssafy.algogo.submission.entity.QSubmission.submission;
 import static com.ssafy.algogo.submission.entity.QSubmissionAlgorithm.submissionAlgorithm;
+import static com.ssafy.algogo.user.entity.QUser.user;
 
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Order;
@@ -22,7 +23,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.ssafy.algogo.problem.dto.response.ProblemResponseDto;
-import com.ssafy.algogo.problem.dto.response.ProgramProblemResponseDto;
+import com.ssafy.algogo.problem.dto.response.ProgramProblemDetailResponseDto;
 import com.ssafy.algogo.problem.entity.PlatformType;
 import com.ssafy.algogo.problem.entity.QProblem;
 import com.ssafy.algogo.problem.entity.QProgramProblem;
@@ -43,6 +44,7 @@ import com.ssafy.algogo.submission.entity.QSubmission;
 import com.ssafy.algogo.submission.entity.QSubmissionAlgorithm;
 import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.repository.query.SubmissionQueryRepository;
+import com.ssafy.algogo.user.dto.response.UserSimpleResponseDto;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -78,9 +80,11 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
 
         List<UserSubmissionResponseDto> contents = jpaQueryFactory
             .from(s)
+            .join(s.user, user)
             .join(s.programProblem, pp)
             .join(pp.problem, p)
             .join(pp.program, pg)
+            .join(pg.programType, pt)
             .leftJoin(sa).on(sa.submission.eq(s))
             .leftJoin(sa.algorithm, a)
             .where(
@@ -94,6 +98,13 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                 groupBy(s.id).list(
                     Projections.constructor(
                         UserSubmissionResponseDto.class,
+                        // User 정보 약식 부분
+                        Projections.constructor(
+                            UserSimpleResponseDto.class,
+                            user.id,
+                            user.profileImage,
+                            user.nickname
+                        ),
                         // submission 부분
                         Projections.constructor(
                             SubmissionResponseDto.class,
@@ -118,7 +129,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                         ),
                         // programProblem 부분
                         Projections.constructor(
-                            ProgramProblemResponseDto.class,
+                            ProgramProblemDetailResponseDto.class,
                             pp.id,
                             pp.participantCount,
                             pp.submissionCount,
@@ -157,7 +168,9 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
         long totalCount = jpaQueryFactory
             .select(s.count())
             .from(s)
-            .where(findUserSubmissionsDynamicConditions(userSubmissionRequestDto))
+            .where(
+                s.user.id.eq(userId),
+                findUserSubmissionsDynamicConditions(userSubmissionRequestDto))
             .fetchOne();
 
         return new PageImpl<>(contents, pageable, totalCount);
@@ -307,6 +320,109 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
             .fetch();
     }
 
+
+    @Override
+    public Page<UserSubmissionResponseDto> findAllSubmissionsByProgramProblem(Long programProblemId,
+        UserSubmissionRequestDto userSubmissionRequestDto,
+        Pageable pageable) {
+
+        List<UserSubmissionResponseDto> contents = jpaQueryFactory
+            .from(s)
+            .join(s.user, user)
+            .join(s.programProblem, pp)
+            .join(pp.problem, p)
+            .join(pp.program, pg)
+            .join(pg.programType, pt)
+            .leftJoin(sa).on(sa.submission.eq(s))
+            .leftJoin(sa.algorithm, a)
+            .where(
+                pp.id.eq(programProblemId),
+                findUserSubmissionsDynamicConditions(userSubmissionRequestDto)
+            )
+            .orderBy(getSubmissionOrderSpecifiers(pageable))
+            .offset(pageable.getOffset())
+            .limit(pageable.getPageSize())
+            .transform(
+                groupBy(s.id).list(
+                    Projections.constructor(
+                        UserSubmissionResponseDto.class,
+                        // User 정보 약식 부분
+                        Projections.constructor(
+                            UserSimpleResponseDto.class,
+                            user.id,
+                            user.profileImage,
+                            user.nickname
+                        ),
+                        // submission 부분
+                        Projections.constructor(
+                            SubmissionResponseDto.class,
+                            s.id,
+                            s.programProblem.id,
+                            s.user.id,
+                            s.language,
+                            s.code,
+                            s.strategy,
+                            s.execTime,
+                            s.memory,
+                            s.isSuccess,
+                            s.viewCount,
+                            s.createdAt,
+                            s.modifiedAt,
+                            // 알고리즘 부분
+                            list(Projections.constructor(
+                                AlgorithmResponseDto.class,
+                                a.id,
+                                a.name
+                            ))
+                        ),
+                        // programProblem 부분
+                        Projections.constructor(
+                            ProgramProblemDetailResponseDto.class,
+                            pp.id,
+                            pp.participantCount,
+                            pp.submissionCount,
+                            pp.solvedCount,
+                            pp.viewCount,
+                            pp.startDate,
+                            pp.endDate,
+                            pp.userDifficultyType,
+                            pp.difficultyViewType,
+                            Projections.constructor(
+                                ProblemResponseDto.class,
+                                p.id,
+                                p.platformType,
+                                p.problemNo,
+                                p.title,
+                                p.difficultyType,
+                                p.problemLink
+                            )
+                        ),
+                        // Program 부분
+                        Projections.constructor(
+                            ProgramResponseDto.class,
+                            pg.id,
+                            pg.title,
+                            pg.thumbnail,
+                            Projections.constructor(
+                                ProgramTypeResponseDto.class,
+                                pt.id,
+                                pt.name
+                            )
+                        )
+                    )
+                )
+            );
+
+        long totalCount = jpaQueryFactory
+            .select(s.count())
+            .from(s)
+            .where(
+                pp.id.eq(programProblemId),
+                findUserSubmissionsDynamicConditions(userSubmissionRequestDto))
+            .fetchOne();
+
+        return new PageImpl<>(contents, pageable, totalCount);
+    }
 
     private Predicate findUserSubmissionsDynamicConditions(
         UserSubmissionRequestDto userSubmissionRequestDto) {

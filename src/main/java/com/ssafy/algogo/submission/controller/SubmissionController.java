@@ -125,4 +125,35 @@ public class SubmissionController {
             trendType.toLowerCase().trim());
         return new SuccessResponse("트렌드 제출 조회를 성공했습니다.", trendIdsResponseDto);
     }
+
+    @GetMapping("/programs/problems/{programProblemId}")
+    public SuccessResponse getProgramProblemsSubmissions(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable Long programProblemId,
+        @RequestParam(value = "language", required = false) String language,
+        @RequestParam(value = "isSuccess", required = false) Boolean isSuccess,
+        @RequestParam(value = "programType", required = false) String programType,
+        @RequestParam(value = "algorithm", required = false) String algorithm,
+        @RequestParam(value = "platform", required = false) String platform,
+        @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+        @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
+        @RequestParam(value = "page", defaultValue = "0") Integer page,
+        @RequestParam(value = "size", defaultValue = "10") Integer size
+    ) {
+        UserSubmissionRequestDto userSubmissionRequestDto = UserSubmissionRequestDto.builder()
+            .language(language)
+            .isSuccess(isSuccess)
+            .programType(programType)
+            .algorithm(algorithm)
+            .platform(platform)
+            .build();
+
+        Pageable pageable = PageRequest.of(page, size,
+            Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
+
+        UserSubmissionPageResponseDto submissionsProgramProblems = submissionService.getSubmissionsByProgramProblem(
+            customUserDetails.getUserId(), programProblemId, userSubmissionRequestDto, pageable
+        );
+        return new SuccessResponse("프로그램 문제의 제출 조회를 성공했습니다.", submissionsProgramProblems);
+    }
 }

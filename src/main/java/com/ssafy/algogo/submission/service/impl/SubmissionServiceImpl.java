@@ -217,4 +217,22 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         return new SubmissionAuthorActiveResponseDto(isActive);
     }
+
+    @Override
+    public UserSubmissionPageResponseDto getSubmissionsByProgramProblem(Long userId,
+        Long programProblemId, UserSubmissionRequestDto userSubmissionRequestDto,
+        Pageable pageable) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+
+        ProgramProblem programProblem = programProblemRepository.findById(programProblemId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 프로그램 문제입니다.",
+                ErrorCode.PROGRAM_PROBLEM_NOT_FOUND));
+
+        Page<UserSubmissionResponseDto> submissionLists = submissionRepository.findAllSubmissionsByProgramProblem(
+            programProblemId,
+            userSubmissionRequestDto, pageable);
+
+        return UserSubmissionPageResponseDto.from(submissionLists);
+    }
 }
