@@ -30,8 +30,10 @@ public class UserController {
 
     @PostMapping("/check/emails")
     @ResponseStatus(HttpStatus.OK)
-    public SuccessResponse checkDuplicateEmail(@RequestBody @Valid CheckDuplicateEmailRequestDto checkDuplicateEmailRequestDto) {
-        CheckDuplicateEmailResponseDto checkDuplicateEmailResponseDto = userService.isAvailableEmail(checkDuplicateEmailRequestDto);
+    public SuccessResponse checkDuplicateEmail(
+        @RequestBody @Valid CheckDuplicateEmailRequestDto checkDuplicateEmailRequestDto) {
+        CheckDuplicateEmailResponseDto checkDuplicateEmailResponseDto = userService.isAvailableEmail(
+            checkDuplicateEmailRequestDto);
         if (checkDuplicateEmailResponseDto.isAvailable()) {
             return SuccessResponse.success("사용가능한 이메일입니다.", checkDuplicateEmailResponseDto);
         } else {
@@ -41,8 +43,10 @@ public class UserController {
 
     @PostMapping("/check/nicknames")
     @ResponseStatus(HttpStatus.OK)
-    public SuccessResponse checkDuplicateNickname(@RequestBody @Valid CheckDuplicateNicknameRequestDto checkDuplicateNicknameRequestDto) {
-        CheckDuplicateNicknameResponseDto checkDuplicateNicknameResponseDto = userService.isAvailableNickname(checkDuplicateNicknameRequestDto);
+    public SuccessResponse checkDuplicateNickname(
+        @RequestBody @Valid CheckDuplicateNicknameRequestDto checkDuplicateNicknameRequestDto) {
+        CheckDuplicateNicknameResponseDto checkDuplicateNicknameResponseDto = userService.isAvailableNickname(
+            checkDuplicateNicknameRequestDto);
         if (checkDuplicateNicknameResponseDto.isAvailable()) {
             return SuccessResponse.success("사용가능한 닉네임입니다.", checkDuplicateNicknameResponseDto);
         } else {
@@ -52,8 +56,18 @@ public class UserController {
 
     @GetMapping("/profiles")
     @ResponseStatus(HttpStatus.OK)
-    public SuccessResponse getUserInfo(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+    public SuccessResponse getUserInfo(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails) {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
+        UserInfoResponseDto userInfoResponseDto = userService.getOneUserInfo(userId);
+        return SuccessResponse.success("유저 정보 조회에 성공했습니다.", userInfoResponseDto);
+    }
+
+    @GetMapping("/profiles/{userId}")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse getOtherUserInfo(
+        @PathVariable Long userId
+    ) {
         UserInfoResponseDto userInfoResponseDto = userService.getOneUserInfo(userId);
         return SuccessResponse.success("유저 정보 조회에 성공했습니다.", userInfoResponseDto);
     }
@@ -61,36 +75,41 @@ public class UserController {
     @PutMapping("/profiles")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse updateUserInfo(
-            @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @RequestBody UpdateUserInfoRequestDto updateUserInfoRequestDto) {
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @RequestBody UpdateUserInfoRequestDto updateUserInfoRequestDto) {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
-        UpdateUserInfoResponseDto updateUserInfoResponseDto = userService.updateUserInfo(userId, updateUserInfoRequestDto);
+        UpdateUserInfoResponseDto updateUserInfoResponseDto = userService.updateUserInfo(userId,
+            updateUserInfoRequestDto);
         return SuccessResponse.success("사용자 정보 수정에 성공했습니다.", updateUserInfoResponseDto);
     }
 
     @PostMapping("/profile-images")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse uploadProfileImage(
-            @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @RequestPart("image") MultipartFile image
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @RequestPart("image") MultipartFile image
     ) {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
-        UpdateUserProfileImageResponseDto updateUserProfileImageResponseDto = userService.updateUserProfileImage(userId, image);
+        UpdateUserProfileImageResponseDto updateUserProfileImageResponseDto = userService.updateUserProfileImage(
+            userId, image);
         return SuccessResponse.success("프로필 사진 수정에 성공했습니다.", updateUserProfileImageResponseDto);
     }
 
     @PutMapping("/profile-images")
     @ResponseStatus(HttpStatus.OK)
-    public SuccessResponse deleteProfileImage(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+    public SuccessResponse deleteProfileImage(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails) {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
-        UpdateUserProfileImageResponseDto updateUserProfileImageResponseDto = userService.updateDefaultProfileImage(userId);
+        UpdateUserProfileImageResponseDto updateUserProfileImageResponseDto = userService.updateDefaultProfileImage(
+            userId);
         return SuccessResponse.success("프로필 사진 삭제에 성공했습니다.", updateUserProfileImageResponseDto);
     }
 
     @GetMapping("/search/members")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse searchUsersInGroupRoom(@RequestParam("content") String content) {
-        ListSearchUserResponseDto listSearchUserResponseDto = userService.searchUserListByContent(content);
+        ListSearchUserResponseDto listSearchUserResponseDto = userService.searchUserListByContent(
+            content);
         return SuccessResponse.success("유저 조회에 성공했습니다.", listSearchUserResponseDto);
     }
 
