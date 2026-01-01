@@ -125,7 +125,9 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                                 AlgorithmResponseDto.class,
                                 a.id,
                                 a.name
-                            ))
+                            )),
+                            s.aiScore,
+                            s.aiScoreReason
                         ),
                         // programProblem 부분
                         Projections.constructor(
@@ -373,7 +375,9 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                                 AlgorithmResponseDto.class,
                                 a.id,
                                 a.name
-                            ))
+                            )),
+                            s.aiScore,
+                            s.aiScoreReason
                         ),
                         // programProblem 부분
                         Projections.constructor(
