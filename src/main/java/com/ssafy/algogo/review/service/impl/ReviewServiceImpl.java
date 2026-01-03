@@ -15,6 +15,9 @@ import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
 import com.ssafy.algogo.review.entity.Review;
 import com.ssafy.algogo.review.entity.UserReviewReaction;
+import com.ssafy.algogo.program.entity.ProgramUser;
+import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
+import com.ssafy.algogo.program.repository.ProgramUserRepository;
 import com.ssafy.algogo.review.repository.RequireReviewRepository;
 import com.ssafy.algogo.review.repository.ReviewRepository;
 import com.ssafy.algogo.review.repository.UserReviewReactionRepository;
@@ -23,6 +26,8 @@ import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.repository.SubmissionRepository;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,6 +51,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final UserReviewReactionRepository userReviewReactionRepository;
     private final SubmissionRepository submissionRepository;
     private final UserRepository userRepository;
+    private final ProgramUserRepository programUserRepository;
 
     @Override
     public CodeReviewTreeResponseDto createCodeReview(
@@ -77,12 +83,69 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review saveReview = reviewRepository.save(newReview);
 
-        alarmService.createAndSendAlarm(
-            targetSubmission.getId(),
-            "REVIEW_CREATED",
-            new AlarmPayload(targetSubmission.getId(), saveReview.getId(), null, null, userId),
-            "내 제출물에 새로운 리뷰가 등록되었습니다."
-        );
+        // targetSubmission 작성자가 null이면 에러
+        if (targetSubmission.getUser() == null) {
+            throw new CustomException("제출물 작성자 정보가 없습니다.", ErrorCode.SUBMISSION_NOT_FOUND);
+        }
+
+        User targetSubmissionAuthor = targetSubmission.getUser();
+        Long targetSubmissionAuthorId = targetSubmissionAuthor.getId();
+        String reviewerNickname = user.getNickname();
+        Long programId = targetSubmission.getProgramProblem().getProgram().getId();
+        String problemTitle = targetSubmission.getProgramProblem().getProblem().getTitle();
+
+        // 알람을 받을 사용자 ID Set (중복 방지)
+        Set<Long> alarmRecipientIds = new HashSet<>();
+
+        // 1. Submission 작성자에게 알람 (조건: 내가 내 제출에 단 경우가 아니고, program_user status가 ACTIVE인 경우)
+        if (!userId.equals(targetSubmissionAuthorId)) {
+            // program_user status 확인
+            programUserRepository.findByUserIdAndProgramId(targetSubmissionAuthorId, programId)
+                .filter(programUser -> programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE)
+                .ifPresent(programUser -> alarmRecipientIds.add(targetSubmissionAuthorId));
+        }
+
+        // 2. 대댓글인 경우 parent review 작성자에게도 알람
+        if (saveReview.getParentReview() != null) {
+            Review parentReviewEntity = saveReview.getParentReview();
+            User parentReviewAuthor = parentReviewEntity.getUser();
+            Long parentReviewAuthorId = parentReviewAuthor.getId();
+
+            // 조건: 내가 단 댓글에 내가 대댓글을 단 경우가 아니고, 댓글 작성자의 program_user status가 ACTIVE인 경우
+            if (!userId.equals(parentReviewAuthorId)) {
+                // program_user status 확인
+                programUserRepository.findByUserIdAndProgramId(parentReviewAuthorId, programId)
+                    .filter(programUser -> programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE)
+                    .ifPresent(programUser -> {
+                        // submission 작성자와 댓글 작성자가 동일한 경우는 이미 추가했으므로 중복 방지
+                        if (!parentReviewAuthorId.equals(targetSubmissionAuthorId)) {
+                            alarmRecipientIds.add(parentReviewAuthorId);
+                        }
+                    });
+            }
+        }
+
+        // 알람 전송
+        for (Long recipientId : alarmRecipientIds) {
+            alarmService.createAndSendAlarm(
+                recipientId,
+                "REVIEW_CREATED",
+                new AlarmPayload(
+                    targetSubmission.getId(),
+                    saveReview.getId(),
+                    targetSubmission.getProgramProblem().getId(),
+                    programId,
+                    userId,
+                    reviewerNickname,
+                    targetSubmission.getProgramProblem().getProgram().getTitle(),
+                    problemTitle,
+                    null,
+                    null,
+                    targetSubmissionAuthor.getNickname()
+                ),
+                "내 제출물에 새로운 리뷰가 등록되었습니다."
+            );
+        }
 
         // 해당 리뷰가 루트 리뷰면..
         if (saveReview.getParentReview() == null) {

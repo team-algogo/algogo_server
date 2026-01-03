@@ -62,11 +62,27 @@ public class ReviewMatchServiceImpl implements ReviewMatchService {
         requireReviewRepository.saveAll(requireReviewList);
 
         for (RequireReview requireReview : requireReviewList) {
+            String problemTitle = subjectSubmission.getProgramProblem().getProblem().getTitle();
+            Submission targetSubmission = requireReview.getTargetSubmission();
+            Long targetUserId = targetSubmission.getUser() != null ? targetSubmission.getUser().getId() : null;
+            String targetUserNickname = targetSubmission.getUser() != null ? targetSubmission.getUser().getNickname() : null;
+            
             alarmService.createAndSendAlarm(
                 subjectSubmission.getUser().getId(),
                 "REQUIRED_REVIEW",
-                new AlarmPayload(requireReview.getTargetSubmission().getId(), null,
-                    subjectSubmission.getProgramProblem().getId(), null, null),
+                new AlarmPayload(
+                    requireReview.getTargetSubmission().getId(), 
+                    null,
+                    subjectSubmission.getProgramProblem().getId(), 
+                    null, 
+                    targetUserId,
+                    targetUserNickname,
+                    null,
+                    problemTitle,
+                    null,
+                    null,
+                    null
+                ),
                 String.format(
                     "유저(user_id = %d)에게 제출(target_submission_id = %d)건에 요구된 리뷰가 매칭되었습니다. ",
                     subjectSubmission.getUser().getId(),

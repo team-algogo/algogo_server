@@ -51,7 +51,13 @@ public class AlarmController {
             555L,   // reviewId
             null,   // programProblemId
             null,   // programId
-            null    // userId
+            null,   // userId
+            null,   // userNickname
+            null,   // programName
+            null,   // problemTitle
+            null,   // joinId
+            null,   // inviteId
+            null    // targetSubmissionAuthorNickname
         );
 
         alarmService.createAndSendAlarm(
