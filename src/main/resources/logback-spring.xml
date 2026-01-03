@@ -1,21 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
 
+  <!-- 콘솔 로그는 항상 가능 -->
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- ✅ 기본(default): 기존 동작 유지 = 콘솔 + 파일 -->
+  <springProfile name="default">
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>./logs/application.log</file> <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <file>./logs/application.log</file>
+      <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
         <fileNamePattern>./logs/application.%d{yyyy-MM-dd}.log</fileNamePattern>
-        <maxHistory>7</maxHistory> <!--아마 최대 날짜인가? -->
-    </rollingPolicy>
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder" />
+        <maxHistory>7</maxHistory>
+      </rollingPolicy>
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
     </appender>
 
     <root level="INFO">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
+      <appender-ref ref="CONSOLE"/>
+      <appender-ref ref="FILE"/>
     </root>
+  </springProfile>
+
+  <!-- ✅ 컨테이너/운영(prod): 콘솔만 (파일 로그로 인해 부팅 죽는 문제 방지) -->
+  <springProfile name="prod">
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+  </springProfile>
+
 </configuration>
