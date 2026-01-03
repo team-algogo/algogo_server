@@ -11,9 +11,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Slf4j
@@ -175,5 +178,35 @@ public class S3Service {
     private boolean hasValidExtension(String filename) {
         String extension = extractExtension(filename);
         return Arrays.asList(allowedExtensions.split(",")).contains(extension);
+    }
+
+    /**
+     * CloudFront URL에서 코드 텍스트 다운로드
+     * 
+     * @param cloudFrontUrl CloudFront URL
+     * @return 코드 텍스트 내용
+     */
+    public String downloadText(String cloudFrontUrl) {
+        if (cloudFrontUrl == null || cloudFrontUrl.isEmpty()) {
+            throw new CustomException("URL이 비어있습니다.", ErrorCode.INVALID_PARAMETER);
+        }
+
+        try {
+            String s3Key = extractS3Key(cloudFrontUrl);
+            
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(s3Key)
+                .build();
+
+            ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest);
+            String content = new String(response.readAllBytes());
+            response.close();
+            
+            return content;
+        } catch (Exception e) {
+            log.error("S3 코드 다운로드 실패: {}", cloudFrontUrl, e);
+            throw new CustomException("코드 다운로드에 실패했습니다.", ErrorCode.FAILED_FILE_UPLOAD);
+        }
     }
 }
