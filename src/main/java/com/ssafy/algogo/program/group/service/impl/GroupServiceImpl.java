@@ -234,6 +234,9 @@ public class GroupServiceImpl implements GroupService {
                 null,
                 programJoin.getId(),
                 null,
+                null,
+                null,
+                null,
                 null
             ),
             "새로운 참여 신청이 도착했습니다."
@@ -337,6 +340,9 @@ public class GroupServiceImpl implements GroupService {
                 null,
                 programJoin.getId(),
                 null,
+                null,
+                null,
+                null,
                 null
             ),
             "참여 신청이 '" + updateGroupJoinStateRequestDto.getIsAccepted() + "' 처리되었습니다."
@@ -394,6 +400,9 @@ public class GroupServiceImpl implements GroupService {
                 null,
                 null,
                 programInvite.getId(),
+                null,
+                null,
+                null,
                 null
             ),
             "그룹 초대가 도착했습니다."
@@ -497,6 +506,9 @@ public class GroupServiceImpl implements GroupService {
                 null,
                 null,
                 programInvite.getId(),
+                null,
+                null,
+                null,
                 null
             ),
             "초대받은 사용자가 초대를 '" + updateGroupInviteStateRequestDto.getIsAccepted() + "' 처리했습니다."

@@ -57,7 +57,10 @@ public class AlarmController {
             null,   // problemTitle
             null,   // joinId
             null,   // inviteId
-            null    // targetSubmissionAuthorNickname
+            null,   // targetSubmissionAuthorNickname
+            null,   // parentReviewId
+            null,   // parentUserId
+            null    // parentUserName
         );
 
         alarmService.createAndSendAlarm(

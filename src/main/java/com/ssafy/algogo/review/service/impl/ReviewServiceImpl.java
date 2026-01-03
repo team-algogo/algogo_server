@@ -26,9 +26,8 @@ import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.repository.SubmissionRepository;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,42 +93,41 @@ public class ReviewServiceImpl implements ReviewService {
         Long programId = targetSubmission.getProgramProblem().getProgram().getId();
         String problemTitle = targetSubmission.getProgramProblem().getProblem().getTitle();
 
-        // 알람을 받을 사용자 ID Set (중복 방지)
-        Set<Long> alarmRecipientIds = new HashSet<>();
+        // 댓글인지 대댓글인지 확인
+        boolean isReply = saveReview.getParentReview() != null;
+        Review parentReviewEntity = isReply ? saveReview.getParentReview() : null;
+        User parentReviewAuthor = isReply ? parentReviewEntity.getUser() : null;
+        Long parentReviewAuthorId = isReply ? parentReviewAuthor.getId() : null;
+        String parentReviewAuthorNickname = isReply ? parentReviewAuthor.getNickname() : null;
 
-        // 1. Submission 작성자에게 알람 (조건: 내가 내 제출에 단 경우가 아니고, program_user status가 ACTIVE인 경우)
-        if (!userId.equals(targetSubmissionAuthorId)) {
+        // 알람을 받을 사용자 ID와 알람 타입을 저장하는 Map
+        Map<Long, String> alarmRecipients = new HashMap<>();
+
+        // 1. 댓글인 경우: Submission 작성자에게 알람
+        // 대댓글인 경우: Submission 작성자에게는 알람을 보내지 않음 (parent review 작성자에게만 보냄)
+        if (!isReply && !userId.equals(targetSubmissionAuthorId)) {
             // program_user status 확인
             programUserRepository.findByUserIdAndProgramId(targetSubmissionAuthorId, programId)
                 .filter(programUser -> programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE)
-                .ifPresent(programUser -> alarmRecipientIds.add(targetSubmissionAuthorId));
+                .ifPresent(programUser -> alarmRecipients.put(targetSubmissionAuthorId, "REVIEW_CREATED"));
         }
 
-        // 2. 대댓글인 경우 parent review 작성자에게도 알람
-        if (saveReview.getParentReview() != null) {
-            Review parentReviewEntity = saveReview.getParentReview();
-            User parentReviewAuthor = parentReviewEntity.getUser();
-            Long parentReviewAuthorId = parentReviewAuthor.getId();
-
-            // 조건: 내가 단 댓글에 내가 대댓글을 단 경우가 아니고, 댓글 작성자의 program_user status가 ACTIVE인 경우
-            if (!userId.equals(parentReviewAuthorId)) {
-                // program_user status 확인
-                programUserRepository.findByUserIdAndProgramId(parentReviewAuthorId, programId)
-                    .filter(programUser -> programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE)
-                    .ifPresent(programUser -> {
-                        // submission 작성자와 댓글 작성자가 동일한 경우는 이미 추가했으므로 중복 방지
-                        if (!parentReviewAuthorId.equals(targetSubmissionAuthorId)) {
-                            alarmRecipientIds.add(parentReviewAuthorId);
-                        }
-                    });
-            }
+        // 2. 대댓글인 경우: parent review 작성자에게 알람
+        if (isReply && !userId.equals(parentReviewAuthorId)) {
+            // program_user status 확인
+            programUserRepository.findByUserIdAndProgramId(parentReviewAuthorId, programId)
+                .filter(programUser -> programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE)
+                .ifPresent(programUser -> alarmRecipients.put(parentReviewAuthorId, "REPLY_REVIEW"));
         }
 
         // 알람 전송
-        for (Long recipientId : alarmRecipientIds) {
+        for (Map.Entry<Long, String> entry : alarmRecipients.entrySet()) {
+            Long recipientId = entry.getKey();
+            String alarmType = entry.getValue();
+
             alarmService.createAndSendAlarm(
                 recipientId,
-                "REVIEW_CREATED",
+                alarmType,
                 new AlarmPayload(
                     targetSubmission.getId(),
                     saveReview.getId(),
@@ -141,9 +139,12 @@ public class ReviewServiceImpl implements ReviewService {
                     problemTitle,
                     null,
                     null,
-                    targetSubmissionAuthor.getNickname()
+                    targetSubmissionAuthor.getNickname(),
+                    isReply ? parentReviewEntity.getId() : null,
+                    isReply ? parentReviewAuthorId : null,
+                    isReply ? parentReviewAuthorNickname : null
                 ),
-                "내 제출물에 새로운 리뷰가 등록되었습니다."
+                isReply ? "내 댓글에 대댓글이 등록되었습니다." : "내 제출물에 새로운 리뷰가 등록되었습니다."
             );
         }
 

@@ -15,7 +15,10 @@ public record AlarmPayload(
     String problemTitle,
     Long joinId,
     Long inviteId,
-    String targetSubmissionAuthorNickname
+    String targetSubmissionAuthorNickname,
+    Long parentReviewId,
+    Long parentUserId,
+    String parentUserName
 ) {
 
 }
