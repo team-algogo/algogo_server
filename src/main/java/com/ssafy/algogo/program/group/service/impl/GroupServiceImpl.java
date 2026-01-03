@@ -201,15 +201,44 @@ public class GroupServiceImpl implements GroupService {
 
         programService.applyProgramJoin(userId, programId);
 
+        // 생성된 joinId 조회
+        ProgramJoin programJoin = programJoinRepository.findByUserIdAndProgramIdAndJoinStatus(
+            userId, programId, JoinStatus.PENDING)
+            .orElseThrow(() -> new CustomException("참여 신청 정보를 찾을 수 없습니다.",
+                ErrorCode.PROGRAM_JOIN_NOT_FOUND));
+
         User admin = groupUserRepository.findAdminByProgramId(programId)
             .orElseThrow(
                 () -> new CustomException("방장을 찾을 수 없습니다.", ErrorCode.GROUP_USER_NOT_FOUND));
+
+        User applicant = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("userId에 해당하는 데이터가 DB에 없습니다.",
+                ErrorCode.USER_NOT_FOUND));
+
+        String programName = groupRoom.getTitle();
+        String userNickname = applicant.getNickname();
+        String adminNickname = admin.getNickname();
 
         // 그룹의 방장에게 알람 전송
         alarmService.createAndSendAlarm(
             admin.getId(),
             "GROUP_JOIN_APPLY",
-            new AlarmPayload(null, null, null, programId, userId),
+            new AlarmPayload(
+                null, 
+                null, 
+                null, 
+                programId, 
+                userId,
+                userNickname,
+                programName,
+                null,
+                programJoin.getId(),
+                null,
+                null,
+                null,
+                null,
+                null
+            ),
             "새로운 참여 신청이 도착했습니다."
         );
     }
@@ -287,11 +316,35 @@ public class GroupServiceImpl implements GroupService {
             programJoinRepository.save(programJoin);
         }
 
+        String programName = program.getTitle();
+        String applicantNickname = applicant.getNickname();
+        
+        // 상태를 변경한 사람(방장) 정보
+        User admin = groupUserRepository.findAdminByProgramId(programId)
+            .orElseThrow(
+                () -> new CustomException("방장을 찾을 수 없습니다.", ErrorCode.GROUP_USER_NOT_FOUND));
+        String adminNickname = admin.getNickname();
+
         // 신청한 사람한테 알람 전송
         alarmService.createAndSendAlarm(
             applicant.getId(),
             "GROUP_JOIN_UPDATE",
-            new AlarmPayload(null, null, null, programId, null),
+            new AlarmPayload(
+                null, 
+                null, 
+                null, 
+                programId, 
+                admin.getId(),
+                adminNickname,
+                programName,
+                null,
+                programJoin.getId(),
+                null,
+                null,
+                null,
+                null,
+                null
+            ),
             "참여 신청이 '" + updateGroupJoinStateRequestDto.getIsAccepted() + "' 처리되었습니다."
         );
     }
@@ -315,11 +368,43 @@ public class GroupServiceImpl implements GroupService {
 
         programService.applyProgramInvite(programId, applyProgramInviteRequestDto);
 
+        // 생성된 inviteId 조회
+        ProgramInvite programInvite = programInviteRepository.findByProgramIdAndUserIdAndInviteStatus(
+            programId, applyProgramInviteRequestDto.getUserId(), InviteStatus.PENDING)
+            .orElseThrow(() -> new CustomException("초대 정보를 찾을 수 없습니다.",
+                ErrorCode.PROGRAM_INVITE_NOT_FOUND));
+
+        User invitedUser = userRepository.findById(applyProgramInviteRequestDto.getUserId())
+            .orElseThrow(() -> new CustomException("userId에 해당하는 데이터가 DB에 없습니다.",
+                ErrorCode.USER_NOT_FOUND));
+
+        User admin = groupUserRepository.findAdminByProgramId(programId)
+            .orElseThrow(
+                () -> new CustomException("방장을 찾을 수 없습니다.", ErrorCode.GROUP_USER_NOT_FOUND));
+
+        String programName = groupRoom.getTitle();
+        String adminNickname = admin.getNickname();
+
         // 초대 받은 사람한테 알람 전송
         alarmService.createAndSendAlarm(
             applyProgramInviteRequestDto.getUserId(),
             "GROUP_INVITE_APPLY",
-            new AlarmPayload(null, null, null, programId, null),
+            new AlarmPayload(
+                null, 
+                null, 
+                null, 
+                programId, 
+                admin.getId(),
+                adminNickname,
+                programName,
+                null,
+                null,
+                programInvite.getId(),
+                null,
+                null,
+                null,
+                null
+            ),
             "그룹 초대가 도착했습니다."
         );
     }
@@ -401,11 +486,31 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(
                 () -> new CustomException("방장을 찾을 수 없습니다.", ErrorCode.GROUP_USER_NOT_FOUND));
 
+        Program program = programInvite.getProgram();
+        User invitedUser = programInvite.getUser();
+        String programName = program.getTitle();
+        String invitedUserNickname = invitedUser.getNickname();
+
         // 방장한테 알람 전송
         alarmService.createAndSendAlarm(
             admin.getId(),
             "GROUP_INVITE_UPDATE",
-            new AlarmPayload(null, null, null, programId, userId),
+            new AlarmPayload(
+                null, 
+                null, 
+                null, 
+                programId, 
+                invitedUser.getId(),
+                invitedUserNickname,
+                programName,
+                null,
+                null,
+                programInvite.getId(),
+                null,
+                null,
+                null,
+                null
+            ),
             "초대받은 사용자가 초대를 '" + updateGroupInviteStateRequestDto.getIsAccepted() + "' 처리했습니다."
         );
     }

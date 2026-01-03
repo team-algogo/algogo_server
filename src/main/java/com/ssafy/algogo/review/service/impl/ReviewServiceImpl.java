@@ -15,6 +15,9 @@ import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
 import com.ssafy.algogo.review.entity.Review;
 import com.ssafy.algogo.review.entity.UserReviewReaction;
+import com.ssafy.algogo.program.entity.ProgramUser;
+import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
+import com.ssafy.algogo.program.repository.ProgramUserRepository;
 import com.ssafy.algogo.review.repository.RequireReviewRepository;
 import com.ssafy.algogo.review.repository.ReviewRepository;
 import com.ssafy.algogo.review.repository.UserReviewReactionRepository;
@@ -24,6 +27,7 @@ import com.ssafy.algogo.submission.repository.SubmissionRepository;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +50,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final UserReviewReactionRepository userReviewReactionRepository;
     private final SubmissionRepository submissionRepository;
     private final UserRepository userRepository;
+    private final ProgramUserRepository programUserRepository;
 
     @Override
     public CodeReviewTreeResponseDto createCodeReview(
@@ -77,12 +82,71 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review saveReview = reviewRepository.save(newReview);
 
-        alarmService.createAndSendAlarm(
-            targetSubmission.getId(),
-            "REVIEW_CREATED",
-            new AlarmPayload(targetSubmission.getId(), saveReview.getId(), null, null, userId),
-            "내 제출물에 새로운 리뷰가 등록되었습니다."
-        );
+        // targetSubmission 작성자가 null이면 에러
+        if (targetSubmission.getUser() == null) {
+            throw new CustomException("제출물 작성자 정보가 없습니다.", ErrorCode.SUBMISSION_NOT_FOUND);
+        }
+
+        User targetSubmissionAuthor = targetSubmission.getUser();
+        Long targetSubmissionAuthorId = targetSubmissionAuthor.getId();
+        String reviewerNickname = user.getNickname();
+        Long programId = targetSubmission.getProgramProblem().getProgram().getId();
+        String problemTitle = targetSubmission.getProgramProblem().getProblem().getTitle();
+
+        // 댓글인지 대댓글인지 확인
+        boolean isReply = saveReview.getParentReview() != null;
+        Review parentReviewEntity = isReply ? saveReview.getParentReview() : null;
+        User parentReviewAuthor = isReply ? parentReviewEntity.getUser() : null;
+        Long parentReviewAuthorId = isReply ? parentReviewAuthor.getId() : null;
+        String parentReviewAuthorNickname = isReply ? parentReviewAuthor.getNickname() : null;
+
+        // 알람을 받을 사용자 ID와 알람 타입을 저장하는 Map
+        Map<Long, String> alarmRecipients = new HashMap<>();
+
+        // 1. 댓글인 경우: Submission 작성자에게 알람
+        // 대댓글인 경우: Submission 작성자에게는 알람을 보내지 않음 (parent review 작성자에게만 보냄)
+        if (!isReply && !userId.equals(targetSubmissionAuthorId)) {
+            // program_user status 확인
+            programUserRepository.findByUserIdAndProgramId(targetSubmissionAuthorId, programId)
+                .filter(programUser -> programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE)
+                .ifPresent(programUser -> alarmRecipients.put(targetSubmissionAuthorId, "REVIEW_CREATED"));
+        }
+
+        // 2. 대댓글인 경우: parent review 작성자에게 알람
+        if (isReply && !userId.equals(parentReviewAuthorId)) {
+            // program_user status 확인
+            programUserRepository.findByUserIdAndProgramId(parentReviewAuthorId, programId)
+                .filter(programUser -> programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE)
+                .ifPresent(programUser -> alarmRecipients.put(parentReviewAuthorId, "REPLY_REVIEW"));
+        }
+
+        // 알람 전송
+        for (Map.Entry<Long, String> entry : alarmRecipients.entrySet()) {
+            Long recipientId = entry.getKey();
+            String alarmType = entry.getValue();
+
+            alarmService.createAndSendAlarm(
+                recipientId,
+                alarmType,
+                new AlarmPayload(
+                    targetSubmission.getId(),
+                    saveReview.getId(),
+                    targetSubmission.getProgramProblem().getId(),
+                    programId,
+                    userId,
+                    reviewerNickname,
+                    targetSubmission.getProgramProblem().getProgram().getTitle(),
+                    problemTitle,
+                    null,
+                    null,
+                    targetSubmissionAuthor.getNickname(),
+                    isReply ? parentReviewEntity.getId() : null,
+                    isReply ? parentReviewAuthorId : null,
+                    isReply ? parentReviewAuthorNickname : null
+                ),
+                isReply ? "내 댓글에 대댓글이 등록되었습니다." : "내 제출물에 새로운 리뷰가 등록되었습니다."
+            );
+        }
 
         // 해당 리뷰가 루트 리뷰면..
         if (saveReview.getParentReview() == null) {
