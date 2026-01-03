@@ -82,4 +82,9 @@ public class Submission extends BaseTime {
     public void increaseViewCount() {
         this.viewCount++;
     }
+
+    public void updateAiEvaluation(java.math.BigDecimal aiScore, String aiScoreReason) {
+        this.aiScore = aiScore;
+        this.aiScoreReason = aiScoreReason;
+    }
 }

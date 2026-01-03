@@ -18,6 +18,7 @@ import com.ssafy.algogo.submission.dto.response.UserSubmissionResponseDto;
 import com.ssafy.algogo.submission.entity.Algorithm;
 import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.entity.SubmissionAlgorithm;
+import com.ssafy.algogo.submission.event.SubmissionAiEvaluationEvent;
 import com.ssafy.algogo.submission.event.SubmissionEvent;
 import com.ssafy.algogo.submission.event.SubmissionRematchEvent;
 import com.ssafy.algogo.submission.repository.AlgorithmRepository;
@@ -107,6 +108,11 @@ public class SubmissionServiceImpl implements SubmissionService {
         // 비동기 적용을 위해 Event 발행
         applicationEventPublisher.publishEvent(
             new SubmissionEvent(submission, usedAlgorithmList, 2));
+
+        // ai 점수 평가 Event 발행(비동기, 트랜잭션 분리)
+        applicationEventPublisher.publishEvent(
+            new SubmissionAiEvaluationEvent(submission.getId())
+        );
 
         return SubmissionResponseDto.from(submission, usedAlgorithmList);
     }
