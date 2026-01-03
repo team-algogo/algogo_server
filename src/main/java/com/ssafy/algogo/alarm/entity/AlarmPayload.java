@@ -9,7 +9,16 @@ public record AlarmPayload(
     Long reviewId,
     Long programProblemId,
     Long programId,
-    Long userId
+    Long userId,
+    String userNickname,
+    String programName,
+    String problemTitle,
+    Long joinId,
+    Long inviteId,
+    String targetSubmissionAuthorNickname,
+    Long parentReviewId,
+    Long parentUserId,
+    String parentUserName
 ) {
 
 }
