@@ -24,7 +24,10 @@ FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
 # Non-root 고정 (UID/GID 고정은 쿠버네티스/보안정책에서 특히 유리)
-RUN groupadd -g 10001 app && useradd -m -u 10001 -g 10001 -s /usr/sbin/nologin appuser
+RUN groupadd -g 10001 app \
+ && useradd -m -u 10001 -g 10001 -s /usr/sbin/nologin appuser \
+ && mkdir -p /app/logs \
+ && chown -R appuser:app /app
 
 COPY --from=builder --chown=appuser:app /app/build/libs/app.jar /app/app.jar
 
