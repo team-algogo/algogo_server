@@ -8,6 +8,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -32,6 +33,12 @@ import org.hibernate.annotations.OnDeleteAction;
         @UniqueConstraint(
             name = "uk_required_review_user_submission",
             columnNames = {"subject_user_id", "target_submission_id"}
+        )
+    },
+    indexes = {
+        @Index(
+            name = "idx_rr_subject_done",
+            columnList = "subject_user_id, is_done"
         )
     }
 )

@@ -16,7 +16,13 @@ import org.hibernate.annotations.OnDeleteAction;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
-    name = "reviews"
+    name = "reviews",
+    indexes = {
+        @Index(
+            name = "idx_review_submission",
+            columnList = "submission_id"
+        )
+    }
 )
 public class Review extends BaseTime {
 
