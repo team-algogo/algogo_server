@@ -8,6 +8,7 @@ import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponse
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchResponseDto;
 import org.springframework.data.domain.Pageable;
 
 public interface ProblemSetService {
@@ -42,4 +43,7 @@ public interface ProblemSetService {
 
 	// 문제집 카테고리 조회
 	CategoryListResponseDto getCategoryList();
+
+	// 문제집 검색
+	ProblemSetSearchResponseDto searchProblemSet(String keyword);
 }

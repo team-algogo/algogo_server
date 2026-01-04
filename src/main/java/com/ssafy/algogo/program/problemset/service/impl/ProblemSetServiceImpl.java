@@ -20,6 +20,7 @@ import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponse
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
 import com.ssafy.algogo.program.repository.CategoryRepository;
 import com.ssafy.algogo.program.repository.ProgramRepository;
@@ -27,6 +28,8 @@ import com.ssafy.algogo.program.repository.ProgramTypeRepository;
 import com.ssafy.algogo.program.repository.ProgramUserRepository;
 import com.ssafy.algogo.program.repository.query.ProgramQueryRepository;
 import com.ssafy.algogo.user.repository.UserRepository;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -214,5 +217,27 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 			.stream()
 			.map(CategoryResponseDto::from).toList();
 		return new CategoryListResponseDto(categoryResponseDtoList);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public ProblemSetSearchResponseDto searchProblemSet(String keyword) {
+		if (keyword == null || keyword.isBlank()) {
+			return ProblemSetSearchResponseDto.from(Collections.emptyList());
+		}
+
+		String escapeKeyword = escapeLike(keyword);
+
+		List<ProblemSetResponseDto> dtos =
+			programQueryRepository.searchProblemSetByKeyword(escapeKeyword);
+
+		return ProblemSetSearchResponseDto.from(dtos);
+	}
+
+	private static String escapeLike(String s) {
+		return s
+			.replace("\\", "\\\\")
+			.replace("%", "\\%")
+			.replace("_", "\\_");
 	}
 }

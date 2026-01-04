@@ -25,5 +25,7 @@ public interface ProgramQueryRepository {
 
 	ProblemSetResponseDto findProblemSetDetail(Long programId);
 
+	// 문제집 검색용도
+	List<ProblemSetResponseDto> searchProblemSetByKeyword(String keyword);
 
 }

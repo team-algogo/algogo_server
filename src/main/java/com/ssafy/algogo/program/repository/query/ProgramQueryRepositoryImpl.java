@@ -7,12 +7,16 @@ import static com.ssafy.algogo.program.entity.QProgramCategory.programCategory;
 import static com.ssafy.algogo.program.entity.QProgramType.programType;
 import static com.ssafy.algogo.program.entity.QCategory.category;
 import static com.ssafy.algogo.problem.entity.QProgramProblem.programProblem;
+import static com.ssafy.algogo.problem.entity.QProblem.problem;
+
 
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import java.util.List;
@@ -165,6 +169,61 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 			.findFirst()
 			.orElse(null);
 	}
+
+	@Override
+	public List<ProblemSetResponseDto> searchProblemSetByKeyword(String keyword) {
+		// 띄어쓰기 제거 (Java)
+		String normalizedKeyword = keyword.replaceAll("\\s+", "");
+
+		NumberExpression<Long> popularityScore =
+			programProblem.participantCount.sum().coalesce(0L);
+
+		NumberExpression<Long> problemCountExpr =
+			programProblem.id.countDistinct().coalesce(0L);
+
+		return queryFactory
+			.from(program)
+			.join(program.programType, programType)
+			.leftJoin(programProblem).on(programProblem.program.eq(program))
+			.leftJoin(programProblem.problem, problem)
+			.leftJoin(programCategory).on(programCategory.program.eq(program))
+			.leftJoin(programCategory.category, category)
+			.where(
+				program.programType.name.eq("problemset"),
+				// DB에서도 띄어쓰기 제거
+				Expressions.stringTemplate(
+						"REPLACE(LOWER({0}), ' ', '')",
+						program.title
+					).contains(normalizedKeyword.toLowerCase())
+					.or(Expressions.stringTemplate(
+						"REPLACE(LOWER({0}), ' ', '')",
+						program.description
+					).contains(normalizedKeyword.toLowerCase()))
+					.or(Expressions.stringTemplate(
+						"REPLACE(LOWER({0}), ' ', '')",
+						problem.title
+					).contains(normalizedKeyword.toLowerCase()))
+			)
+			.groupBy(program.id, programType.id)
+			.transform(
+				groupBy(program.id).list(
+					Projections.constructor(
+						ProblemSetResponseDto.class,
+						program.id,
+						program.title,
+						program.description,
+						program.thumbnail,
+						program.createdAt,
+						program.modifiedAt,
+						programType.name,
+						list(category.name),
+						popularityScore,
+						problemCountExpr
+					)
+				)
+			);
+	}
+
 
 
 	private boolean hasText(String value) {

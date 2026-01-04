@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -190,5 +191,11 @@ public class ProblemSetController {
 	@GetMapping("/categories")
 	public SuccessResponse getCategories() {
 		return new SuccessResponse("카테고리 리스트 조회에 성공했습니다.", problemSetService.getCategoryList());
+	}
+
+	@GetMapping("/search")
+	public SuccessResponse searchProblemSet(@RequestParam String keyword) {
+		return new
+			SuccessResponse("문제집 검색에 성공했습니다.", problemSetService.searchProblemSet(keyword));
 	}
 }
