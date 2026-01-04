@@ -13,6 +13,7 @@ import com.ssafy.algogo.review.dto.response.UserCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.UserCodeReviewResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
+import com.ssafy.algogo.review.dto.response.CodeReviewResponseDto;
 import com.ssafy.algogo.review.entity.Review;
 import com.ssafy.algogo.review.entity.UserReviewReaction;
 import com.ssafy.algogo.program.entity.ProgramUser;
@@ -53,7 +54,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ProgramUserRepository programUserRepository;
 
     @Override
-    public CodeReviewTreeResponseDto createCodeReview(
+    public CodeReviewResponseDto createCodeReview(
         CreateCodeReviewRequestDto createCodeReviewRequestDto, Long userId) {
 
         // 리뷰 작성자가 없는 유저임
@@ -164,7 +165,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         }
 
-        return CodeReviewTreeResponseDto.from(saveReview);
+        return CodeReviewResponseDto.from(saveReview);
     }
 
     private void validateActiveProgramUser(Long userId, Long programId) {
@@ -183,7 +184,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional(readOnly = true)
-    public CodeReviewListResponseDto getReviewsBySubmissionId(Long submissionId) {
+    public CodeReviewListResponseDto getReviewsBySubmissionId(Long userId, Long submissionId) {
 
         // 제출 코드 여부를 확인
         boolean exists = submissionRepository.existsById(submissionId);
@@ -191,7 +192,7 @@ public class ReviewServiceImpl implements ReviewService {
             throw new CustomException("존재하지 않는 submission ID 입니다.", ErrorCode.SUBMISSION_NOT_FOUND);
         }
 
-        List<Review> reviews = reviewRepository.findAllBySubmission_IdOrderByCreatedAtAsc(
+        List<CodeReviewTreeResponseDto> reviews = reviewRepository.getReviewsBySubmissionId(userId,
             submissionId);
 
         List<CodeReviewTreeResponseDto> reviewTree = new ArrayList<>();
@@ -203,7 +204,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public CodeReviewTreeResponseDto editCodeReview(Long userId, Long reviewId,
+    public CodeReviewResponseDto editCodeReview(Long userId, Long reviewId,
         UpdateCodeReiewRequestDto updateCodeReiewRequestDto) {
         Review review = reviewRepository.findById(reviewId)
             .orElseThrow(() -> new CustomException("reviewID에 해당하는 리뷰가 DB에 없습니다.",
@@ -216,7 +217,7 @@ public class ReviewServiceImpl implements ReviewService {
         review.updateReview(updateCodeReiewRequestDto.getCodeLine(),
             updateCodeReiewRequestDto.getContent());
 
-        return CodeReviewTreeResponseDto.from(review);
+        return CodeReviewResponseDto.from(review);
     }
 
     @Override
@@ -316,34 +317,30 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
 
-    private List<CodeReviewTreeResponseDto> buildReviewTree(List<Review> reviews) {
+    private List<CodeReviewTreeResponseDto> buildReviewTree(
+        List<CodeReviewTreeResponseDto> reviews) {
 
         Map<Long, CodeReviewTreeResponseDto> dtoMap = new LinkedHashMap<>();
         List<CodeReviewTreeResponseDto> roots = new ArrayList<>();
 
-        // 1) 엔티티 -> DTO 변환 + 루트 댓글 수집
-        for (Review review : reviews) {
-
-            // 모든 review를 dto화 시켜서 id로 매핑
-            CodeReviewTreeResponseDto reviewDto = CodeReviewTreeResponseDto.from(review);
-            dtoMap.put(reviewDto.reviewId(), reviewDto);
+        // 1. DTO를 ID 기준으로 맵핑
+        for (CodeReviewTreeResponseDto dto : reviews) {
+            dtoMap.put(dto.reviewId(), dto);
 
             // 부모가 없음 -> 최상위 댓글
-            if (reviewDto.parentReviewId() == null) {
-                roots.add(reviewDto);
+            if (dto.parentReviewId() == null) {
+                roots.add(dto);
             }
         }
 
-        // 2) 부모-자식 연결 (대댓글)
-        for (Review review : reviews) {
-            if (review.getParentReview() != null) {
-                Long parentId = review.getParentReview().getId();
+        // 2. 부모-자식 연결
+        for (CodeReviewTreeResponseDto dto : reviews) {
+            if (dto.parentReviewId() != null) {
+                CodeReviewTreeResponseDto parent =
+                    dtoMap.get(dto.parentReviewId());
 
-                CodeReviewTreeResponseDto parentDto = dtoMap.get(parentId);
-                CodeReviewTreeResponseDto childDto = dtoMap.get(review.getId());
-
-                if (parentDto != null && childDto != null) {
-                    parentDto.children().add(childDto);
+                if (parent != null) {
+                    parent.children().add(dto);
                 }
             }
         }
