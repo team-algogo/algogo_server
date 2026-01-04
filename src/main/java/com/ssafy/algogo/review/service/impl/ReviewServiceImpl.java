@@ -62,7 +62,8 @@ public class ReviewServiceImpl implements ReviewService {
                 ErrorCode.USER_NOT_FOUND));
 
         // 리뷰 달려는 제출의 정보가 없음
-        Submission targetSubmission = submissionRepository.findById(
+        // fetch join으로 getProgramProblem, getUser, getProgram, getProblem 가져옴
+        Submission targetSubmission = submissionRepository.findByIdWithAll(
                 createCodeReviewRequestDto.getSubmissionId())
             .orElseThrow(() -> new CustomException("submission ID에 해당하는 데이터가 DB에 없습니다.",
                 ErrorCode.SUBMISSION_NOT_FOUND));
@@ -76,40 +77,24 @@ public class ReviewServiceImpl implements ReviewService {
         Long targetSubmissionAuthorId = targetSubmissionAuthor.getId();
         Long programId = targetSubmission.getProgramProblem().getProgram().getId();
 
-        // 제출 작성자가 해당 그룹에 가입한 적이 없음
-        ProgramUser submissionUser = programUserRepository
-            .findByUserIdAndProgramId(targetSubmissionAuthorId, programId)
-            .orElseThrow(() -> new CustomException("해당 제출 유저는 프로그램에 포함된 유저가 아닙니다.",
-                ErrorCode.SUBMISSION_NOT_FOUND));
-
-        // 제출 작성자가 active 가 아님
-        if (submissionUser.getProgramUserStatus() != ProgramUserStatus.ACTIVE) {
-            throw new CustomException("해당 제출에 대한 유저는 active 상태가 아닙니다.",
-                ErrorCode.PROGRAM_USER_NOT_ACTIVE);
-        }
+        // 제출 작성자 active 상태 확인
+        validateActiveProgramUser(targetSubmissionAuthorId, programId);
 
         // 대댓글 예외처리
         Review parentReview = null;
         Long parentReviewAuthorId = null;
         if (createCodeReviewRequestDto.getParentReviewId() != null) {
             // 없는 댓글에 대댓글을 달려고 함
-            parentReview = reviewRepository.findById(createCodeReviewRequestDto.getParentReviewId())
+            // fetch join으로 getUser 가져옴
+            parentReview = reviewRepository.findByIdWithUser(
+                    createCodeReviewRequestDto.getParentReviewId())
                 .orElseThrow(() -> new CustomException("parentReview ID에 해당하는 데이터가 DB에 없습니다.",
                     ErrorCode.REVIEW_NOT_FOUND));
 
             parentReviewAuthorId = parentReview.getUser().getId();
 
-            // 리뷰 작성자는 해당 그룹에 가입한 적이 없음
-            ProgramUser reviewUser = programUserRepository
-                .findByUserIdAndProgramId(parentReviewAuthorId, programId)
-                .orElseThrow(() -> new CustomException("해당 부모 리뷰 작성 유저는 프로그램에 포함된 유저가 아닙니다.",
-                    ErrorCode.SUBMISSION_NOT_FOUND));
-
-            // 리뷰 작성자가 active 가 아님
-            if (reviewUser.getProgramUserStatus() != ProgramUserStatus.ACTIVE) {
-                throw new CustomException("해당 부모 리뷰 작성에 대한 유저는 active 상태가 아닙니다.",
-                    ErrorCode.PROGRAM_USER_NOT_ACTIVE);
-            }
+            // 부모 리뷰 작성자 active 상태 확인
+            validateActiveProgramUser(parentReviewAuthorId, programId);
         }
 
         Review newReview = Review.builder()
@@ -180,6 +165,20 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         return CodeReviewTreeResponseDto.from(saveReview);
+    }
+
+    private void validateActiveProgramUser(Long userId, Long programId) {
+        // 제출 작성자가 해당 그룹에 가입한 적이 없음
+        ProgramUser submissionUser = programUserRepository
+            .findByUserIdAndProgramId(userId, programId)
+            .orElseThrow(() -> new CustomException("해당 유저는 프로그램에 포함된 유저가 아닙니다.",
+                ErrorCode.SUBMISSION_NOT_FOUND));
+
+        // 제출 작성자가 active 가 아님
+        if (submissionUser.getProgramUserStatus() != ProgramUserStatus.ACTIVE) {
+            throw new CustomException("해당 유저는 active 상태가 아닙니다.",
+                ErrorCode.PROGRAM_USER_NOT_ACTIVE);
+        }
     }
 
     @Override
