@@ -56,19 +56,60 @@ public class ReviewServiceImpl implements ReviewService {
     public CodeReviewTreeResponseDto createCodeReview(
         CreateCodeReviewRequestDto createCodeReviewRequestDto, Long userId) {
 
-        Submission targetSubmission = submissionRepository.findById(
-                createCodeReviewRequestDto.getSubmissionId())
-            .orElseThrow(() -> new CustomException("submission ID에 해당하는 데이터가 DB에 없습니다.",
-                ErrorCode.SUBMISSION_NOT_FOUND));
+        // 리뷰 작성자가 없는 유저임
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new CustomException("user ID에 해당하는 데이터가 DB에 없습니다.",
                 ErrorCode.USER_NOT_FOUND));
 
+        // 리뷰 달려는 제출의 정보가 없음
+        Submission targetSubmission = submissionRepository.findById(
+                createCodeReviewRequestDto.getSubmissionId())
+            .orElseThrow(() -> new CustomException("submission ID에 해당하는 데이터가 DB에 없습니다.",
+                ErrorCode.SUBMISSION_NOT_FOUND));
+
+        // 제출 작성자가 없는 유저임
+        if (targetSubmission.getUser() == null) {
+            throw new CustomException("제출물 작성자 정보가 없습니다.", ErrorCode.SUBMISSION_NOT_FOUND);
+        }
+
+        User targetSubmissionAuthor = targetSubmission.getUser();
+        Long targetSubmissionAuthorId = targetSubmissionAuthor.getId();
+        Long programId = targetSubmission.getProgramProblem().getProgram().getId();
+
+        // 제출 작성자가 해당 그룹에 가입한 적이 없음
+        ProgramUser submissionUser = programUserRepository
+            .findByUserIdAndProgramId(targetSubmissionAuthorId, programId)
+            .orElseThrow(() -> new CustomException("해당 제출 유저는 프로그램에 포함된 유저가 아닙니다.",
+                ErrorCode.SUBMISSION_NOT_FOUND));
+
+        // 제출 작성자가 active 가 아님
+        if (submissionUser.getProgramUserStatus() != ProgramUserStatus.ACTIVE) {
+            throw new CustomException("해당 제출에 대한 유저는 active 상태가 아닙니다.",
+                ErrorCode.PROGRAM_USER_NOT_ACTIVE);
+        }
+
+        // 대댓글 예외처리
         Review parentReview = null;
+        Long parentReviewAuthorId = null;
         if (createCodeReviewRequestDto.getParentReviewId() != null) {
+            // 없는 댓글에 대댓글을 달려고 함
             parentReview = reviewRepository.findById(createCodeReviewRequestDto.getParentReviewId())
                 .orElseThrow(() -> new CustomException("parentReview ID에 해당하는 데이터가 DB에 없습니다.",
                     ErrorCode.REVIEW_NOT_FOUND));
+
+            parentReviewAuthorId = parentReview.getUser().getId();
+
+            // 리뷰 작성자는 해당 그룹에 가입한 적이 없음
+            ProgramUser reviewUser = programUserRepository
+                .findByUserIdAndProgramId(parentReviewAuthorId, programId)
+                .orElseThrow(() -> new CustomException("해당 부모 리뷰 작성 유저는 프로그램에 포함된 유저가 아닙니다.",
+                    ErrorCode.SUBMISSION_NOT_FOUND));
+
+            // 리뷰 작성자가 active 가 아님
+            if (reviewUser.getProgramUserStatus() != ProgramUserStatus.ACTIVE) {
+                throw new CustomException("해당 부모 리뷰 작성에 대한 유저는 active 상태가 아닙니다.",
+                    ErrorCode.PROGRAM_USER_NOT_ACTIVE);
+            }
         }
 
         Review newReview = Review.builder()
@@ -82,42 +123,19 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review saveReview = reviewRepository.save(newReview);
 
-        // targetSubmission 작성자가 null이면 에러
-        if (targetSubmission.getUser() == null) {
-            throw new CustomException("제출물 작성자 정보가 없습니다.", ErrorCode.SUBMISSION_NOT_FOUND);
-        }
-
-        User targetSubmissionAuthor = targetSubmission.getUser();
-        Long targetSubmissionAuthorId = targetSubmissionAuthor.getId();
-        String reviewerNickname = user.getNickname();
-        Long programId = targetSubmission.getProgramProblem().getProgram().getId();
-        String problemTitle = targetSubmission.getProgramProblem().getProblem().getTitle();
-
-        // 댓글인지 대댓글인지 확인
         boolean isReply = saveReview.getParentReview() != null;
-        Review parentReviewEntity = isReply ? saveReview.getParentReview() : null;
-        User parentReviewAuthor = isReply ? parentReviewEntity.getUser() : null;
-        Long parentReviewAuthorId = isReply ? parentReviewAuthor.getId() : null;
-        String parentReviewAuthorNickname = isReply ? parentReviewAuthor.getNickname() : null;
 
         // 알람을 받을 사용자 ID와 알람 타입을 저장하는 Map
         Map<Long, String> alarmRecipients = new HashMap<>();
 
         // 1. 댓글인 경우: Submission 작성자에게 알람
-        // 대댓글인 경우: Submission 작성자에게는 알람을 보내지 않음 (parent review 작성자에게만 보냄)
-        if (!isReply && !userId.equals(targetSubmissionAuthorId)) {
-            // program_user status 확인
-            programUserRepository.findByUserIdAndProgramId(targetSubmissionAuthorId, programId)
-                .filter(programUser -> programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE)
-                .ifPresent(programUser -> alarmRecipients.put(targetSubmissionAuthorId, "REVIEW_CREATED"));
+        if (!userId.equals(targetSubmissionAuthorId)) {
+            alarmRecipients.put(targetSubmissionAuthorId, "REVIEW_CREATED");
         }
 
         // 2. 대댓글인 경우: parent review 작성자에게 알람
         if (isReply && !userId.equals(parentReviewAuthorId)) {
-            // program_user status 확인
-            programUserRepository.findByUserIdAndProgramId(parentReviewAuthorId, programId)
-                .filter(programUser -> programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE)
-                .ifPresent(programUser -> alarmRecipients.put(parentReviewAuthorId, "REPLY_REVIEW"));
+            alarmRecipients.put(parentReviewAuthorId, "REPLY_REVIEW");
         }
 
         // 알람 전송
@@ -134,17 +152,17 @@ public class ReviewServiceImpl implements ReviewService {
                     targetSubmission.getProgramProblem().getId(),
                     programId,
                     userId,
-                    reviewerNickname,
+                    user.getNickname(),
                     targetSubmission.getProgramProblem().getProgram().getTitle(),
-                    problemTitle,
+                    targetSubmission.getProgramProblem().getProblem().getTitle(),
                     null,
                     null,
                     targetSubmissionAuthor.getNickname(),
-                    isReply ? parentReviewEntity.getId() : null,
+                    isReply ? saveReview.getParentReview().getId() : null,
                     isReply ? parentReviewAuthorId : null,
-                    isReply ? parentReviewAuthorNickname : null
+                    isReply ? saveReview.getParentReview().getUser().getNickname() : null
                 ),
-                isReply ? "내 댓글에 대댓글이 등록되었습니다." : "내 제출물에 새로운 리뷰가 등록되었습니다."
+                "REPLY_REVIEW".equals(alarmType) ? "내 댓글에 대댓글이 등록되었습니다." : "내 제출물에 새로운 리뷰가 등록되었습니다."
             );
         }
 
