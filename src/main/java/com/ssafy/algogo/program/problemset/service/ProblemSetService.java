@@ -4,33 +4,34 @@ import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
 import com.ssafy.algogo.program.problemset.dto.response.CategoryListResponseDto;
-import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
-import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchResponseDto;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface ProblemSetService {
 
 	// 문제집 리스트 조회
-	public ProblemSetListResponseDto getProblemSetList(String keyWord, String category,
+	ProblemSetListResponseDto getProblemSetList(String keyWord, String category,
 		String sortBy,
 		String sortDirection, int size,
 		int page);
 
 	// 자율 문제집 조회
-	public ProblemSetResponseDto getProblemSet(Long programId);
+	ProblemSetResponseDto getProblemSet(Long programId);
 
 	// 자율 문제집 생성
-	public ProblemSetResponseDto createProblemSet(
+	ProblemSetResponseDto createProblemSet(
 		ProblemSetCreateRequestDto problemSetCreateRequestDto);
 
 	// 자율 문제집 수정
-	public ProblemSetResponseDto modifyProblemSet(Long programId, ProblemSetModifyRequestDto dto);
+	ProblemSetResponseDto modifyProblemSet(Long programId, ProblemSetModifyRequestDto dto);
 
 	// 자율 문제집 삭제
-	public void deleteProblemSet(Long programId);
+	void deleteProblemSet(Long programId);
 
 	// 문제집 문제 리스트 조회
 	ProgramProblemPageResponseDto getProgramProblemsPage(
@@ -39,11 +40,14 @@ public interface ProblemSetService {
 	);
 
 	// 내가 참여한 문제집리스트 조회
-	public MyProblemSetListResponseDto getMeJoinProblemSet(Long userId);
+	MyProblemSetPageResponseDto getMyJoinProblemSet(Long userId, Pageable pageable);
 
 	// 문제집 카테고리 조회
 	CategoryListResponseDto getCategoryList();
 
-	// 문제집 검색
-	ProblemSetSearchResponseDto searchProblemSet(String keyword);
+	// 문제집 제목/설명으로 검색 (페이지네이션)
+	ProblemSetSearchPageResponseDto searchProblemSetByTitle(String keyword, Pageable pageable);
+
+	// 문제집에 속한 문제로 검색 (페이지네이션)
+	ProblemSetSearchPageResponseDto searchProblemSetByProblems(String keyword, Pageable pageable);
 }
