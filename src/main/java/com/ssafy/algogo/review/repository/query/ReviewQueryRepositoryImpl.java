@@ -1,3 +1,4 @@
+
 package com.ssafy.algogo.review.repository.query;
 
 import static com.ssafy.algogo.problem.entity.QProblem.problem;
@@ -124,7 +125,7 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
                 problem.title,
                 program.programType.name,
                 program.title,
-                review.user.nickname,
+                submission.user.nickname,
                 Expressions.stringTemplate(
                     "CASE " +
                         "WHEN LENGTH({0}) > 15 THEN CONCAT(SUBSTRING({0}, 1, 15), '...') " +
@@ -139,20 +140,23 @@ public class ReviewQueryRepositoryImpl implements ReviewQueryRepository {
             .join(review.submission, submission)
             .join(submission.programProblem, programProblem)
             .join(programProblem.problem, problem)
-            .join(submission.user, user)
-            .where(review.user.id.eq(userId))
-            .where(submission.user.id.ne(userId))
+            .where(
+                review.user.id.eq(userId),
+                submission.user.id.ne(userId)
+            )
             .orderBy(review.modifiedAt.desc())
             .offset((long) page * size)
             .limit(size)
             .fetch();
 
-        Long total = query.
-            select(review.count())
+        Long total = query
+            .select(review.count())
             .from(review)
             .join(review.submission, submission)
-            .join(submission.user, user)
-            .where(user.id.eq(userId))
+            .where(
+                review.user.id.eq(userId),
+                submission.user.id.ne(userId)
+            )
             .fetchOne();
 
         return new PageImpl<>(
