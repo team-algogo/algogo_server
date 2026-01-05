@@ -13,6 +13,7 @@ import com.ssafy.algogo.review.dto.response.UserCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.UserCodeReviewResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
+import com.ssafy.algogo.review.dto.response.CodeReviewResponseDto;
 import com.ssafy.algogo.review.entity.Review;
 import com.ssafy.algogo.review.entity.UserReviewReaction;
 import com.ssafy.algogo.program.entity.ProgramUser;
@@ -53,22 +54,48 @@ public class ReviewServiceImpl implements ReviewService {
     private final ProgramUserRepository programUserRepository;
 
     @Override
-    public CodeReviewTreeResponseDto createCodeReview(
+    public CodeReviewResponseDto createCodeReview(
         CreateCodeReviewRequestDto createCodeReviewRequestDto, Long userId) {
 
-        Submission targetSubmission = submissionRepository.findById(
-                createCodeReviewRequestDto.getSubmissionId())
-            .orElseThrow(() -> new CustomException("submission ID에 해당하는 데이터가 DB에 없습니다.",
-                ErrorCode.SUBMISSION_NOT_FOUND));
+        // 리뷰 작성자가 없는 유저임
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new CustomException("user ID에 해당하는 데이터가 DB에 없습니다.",
                 ErrorCode.USER_NOT_FOUND));
 
+        // 리뷰 달려는 제출의 정보가 없음
+        // fetch join으로 getProgramProblem, getUser, getProgram, getProblem 가져옴
+        Submission targetSubmission = submissionRepository.findByIdWithAll(
+                createCodeReviewRequestDto.getSubmissionId())
+            .orElseThrow(() -> new CustomException("submission ID에 해당하는 데이터가 DB에 없습니다.",
+                ErrorCode.SUBMISSION_NOT_FOUND));
+
+        // 제출 작성자가 없는 유저임
+        if (targetSubmission.getUser() == null) {
+            throw new CustomException("제출물 작성자 정보가 없습니다.", ErrorCode.SUBMISSION_NOT_FOUND);
+        }
+
+        User targetSubmissionAuthor = targetSubmission.getUser();
+        Long targetSubmissionAuthorId = targetSubmissionAuthor.getId();
+        Long programId = targetSubmission.getProgramProblem().getProgram().getId();
+
+        // 제출 작성자 active 상태 확인
+        validateActiveProgramUser(targetSubmissionAuthorId, programId);
+
+        // 대댓글 예외처리
         Review parentReview = null;
+        Long parentReviewAuthorId = null;
         if (createCodeReviewRequestDto.getParentReviewId() != null) {
-            parentReview = reviewRepository.findById(createCodeReviewRequestDto.getParentReviewId())
+            // 없는 댓글에 대댓글을 달려고 함
+            // fetch join으로 getUser 가져옴
+            parentReview = reviewRepository.findByIdWithUser(
+                    createCodeReviewRequestDto.getParentReviewId())
                 .orElseThrow(() -> new CustomException("parentReview ID에 해당하는 데이터가 DB에 없습니다.",
                     ErrorCode.REVIEW_NOT_FOUND));
+
+            parentReviewAuthorId = parentReview.getUser().getId();
+
+            // 부모 리뷰 작성자 active 상태 확인
+            validateActiveProgramUser(parentReviewAuthorId, programId);
         }
 
         Review newReview = Review.builder()
@@ -82,42 +109,19 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review saveReview = reviewRepository.save(newReview);
 
-        // targetSubmission 작성자가 null이면 에러
-        if (targetSubmission.getUser() == null) {
-            throw new CustomException("제출물 작성자 정보가 없습니다.", ErrorCode.SUBMISSION_NOT_FOUND);
-        }
-
-        User targetSubmissionAuthor = targetSubmission.getUser();
-        Long targetSubmissionAuthorId = targetSubmissionAuthor.getId();
-        String reviewerNickname = user.getNickname();
-        Long programId = targetSubmission.getProgramProblem().getProgram().getId();
-        String problemTitle = targetSubmission.getProgramProblem().getProblem().getTitle();
-
-        // 댓글인지 대댓글인지 확인
         boolean isReply = saveReview.getParentReview() != null;
-        Review parentReviewEntity = isReply ? saveReview.getParentReview() : null;
-        User parentReviewAuthor = isReply ? parentReviewEntity.getUser() : null;
-        Long parentReviewAuthorId = isReply ? parentReviewAuthor.getId() : null;
-        String parentReviewAuthorNickname = isReply ? parentReviewAuthor.getNickname() : null;
 
         // 알람을 받을 사용자 ID와 알람 타입을 저장하는 Map
         Map<Long, String> alarmRecipients = new HashMap<>();
 
         // 1. 댓글인 경우: Submission 작성자에게 알람
-        // 대댓글인 경우: Submission 작성자에게는 알람을 보내지 않음 (parent review 작성자에게만 보냄)
-        if (!isReply && !userId.equals(targetSubmissionAuthorId)) {
-            // program_user status 확인
-            programUserRepository.findByUserIdAndProgramId(targetSubmissionAuthorId, programId)
-                .filter(programUser -> programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE)
-                .ifPresent(programUser -> alarmRecipients.put(targetSubmissionAuthorId, "REVIEW_CREATED"));
+        if (!userId.equals(targetSubmissionAuthorId)) {
+            alarmRecipients.put(targetSubmissionAuthorId, "REVIEW_CREATED");
         }
 
         // 2. 대댓글인 경우: parent review 작성자에게 알람
         if (isReply && !userId.equals(parentReviewAuthorId)) {
-            // program_user status 확인
-            programUserRepository.findByUserIdAndProgramId(parentReviewAuthorId, programId)
-                .filter(programUser -> programUser.getProgramUserStatus() == ProgramUserStatus.ACTIVE)
-                .ifPresent(programUser -> alarmRecipients.put(parentReviewAuthorId, "REPLY_REVIEW"));
+            alarmRecipients.put(parentReviewAuthorId, "REPLY_REVIEW");
         }
 
         // 알람 전송
@@ -134,17 +138,17 @@ public class ReviewServiceImpl implements ReviewService {
                     targetSubmission.getProgramProblem().getId(),
                     programId,
                     userId,
-                    reviewerNickname,
+                    user.getNickname(),
                     targetSubmission.getProgramProblem().getProgram().getTitle(),
-                    problemTitle,
+                    targetSubmission.getProgramProblem().getProblem().getTitle(),
                     null,
                     null,
                     targetSubmissionAuthor.getNickname(),
-                    isReply ? parentReviewEntity.getId() : null,
+                    isReply ? saveReview.getParentReview().getId() : null,
                     isReply ? parentReviewAuthorId : null,
-                    isReply ? parentReviewAuthorNickname : null
+                    isReply ? saveReview.getParentReview().getUser().getNickname() : null
                 ),
-                isReply ? "내 댓글에 대댓글이 등록되었습니다." : "내 제출물에 새로운 리뷰가 등록되었습니다."
+                "REPLY_REVIEW".equals(alarmType) ? "내 댓글에 대댓글이 등록되었습니다." : "내 제출물에 새로운 리뷰가 등록되었습니다."
             );
         }
 
@@ -161,12 +165,26 @@ public class ReviewServiceImpl implements ReviewService {
 
         }
 
-        return CodeReviewTreeResponseDto.from(saveReview);
+        return CodeReviewResponseDto.from(saveReview);
+    }
+
+    private void validateActiveProgramUser(Long userId, Long programId) {
+        // 제출 작성자가 해당 그룹에 가입한 적이 없음
+        ProgramUser submissionUser = programUserRepository
+            .findByUserIdAndProgramId(userId, programId)
+            .orElseThrow(() -> new CustomException("해당 유저는 프로그램에 포함된 유저가 아닙니다.",
+                ErrorCode.SUBMISSION_NOT_FOUND));
+
+        // 제출 작성자가 active 가 아님
+        if (submissionUser.getProgramUserStatus() != ProgramUserStatus.ACTIVE) {
+            throw new CustomException("해당 유저는 active 상태가 아닙니다.",
+                ErrorCode.PROGRAM_USER_NOT_ACTIVE);
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
-    public CodeReviewListResponseDto getReviewsBySubmissionId(Long submissionId) {
+    public CodeReviewListResponseDto getReviewsBySubmissionId(Long userId, Long submissionId) {
 
         // 제출 코드 여부를 확인
         boolean exists = submissionRepository.existsById(submissionId);
@@ -174,7 +192,7 @@ public class ReviewServiceImpl implements ReviewService {
             throw new CustomException("존재하지 않는 submission ID 입니다.", ErrorCode.SUBMISSION_NOT_FOUND);
         }
 
-        List<Review> reviews = reviewRepository.findAllBySubmission_IdOrderByCreatedAtAsc(
+        List<CodeReviewTreeResponseDto> reviews = reviewRepository.getReviewsBySubmissionId(userId,
             submissionId);
 
         List<CodeReviewTreeResponseDto> reviewTree = new ArrayList<>();
@@ -186,7 +204,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public CodeReviewTreeResponseDto editCodeReview(Long userId, Long reviewId,
+    public CodeReviewResponseDto editCodeReview(Long userId, Long reviewId,
         UpdateCodeReiewRequestDto updateCodeReiewRequestDto) {
         Review review = reviewRepository.findById(reviewId)
             .orElseThrow(() -> new CustomException("reviewID에 해당하는 리뷰가 DB에 없습니다.",
@@ -199,7 +217,7 @@ public class ReviewServiceImpl implements ReviewService {
         review.updateReview(updateCodeReiewRequestDto.getCodeLine(),
             updateCodeReiewRequestDto.getContent());
 
-        return CodeReviewTreeResponseDto.from(review);
+        return CodeReviewResponseDto.from(review);
     }
 
     @Override
@@ -299,34 +317,30 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
 
-    private List<CodeReviewTreeResponseDto> buildReviewTree(List<Review> reviews) {
+    private List<CodeReviewTreeResponseDto> buildReviewTree(
+        List<CodeReviewTreeResponseDto> reviews) {
 
         Map<Long, CodeReviewTreeResponseDto> dtoMap = new LinkedHashMap<>();
         List<CodeReviewTreeResponseDto> roots = new ArrayList<>();
 
-        // 1) 엔티티 -> DTO 변환 + 루트 댓글 수집
-        for (Review review : reviews) {
-
-            // 모든 review를 dto화 시켜서 id로 매핑
-            CodeReviewTreeResponseDto reviewDto = CodeReviewTreeResponseDto.from(review);
-            dtoMap.put(reviewDto.reviewId(), reviewDto);
+        // 1. DTO를 ID 기준으로 맵핑
+        for (CodeReviewTreeResponseDto dto : reviews) {
+            dtoMap.put(dto.reviewId(), dto);
 
             // 부모가 없음 -> 최상위 댓글
-            if (reviewDto.parentReviewId() == null) {
-                roots.add(reviewDto);
+            if (dto.parentReviewId() == null) {
+                roots.add(dto);
             }
         }
 
-        // 2) 부모-자식 연결 (대댓글)
-        for (Review review : reviews) {
-            if (review.getParentReview() != null) {
-                Long parentId = review.getParentReview().getId();
+        // 2. 부모-자식 연결
+        for (CodeReviewTreeResponseDto dto : reviews) {
+            if (dto.parentReviewId() != null) {
+                CodeReviewTreeResponseDto parent =
+                    dtoMap.get(dto.parentReviewId());
 
-                CodeReviewTreeResponseDto parentDto = dtoMap.get(parentId);
-                CodeReviewTreeResponseDto childDto = dtoMap.get(review.getId());
-
-                if (parentDto != null && childDto != null) {
-                    parentDto.children().add(childDto);
+                if (parent != null) {
+                    parent.children().add(dto);
                 }
             }
         }

@@ -6,15 +6,16 @@ import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
 import com.ssafy.algogo.review.dto.response.UserCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
+import com.ssafy.algogo.review.dto.response.CodeReviewResponseDto;
 
 public interface ReviewService {
 
-    CodeReviewTreeResponseDto createCodeReview(CreateCodeReviewRequestDto reviewRequest,
+    CodeReviewResponseDto createCodeReview(CreateCodeReviewRequestDto reviewRequest,
         Long userId);
 
-    CodeReviewListResponseDto getReviewsBySubmissionId(Long submissionId);
+    CodeReviewListResponseDto getReviewsBySubmissionId(Long userId, Long submissionId);
 
-    CodeReviewTreeResponseDto editCodeReview(Long userId, Long reviewId,
+    CodeReviewResponseDto editCodeReview(Long userId, Long reviewId,
         UpdateCodeReiewRequestDto updateReview);
 
     void deleteCodeReview(Long userId, Long reviewId);

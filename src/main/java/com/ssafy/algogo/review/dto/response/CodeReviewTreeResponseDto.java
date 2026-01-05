@@ -16,26 +16,34 @@ public record CodeReviewTreeResponseDto(Long reviewId,
                                         String content,
                                         LocalDateTime createdAt,
                                         LocalDateTime modifiedAt,
+                                        boolean isLike,
                                         List<CodeReviewTreeResponseDto> children
 ) {
 
-    public static CodeReviewTreeResponseDto from(Review review) {
-
-        Review parent = review.getParentReview();
-        Long parentReviewId = parent != null ? parent.getId() : null;
-
-        return new CodeReviewTreeResponseDto(
-            review.getId(),
+    public CodeReviewTreeResponseDto(
+        Long reviewId,
+        Long parentReviewId,
+        Long userId,
+        Long submissionId,
+        Long likeCount,
+        Long codeLine,
+        String content,
+        LocalDateTime createdAt,
+        LocalDateTime modifiedAt,
+        boolean isLike
+    ) {
+        this(
+            reviewId,
             parentReviewId,
-            review.getUser().getId(),
-            review.getSubmission().getId(),
-            review.getLikeCount(),
-            review.getCodeLine(),
-            review.getContent(),
-            review.getCreatedAt(),
-            review.getModifiedAt(),
+            userId,
+            submissionId,
+            likeCount,
+            codeLine,
+            content,
+            createdAt,
+            modifiedAt,
+            isLike,
             new ArrayList<>()
         );
     }
-
 }
