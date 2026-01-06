@@ -5,21 +5,19 @@ import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.dto.PageInfo;
 import com.ssafy.algogo.common.dto.SortInfo;
 import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
-import com.ssafy.algogo.problem.entity.ProgramProblem;
 import com.ssafy.algogo.problem.repository.ProblemRepository;
 import com.ssafy.algogo.problem.repository.ProgramProblemRepository;
 import com.ssafy.algogo.problem.service.ProgramProblemService;
 import com.ssafy.algogo.program.entity.Program;
 import com.ssafy.algogo.program.entity.ProgramType;
-import com.ssafy.algogo.program.entity.ProgramUser;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
 import com.ssafy.algogo.program.problemset.dto.response.CategoryListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.CategoryResponseDto;
-import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
-import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
 import com.ssafy.algogo.program.repository.CategoryRepository;
@@ -28,15 +26,14 @@ import com.ssafy.algogo.program.repository.ProgramTypeRepository;
 import com.ssafy.algogo.program.repository.ProgramUserRepository;
 import com.ssafy.algogo.program.repository.query.ProgramQueryRepository;
 import com.ssafy.algogo.user.repository.UserRepository;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -195,21 +192,28 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 	}
 
 
+	// 내가 참여한 문제집 조회 (페이징 + 정렬)
 	@Override
 	@Transactional(readOnly = true)
-	public MyProblemSetListResponseDto getMeJoinProblemSet(Long userId) {
+	public MyProblemSetPageResponseDto getMyJoinProblemSet(Long userId, Pageable pageable) {
 
-		List<ProgramUser> programUsers =
-			programUserRepository.findAllByUserId(userId);
+		//  사용자가 참여한 문제집 ID 조회
+		List<Long> programIds =
+			programUserRepository.findActiveProblemSetIdsByUserId(userId);
 
-		List<ProblemSetResponseDto> programList = programUsers.stream()
-			.map(ProgramUser::getProgram)
-			.distinct()
-			.map(ProblemSetResponseDto::from)
-			.toList();
+		// 참여한 문제집이 없으면 빈 페이지 반환
+		if (programIds.isEmpty()) {
+			return MyProblemSetPageResponseDto.from(Page.empty(pageable));
+		}
 
-		return new MyProblemSetListResponseDto(programList);
+		// ID 리스트로 페이징된 문제집 조회 (QueryDSL)
+		Page<ProblemSetResponseDto> page =
+			programQueryRepository.findMyJoinProblemSets(programIds, userId, pageable);
+
+		// DTO로 변환
+		return MyProblemSetPageResponseDto.from(page);
 	}
+
 
 	@Override
 	public CategoryListResponseDto getCategoryList() {
@@ -221,17 +225,38 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public ProblemSetSearchResponseDto searchProblemSet(String keyword) {
+	public ProblemSetSearchPageResponseDto searchProblemSetByTitle(
+		String keyword, Pageable pageable) {
+
 		if (keyword == null || keyword.isBlank()) {
-			return ProblemSetSearchResponseDto.from(Collections.emptyList());
+			return ProblemSetSearchPageResponseDto.from(
+				new PageImpl<>(Collections.emptyList(), pageable, 0)
+			);
 		}
 
 		String escapeKeyword = escapeLike(keyword);
+		Page<ProblemSetResponseDto> result =
+			programQueryRepository.searchProblemSetByTitleOrDescription(escapeKeyword, pageable);
 
-		List<ProblemSetResponseDto> dtos =
-			programQueryRepository.searchProblemSetByKeyword(escapeKeyword);
+		return ProblemSetSearchPageResponseDto.from(result);
+	}
 
-		return ProblemSetSearchResponseDto.from(dtos);
+	@Override
+	@Transactional(readOnly = true)
+	public ProblemSetSearchPageResponseDto searchProblemSetByProblems(
+		String keyword, Pageable pageable) {
+
+		if (keyword == null || keyword.isBlank()) {
+			return ProblemSetSearchPageResponseDto.from(
+				new PageImpl<>(Collections.emptyList(), pageable, 0)
+			);
+		}
+
+		String escapeKeyword = escapeLike(keyword);
+		Page<ProblemSetResponseDto> result =
+			programQueryRepository.searchProblemSetByProblems(escapeKeyword, pageable);
+
+		return ProblemSetSearchPageResponseDto.from(result);
 	}
 
 	private static String escapeLike(String s) {
@@ -240,4 +265,5 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 			.replace("%", "\\%")
 			.replace("_", "\\_");
 	}
+
 }

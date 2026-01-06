@@ -1,7 +1,10 @@
 package com.ssafy.algogo.program.repository.query;
 
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchResponseDto;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface ProgramQueryRepository {
 
@@ -25,7 +28,16 @@ public interface ProgramQueryRepository {
 
 	ProblemSetResponseDto findProblemSetDetail(Long programId);
 
-	// 문제집 검색용도
-	List<ProblemSetResponseDto> searchProblemSetByKeyword(String keyword);
 
+	Page<ProblemSetResponseDto> searchProblemSetByTitleOrDescription(
+		String keyword, Pageable pageable);
+
+	Page<ProblemSetResponseDto> searchProblemSetByProblems(
+		String keyword, Pageable pageable);
+
+	Page<ProblemSetResponseDto> findMyJoinProblemSets(
+		List<Long> programIds,
+		Long userId,
+		Pageable pageable
+	);
 }

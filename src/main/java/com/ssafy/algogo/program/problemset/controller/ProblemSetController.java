@@ -1,8 +1,6 @@
 package com.ssafy.algogo.program.problemset.controller;
 
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
-import com.ssafy.algogo.common.advice.CustomException;
-import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemCreateRequestDto;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemDeleteRequestDto;
@@ -10,19 +8,20 @@ import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.problem.service.impl.ProgramProblemServiceImpl;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
-import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
-import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchPageResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -164,21 +163,26 @@ public class ProblemSetController {
 	}
 
 	// 내가 참여한 문제집 조회
-	@PreAuthorize("hasAnyRole('USER','ADMIN')")
+	@PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 	@GetMapping("/me")
 	@ResponseStatus(HttpStatus.OK)
-	public SuccessResponse getJoinMe(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+	public SuccessResponse getMyJoinProblemSet(
+		@AuthenticationPrincipal CustomUserDetails customUserDetails,
+		@RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+		@RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
+		@RequestParam(value = "size", defaultValue = "10") Integer size,
+		@RequestParam(value = "page", defaultValue = "0") Integer page
+	) {
+		Pageable pageable = PageRequest.of(
+			page,
+			size,
+			Sort.by(Sort.Direction.fromString(sortDirection), sortBy)
+		);
 
-		if (customUserDetails == null) {
-			throw new CustomException("인증 정보가 없습니다.", ErrorCode.UNAUTHORIZED);
-		}
+		MyProblemSetPageResponseDto response =
+			problemSetService.getMyJoinProblemSet(customUserDetails.getUserId(), pageable);
 
-		Long userId = customUserDetails.getUserId();
-
-		MyProblemSetListResponseDto data =
-			problemSetService.getMeJoinProblemSet(userId);
-
-		return new SuccessResponse("내가 참여한 문제집 조회에 성공했습니다.", data);
+		return new SuccessResponse("내 문제집 조회 성공", response);
 	}
 
 	/*@GetMapping("/debug/me") // 유저권한 확인용
@@ -193,9 +197,38 @@ public class ProblemSetController {
 		return new SuccessResponse("카테고리 리스트 조회에 성공했습니다.", problemSetService.getCategoryList());
 	}
 
+	/*// 문제집 검색
 	@GetMapping("/search")
 	public SuccessResponse searchProblemSet(@RequestParam String keyword) {
 		return new
 			SuccessResponse("문제집 검색에 성공했습니다.", problemSetService.searchProblemSet(keyword));
+	}*/
+
+	// 문제집 제목/설명으로 검색
+	@GetMapping("/search/by-title")
+	public SuccessResponse searchProblemSetByTitle(
+		@RequestParam String keyword,
+		@RequestParam(defaultValue = "0") int page,
+		@RequestParam(defaultValue = "10") int size) {
+
+		Pageable pageable = PageRequest.of(page, size);
+		ProblemSetSearchPageResponseDto result =
+			problemSetService.searchProblemSetByTitle(keyword, pageable);
+
+		return new SuccessResponse("문제집 제목/설명 검색에 성공했습니다.", result);
+	}
+
+	// 문제집에 속한 문제로 검색
+	@GetMapping("/search/by-problems")
+	public SuccessResponse searchProblemSetByProblems(
+		@RequestParam String keyword,
+		@RequestParam(defaultValue = "0") int page,
+		@RequestParam(defaultValue = "10") int size) {
+
+		Pageable pageable = PageRequest.of(page, size);
+		ProblemSetSearchPageResponseDto result =
+			problemSetService.searchProblemSetByProblems(keyword, pageable);
+
+		return new SuccessResponse("문제 포함 문제집 검색에 성공했습니다.", result);
 	}
 }
