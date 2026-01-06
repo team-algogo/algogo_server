@@ -5,11 +5,11 @@ import com.ssafy.algogo.program.dto.response.ProgramResponseDto;
 import com.ssafy.algogo.user.dto.response.UserSimpleResponseDto;
 
 public record SubmissionMeResponseDto(
-    UserSimpleResponseDto user,
-    SubmissionResponseDto submission,
+    UserSimpleResponseDto userSimpleResponseDto,
+    SubmissionResponseDto submissionResponseDto,
     Long reviewCount,
     ProblemResponseDto problemResponseDto,
-    ProgramResponseDto program
+    ProgramResponseDto programResponseDto
 ) {
 
 }
