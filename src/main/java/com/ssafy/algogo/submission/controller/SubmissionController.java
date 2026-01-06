@@ -6,9 +6,10 @@ import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionAuthorActiveResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionMePageResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionStatsPageResponseDto;
 import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
-import com.ssafy.algogo.submission.dto.response.UserSubmissionPageResponseDto;
 import com.ssafy.algogo.submission.service.SubmissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -111,7 +112,7 @@ public class SubmissionController {
         Pageable pageable = PageRequest.of(page, size,
             Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
 
-        UserSubmissionPageResponseDto submissionMe = submissionService.getSubmissionMe(
+        SubmissionMePageResponseDto submissionMe = submissionService.getSubmissionMe(
             customUserDetails.getUserId(),
             userSubmissionRequestDto, pageable);
         return new SuccessResponse("내 제출 조회를 성공했습니다.", submissionMe);
@@ -126,8 +127,8 @@ public class SubmissionController {
         return new SuccessResponse("트렌드 제출 조회를 성공했습니다.", trendIdsResponseDto);
     }
 
-    @GetMapping("/programs/problems/{programProblemId}")
-    public SuccessResponse getProgramProblemsSubmissions(
+    @GetMapping("/stats/{programProblemId}")
+    public SuccessResponse getSubmissionStats(
         @AuthenticationPrincipal CustomUserDetails customUserDetails,
         @PathVariable Long programProblemId,
         @RequestParam(value = "language", required = false) String language,
@@ -151,9 +152,9 @@ public class SubmissionController {
         Pageable pageable = PageRequest.of(page, size,
             Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
 
-        UserSubmissionPageResponseDto submissionsProgramProblems = submissionService.getSubmissionsByProgramProblem(
+        SubmissionStatsPageResponseDto submissionStatsPageResponseDto = submissionService.getSubmissionStats(
             customUserDetails.getUserId(), programProblemId, userSubmissionRequestDto, pageable
         );
-        return new SuccessResponse("프로그램 문제의 제출 조회를 성공했습니다.", submissionsProgramProblems);
+        return new SuccessResponse("프로그램 문제의 제출 조회를 성공했습니다.", submissionStatsPageResponseDto);
     }
 }

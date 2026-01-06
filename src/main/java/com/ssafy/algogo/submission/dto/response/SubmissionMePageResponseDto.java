@@ -5,15 +5,15 @@ import com.ssafy.algogo.common.dto.SortInfo;
 import java.util.List;
 import org.springframework.data.domain.Page;
 
-public record UserSubmissionPageResponseDto(
+public record SubmissionMePageResponseDto(
     PageInfo page,
     SortInfo sort,
-    List<UserSubmissionResponseDto> submissions
+    List<SubmissionMeResponseDto> submissions
 ) {
 
-    public static UserSubmissionPageResponseDto from(
-        Page<UserSubmissionResponseDto> userSubmissionResponseDto) {
-        return new UserSubmissionPageResponseDto(
+    public static SubmissionMePageResponseDto from(
+        Page<SubmissionMeResponseDto> userSubmissionResponseDto) {
+        return new SubmissionMePageResponseDto(
             PageInfo.of(userSubmissionResponseDto),
             SortInfo.of(userSubmissionResponseDto),
             userSubmissionResponseDto.getContent()
