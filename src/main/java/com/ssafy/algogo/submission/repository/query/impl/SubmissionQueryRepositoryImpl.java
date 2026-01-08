@@ -21,6 +21,7 @@ import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.ssafy.algogo.problem.dto.response.ProblemResponseDto;
 import com.ssafy.algogo.problem.entity.PlatformType;
@@ -45,6 +46,7 @@ import com.ssafy.algogo.submission.entity.QSubmissionAlgorithm;
 import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.repository.query.SubmissionQueryRepository;
 import com.ssafy.algogo.user.dto.response.UserSimpleResponseDto;
+import com.ssafy.algogo.user.entity.QUser;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +72,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
     QProgram pg = program;
     QProgramType pt = programType;
     QReview r = review;
+    QUser u = user;
 
     LocalDateTime aWeekAgo = LocalDateTime.now().minusDays(7);
 
@@ -80,19 +83,17 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
         Pageable pageable
     ) {
         // 총 개수 확인
-        Long preTotalCount = jpaQueryFactory
-            .select(submission.id.countDistinct())
-            .from(submission)
-            .join(submission.user, user)
-            .join(submission.programProblem, pp)
-            .join(pp.problem, p)
-            .join(pp.program, pg)
-            .join(pg.programType, pt)
+        JPQLQuery<Long> preTotalCountQuery = jpaQueryFactory
+            .select(s.id.countDistinct())
+            .from(s)
             .where(
-                submission.user.id.eq(userId),
+                s.user.id.eq(userId),
                 findUserSubmissionsDynamicConditions(userSubmissionRequestDto)
-            )
-            .fetchOne();
+            );
+
+        // 동적 조인
+        applyDynamicJoins(preTotalCountQuery, userSubmissionRequestDto);
+        Long preTotalCount = preTotalCountQuery.fetchOne();
 
         long totalCount = (preTotalCount == null) ? 0L : preTotalCount;
 
@@ -102,23 +103,19 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
         }
 
         // submissionId만 먼저 조회
-        List<Long> submissionIds = jpaQueryFactory
-            .select(submission.id)
-            .from(submission)
-            .join(submission.user, user)
-            .join(submission.programProblem, pp)
-            .join(pp.problem, p)
-            .join(pp.program, pg)
-            .join(pg.programType, pt)
+        JPQLQuery<Long> submissionIdsQuery = jpaQueryFactory
+            .select(s.id).distinct()
+            .from(s)
             .where(
                 submission.user.id.eq(userId),
                 findUserSubmissionsDynamicConditions(userSubmissionRequestDto)
             )
-            .distinct()
             .orderBy(getSubmissionOrderSpecifiers(pageable))
             .offset(pageable.getOffset())
-            .limit(pageable.getPageSize())
-            .fetch();
+            .limit(pageable.getPageSize());
+
+        applyDynamicJoins(submissionIdsQuery, userSubmissionRequestDto);
+        List<Long> submissionIds = submissionIdsQuery.fetch();
 
         if (submissionIds.isEmpty()) {
             return new PageImpl<>(List.of(), pageable, totalCount);
@@ -129,42 +126,35 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
 
         // 찾은 id들의 전체 내용 조회
         List<SubmissionMeResponseDto> contents = jpaQueryFactory
-            .from(submission)
-            .join(submission.user, user)
-            .join(submission.programProblem, pp)
+            .from(s)
+            .join(s.user, user)
+            .join(s.programProblem, pp)
             .join(pp.problem, p)
             .join(pp.program, pg)
             .join(pg.programType, pt)
-            .leftJoin(sa).on(sa.submission.eq(submission))
+            .leftJoin(sa).on(sa.submission.eq(s))
             .leftJoin(sa.algorithm, a)
-            .where(submission.id.in(submissionIds))
+            .where(s.id.in(submissionIds))
             .orderBy(getSubmissionOrderSpecifiers(pageable))
             .transform(
-                groupBy(submission.id).list(
+                groupBy(s.id).list(
                     Projections.constructor(
                         SubmissionMeResponseDto.class,
-                        // user 부분
-                        Projections.constructor(
-                            UserSimpleResponseDto.class,
-                            user.id,
-                            user.profileImage,
-                            user.nickname
-                        ),
                         // submission 부분
                         Projections.constructor(
                             SubmissionResponseDto.class,
-                            submission.id,
-                            submission.programProblem.id,
-                            submission.user.id,
-                            submission.language,
-                            submission.code,
-                            submission.strategy,
-                            submission.execTime,
-                            submission.memory,
-                            submission.isSuccess,
-                            submission.viewCount,
-                            submission.createdAt,
-                            submission.modifiedAt,
+                            s.id,
+                            s.programProblem.id,
+                            s.user.id,
+                            s.language,
+                            s.code,
+                            s.strategy,
+                            s.execTime,
+                            s.memory,
+                            s.isSuccess,
+                            s.viewCount,
+                            s.createdAt,
+                            s.modifiedAt,
                             // algorithm 부분
                             list(
                                 Projections.constructor(
@@ -173,14 +163,14 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                                     a.name
                                 )
                             ),
-                            submission.aiScore,
-                            submission.aiScoreReason
+                            s.aiScore,
+                            s.aiScoreReason
                         ),
                         // 해당 submission의 리뷰 개수
                         JPAExpressions
                             .select(r2.id.count())
                             .from(r2)
-                            .where(r2.submission.id.eq(submission.id)
+                            .where(r2.submission.id.eq(s.id)
                             ),
                         // problem 부분
                         Projections.constructor(
@@ -361,14 +351,17 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
         UserSubmissionRequestDto userSubmissionRequestDto,
         Pageable pageable) {
 
-        Long preTotalCount = jpaQueryFactory
+        JPQLQuery<Long> preCountQuery = jpaQueryFactory
             .select(s.id.countDistinct())
             .from(s)
             .where(
                 s.programProblem.id.eq(programProblemId),
                 findUserSubmissionsDynamicConditions(userSubmissionRequestDto)
-            )
-            .fetchOne();
+            );
+
+        // 동적 조인
+        applyDynamicJoins(preCountQuery, userSubmissionRequestDto);
+        Long preTotalCount = preCountQuery.fetchOne();
 
         long totalCount = (preTotalCount == null) ? 0L : preTotalCount;
 
@@ -376,10 +369,9 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
             return new PageImpl<>(List.of(), pageable, 0L);
         }
 
-        List<Long> submissionIds = jpaQueryFactory
+        JPQLQuery<Long> submissionIdsQuery = jpaQueryFactory
             .select(s.id)
             .from(s)
-            .join(s.user, user)
             .where(
                 s.programProblem.id.eq(programProblemId),
                 findUserSubmissionsDynamicConditions(userSubmissionRequestDto)
@@ -387,8 +379,11 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
             .distinct()
             .orderBy(getSubmissionOrderSpecifiers(pageable))
             .offset(pageable.getOffset())
-            .limit(pageable.getPageSize())
-            .fetch();
+            .limit(pageable.getPageSize());
+
+        // 동적 조인
+        applyDynamicJoins(submissionIdsQuery, userSubmissionRequestDto);
+        List<Long> submissionIds = submissionIdsQuery.fetch();
 
         if (submissionIds.isEmpty()) {
             return new PageImpl<>(List.of(), pageable, totalCount);
@@ -397,7 +392,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
         QReview r2 = new QReview("r2");
         List<SubmissionStatsResponseDto> contents = jpaQueryFactory
             .from(s)
-            .join(s.user, user)
+            .join(s.user, u)
             .join(s.programProblem, pp)
             .join(pp.problem, p)
             .join(pp.program, pg)
@@ -413,9 +408,9 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                         // User 부분
                         Projections.constructor(
                             UserSimpleResponseDto.class,
-                            user.id,
-                            user.profileImage,
-                            user.nickname
+                            u.id,
+                            u.profileImage,
+                            u.nickname
                         ),
                         // Submission 부분
                         Projections.constructor(
@@ -460,7 +455,8 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
             eqIsSuccess(userSubmissionRequestDto.getIsSuccess()),
             eqLanguage(userSubmissionRequestDto.getLanguage()),
             eqPlatform(userSubmissionRequestDto.getPlatform()),
-            eqProgramType(userSubmissionRequestDto.getProgramType())
+            eqProgramType(userSubmissionRequestDto.getProgramType()),
+            eqNickname(userSubmissionRequestDto.getNickname())
         );
     }
 
@@ -482,8 +478,32 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
             .fetchOne();
     }
 
+    private void applyDynamicJoins(JPQLQuery<?> query, UserSubmissionRequestDto dto) {
+        query.join(s.programProblem, pp);
+
+        if (StringUtils.hasText(dto.getNickname())) {
+            query.join(s.user, u);
+        }
+
+        if (StringUtils.hasText(dto.getProgramType())) {
+            query.join(pp.program, pg)
+                .join(pg.programType, pt);
+        }
+
+        if (StringUtils.hasText(dto.getPlatform())) {
+            query.join(pp.problem, p);
+        }
+
+        if (StringUtils.hasText(dto.getAlgorithm())) {
+            query.leftJoin(sa).on(sa.submission.eq(s))
+                .leftJoin(sa.algorithm, a);
+        }
+    }
+
     private BooleanExpression eqLanguage(String language) {
-        return (StringUtils.hasText(language)) ? submission.language.eq(language) : null;
+        return (StringUtils.hasText(language)) ?
+            submission.language.toLowerCase().eq(language.toLowerCase().trim())
+            : null;
     }
 
     private BooleanExpression eqIsSuccess(Boolean isSuccess) {
@@ -491,17 +511,25 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
     }
 
     private BooleanExpression eqProgramType(String programType) {
-        return (StringUtils.hasText(programType)) ? program.programType.name.eq(
-            programType.toLowerCase().trim()) : null;
+        return (StringUtils.hasText(programType)) ? pt.name.eq(
+            programType.toLowerCase().trim())
+            : null;
     }
 
     private BooleanExpression eqAlgorithm(String usedAlgorithm) {
-        return (StringUtils.hasText(usedAlgorithm)) ? algorithm.name.eq(usedAlgorithm) : null;
+        return (StringUtils.hasText(usedAlgorithm)) ? algorithm.name.eq(usedAlgorithm)
+            : null;
     }
 
     private BooleanExpression eqPlatform(String platform) {
-        return (StringUtils.hasText(platform)) ? problem.platformType.eq(
-            PlatformType.valueOf(platform.trim().toUpperCase())) : null;
+        return (StringUtils.hasText(platform)) ?
+            problem.platformType.eq(PlatformType.valueOf(platform.trim().toUpperCase()))
+            : null;
+    }
+
+    private BooleanExpression eqNickname(String nickname) {
+        return (StringUtils.hasText(nickname)) ? u.nickname.contains(nickname)
+            : null;
     }
 
     private OrderSpecifier<?> getSubmissionOrderSpecifiers(Pageable pageable) {
@@ -514,7 +542,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
         return switch (order.getProperty()) {
             case "execTime" -> new OrderSpecifier<>(direction, submission.execTime);
             case "memory" -> new OrderSpecifier<>(direction, submission.memory);
-            default -> new OrderSpecifier<>(direction, submission.modifiedAt);
+            default -> new OrderSpecifier<>(direction, submission.createdAt);
         };
     }
 }
