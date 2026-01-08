@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class UserSubmissionRequestDto {
 
+    private String nickname;
     private String language;
     private Boolean isSuccess;
     private String programType;

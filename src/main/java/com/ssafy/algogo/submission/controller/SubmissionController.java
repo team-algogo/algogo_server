@@ -136,6 +136,7 @@ public class SubmissionController {
         @RequestParam(value = "programType", required = false) String programType,
         @RequestParam(value = "algorithm", required = false) String algorithm,
         @RequestParam(value = "platform", required = false) String platform,
+        @RequestParam(value = "nickname", required = false) String nickname,
         @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
         @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
         @RequestParam(value = "page", defaultValue = "0") Integer page,
@@ -147,6 +148,7 @@ public class SubmissionController {
             .programType(programType)
             .algorithm(algorithm)
             .platform(platform)
+            .nickname(nickname)
             .build();
 
         Pageable pageable = PageRequest.of(page, size,
