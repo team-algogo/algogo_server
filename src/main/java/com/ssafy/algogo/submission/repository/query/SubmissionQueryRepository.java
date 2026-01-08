@@ -2,14 +2,15 @@ package com.ssafy.algogo.submission.repository.query;
 
 import com.ssafy.algogo.submission.dto.ReviewCandidateQueryDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
-import com.ssafy.algogo.submission.dto.response.UserSubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionMeResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionStatsResponseDto;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface SubmissionQueryRepository {
 
-    Page<UserSubmissionResponseDto> findAllUserSubmissionList(Long userId,
+    Page<SubmissionMeResponseDto> findAllUserSubmissionList(Long userId,
         UserSubmissionRequestDto userSubmissionRequestDto, Pageable pageable);
 
     List<ReviewCandidateQueryDto> findReviewMatchCandidates(Long subjectSubmissionId,
@@ -24,7 +25,7 @@ public interface SubmissionQueryRepository {
 
     Boolean isSubmissionAuthorActive(Long submissionId);
 
-    Page<UserSubmissionResponseDto> findAllSubmissionsByProgramProblem(Long programProblemId,
+    Page<SubmissionStatsResponseDto> findAllSubmissionsByProgramProblem(Long programProblemId,
         UserSubmissionRequestDto userSubmissionRequestDto,
         Pageable pageable);
 }

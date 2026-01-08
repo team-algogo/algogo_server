@@ -11,10 +11,12 @@ import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionAuthorActiveResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionMePageResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionMeResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionStatsPageResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionStatsResponseDto;
 import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
-import com.ssafy.algogo.submission.dto.response.UserSubmissionPageResponseDto;
-import com.ssafy.algogo.submission.dto.response.UserSubmissionResponseDto;
 import com.ssafy.algogo.submission.entity.Algorithm;
 import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.entity.SubmissionAlgorithm;
@@ -184,14 +186,14 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserSubmissionPageResponseDto getSubmissionMe(Long userId,
+    public SubmissionMePageResponseDto getSubmissionMe(Long userId,
         UserSubmissionRequestDto userSubmissionRequestDto, Pageable pageable) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
 
-        Page<UserSubmissionResponseDto> submissionMeList = submissionRepository.findAllUserSubmissionList(
+        Page<SubmissionMeResponseDto> submissionMeList = submissionRepository.findAllUserSubmissionList(
             user.getId(), userSubmissionRequestDto, pageable);
-        return UserSubmissionPageResponseDto.from(submissionMeList);
+        return SubmissionMePageResponseDto.from(submissionMeList);
     }
 
     @Override
@@ -225,7 +227,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     @Override
-    public UserSubmissionPageResponseDto getSubmissionsByProgramProblem(Long userId,
+    public SubmissionStatsPageResponseDto getSubmissionStats(Long userId,
         Long programProblemId, UserSubmissionRequestDto userSubmissionRequestDto,
         Pageable pageable) {
         User user = userRepository.findById(userId)
@@ -235,10 +237,10 @@ public class SubmissionServiceImpl implements SubmissionService {
             .orElseThrow(() -> new CustomException("존재하지 않는 프로그램 문제입니다.",
                 ErrorCode.PROGRAM_PROBLEM_NOT_FOUND));
 
-        Page<UserSubmissionResponseDto> submissionLists = submissionRepository.findAllSubmissionsByProgramProblem(
+        Page<SubmissionStatsResponseDto> submissionStatsLists = submissionRepository.findAllSubmissionsByProgramProblem(
             programProblemId,
             userSubmissionRequestDto, pageable);
 
-        return UserSubmissionPageResponseDto.from(submissionLists);
+        return SubmissionStatsPageResponseDto.from(submissionStatsLists);
     }
 }
