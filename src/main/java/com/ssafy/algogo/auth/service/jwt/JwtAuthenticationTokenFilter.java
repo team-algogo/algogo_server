@@ -37,33 +37,41 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        log.info("[REQUEST] IP: {} | Method: {} | URI: {}", jwtTokenProvider.getIpFromRequest(request), request.getMethod(), request.getRequestURI());
+        if (request.getMethod().equals("OPTIONS")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         String authHeader = request.getHeader("Authorization");
-        String accessToken = null;
+        String accessToken = (authHeader != null && authHeader.startsWith("Bearer ")) ? authHeader.substring(BEARER_PREFIX_COUNT) : null;
         String refreshToken = CookieUtils.getTokenFromCookies("refreshToken", request);
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            accessToken = authHeader.substring(BEARER_PREFIX_COUNT);
-        }
-
         try {
-
             if (accessToken != null) {
-                jwtTokenProvider.isValidateToken(accessToken);
-                authenticateWithAccessToken(accessToken, request);
-                filterChain.doFilter(request, response);
-                return;
+                // 1. AT 검증 시도
+                try {
+                    jwtTokenProvider.isValidateToken(accessToken);
+                    authenticateWithAccessToken(accessToken, request);
+                } catch (Exception e) {
+                    // 2. AT가 만료되었거나 문제가 있다면 RT 확인
+                    log.info("Access Token invalid, checking Refresh Token...");
+                    if (refreshToken != null) {
+                        jwtTokenProvider.isValidateToken(refreshToken);
+                        reissueTokens(refreshToken, request, response);
+                    } else {
+                        throw e; // RT도 없으면 에러 던짐
+                    }
+                }
             } else if (refreshToken != null) {
+                // AT가 아예 없는 경우 RT로 인증 시도
                 jwtTokenProvider.isValidateToken(refreshToken);
                 reissueTokens(refreshToken, request, response);
-                filterChain.doFilter(request, response);
-                return;
             }
-
         } catch (Exception e) {
-            log.error("JWT Filter Error : {}", e.getMessage());
+            log.error("JWT Authentication failed: {}", e.getMessage());
+            // 필요 시 여기서 401 에러를 직접 응답하거나 context를 비웁니다.
         }
+
         filterChain.doFilter(request, response);
     }
 

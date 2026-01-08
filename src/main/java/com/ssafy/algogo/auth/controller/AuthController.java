@@ -39,9 +39,10 @@ public class AuthController {
 
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.OK)
-    public SuccessResponse logout(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+    public SuccessResponse logout(@AuthenticationPrincipal CustomUserDetails customUserDetails, HttpServletResponse response) {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
         authService.logout(userId);
+        CookieUtils.deleteTokenCookie(response);
         return SuccessResponse.success("로그웃에 성공했습니다.", null);
     }
 
