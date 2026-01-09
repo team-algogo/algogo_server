@@ -78,8 +78,16 @@ public class ReviewServiceImpl implements ReviewService {
         Long targetSubmissionAuthorId = targetSubmissionAuthor.getId();
         Long programId = targetSubmission.getProgramProblem().getProgram().getId();
 
-        // 제출 작성자 active 상태 확인
-        validateActiveProgramUser(targetSubmissionAuthorId, programId);
+        // submissionId로 프로그램 타입 조회
+        String programTypeName = reviewRepository.findProgramTypeNameBySubmissionId(
+                createCodeReviewRequestDto.getSubmissionId())
+            .orElseThrow(() -> new CustomException("프로그램 타입을 찾을 수 없습니다.",
+                ErrorCode.PROGRAM_TYPE_NOT_FOUND));
+
+        // GROUP인 경우에만 제출 작성자 active 상태 확인
+        if ("GROUP".equalsIgnoreCase(programTypeName)) {
+            validateActiveProgramUser(targetSubmissionAuthorId, programId);
+        }
 
         // 대댓글 예외처리
         Review parentReview = null;
@@ -94,8 +102,10 @@ public class ReviewServiceImpl implements ReviewService {
 
             parentReviewAuthorId = parentReview.getUser().getId();
 
-            // 부모 리뷰 작성자 active 상태 확인
-            validateActiveProgramUser(parentReviewAuthorId, programId);
+            // GROUP인 경우에만 부모 리뷰 작성자 active 상태 확인
+            if ("GROUP".equalsIgnoreCase(programTypeName)) {
+                validateActiveProgramUser(parentReviewAuthorId, programId);
+            }
         }
 
         Review newReview = Review.builder()
