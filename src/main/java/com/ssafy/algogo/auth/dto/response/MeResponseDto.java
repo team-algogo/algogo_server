@@ -1,6 +1,7 @@
 package com.ssafy.algogo.auth.dto.response;
 
 import com.ssafy.algogo.user.entity.User;
+import com.ssafy.algogo.user.entity.UserRole;
 
 import java.time.LocalDateTime;
 
@@ -11,7 +12,8 @@ public record MeResponseDto(
         String nickname,
         String profileImage,
         LocalDateTime createAt,
-        LocalDateTime modifiedAt
+        LocalDateTime modifiedAt,
+        UserRole userRole
 ) {
     public static MeResponseDto from(User user) {
         return new MeResponseDto(
@@ -21,7 +23,8 @@ public record MeResponseDto(
                 user.getNickname(),
                 user.getProfileImage(),
                 user.getCreatedAt(),
-                user.getModifiedAt()
+                user.getModifiedAt(),
+                user.getUserRole()
         );
     }
 }
