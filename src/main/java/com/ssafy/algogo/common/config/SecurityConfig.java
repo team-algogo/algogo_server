@@ -97,7 +97,11 @@ public class SecurityConfig {
         )); // 허용할 프론트엔드 도메인
         configuration.setAllowedMethods(
             List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 메서드
-        configuration.setAllowedHeaders(List.of("*")); //프론트엔드에서 요청을 보낼 때 포함할 수 있는 헤더
+        configuration.setAllowedHeaders(List.of(
+            "Authorization",
+            "Content-Type",
+            "X-Requested-With"
+        )); //프론트엔드에서 요청을 보낼 때 포함할 수 있는 헤더
         configuration.setExposedHeaders(List.of("Authorization")); // 프론트에서 응답에서 조회할 수 있는 헤더
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
