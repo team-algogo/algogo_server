@@ -22,4 +22,14 @@ public interface ReviewRepository extends JpaRepository<Review, Long>, ReviewQue
         """)
     Optional<Review> findByIdWithUser(@Param("reviewId") Long reviewId);
 
+    @Query("""
+            select pt.name
+            from Submission s
+            join s.programProblem pp
+            join pp.program p
+            join p.programType pt
+            where s.id = :submissionId
+        """)
+    Optional<String> findProgramTypeNameBySubmissionId(@Param("submissionId") Long submissionId);
+
 }
