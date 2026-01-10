@@ -31,6 +31,7 @@ import com.ssafy.algogo.program.dto.response.ProgramResponseDto;
 import com.ssafy.algogo.program.dto.response.ProgramTypeResponseDto;
 import com.ssafy.algogo.program.entity.QProgram;
 import com.ssafy.algogo.program.entity.QProgramType;
+import com.ssafy.algogo.program.entity.QProgramUser;
 import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
 import com.ssafy.algogo.review.entity.QRequireReview;
 import com.ssafy.algogo.review.entity.QReview;
@@ -209,9 +210,17 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
         QRequireReview rr = requireReview;
         QReview rSub = new QReview("rSub");
         QRequireReview rrSub = new QRequireReview("rrSub");
+        QProgramUser pu = QProgramUser.programUser;
 
         Map<Submission, ReviewCandidateQueryDto> result = jpaQueryFactory
             .from(s)
+            .innerJoin(s.programProblem, pp)
+            .innerJoin(pp.program, pg)
+            .innerJoin(pg.programType, pt)
+            .leftJoin(pu).on(
+                pu.user.id.eq(s.user.id),
+                pu.program.id.eq(p.id)
+            )
             .leftJoin(sa).on(sa.submission.eq(s))
             .leftJoin(r).on(r.submission.eq(s),
                 r.parentReview.isNull())
@@ -222,6 +231,9 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                 s.user.id.ne(subjectUserId),
                 s.id.ne(subjectSubmissionId),
 
+                // programs_users에 사용자 상태가 ACTIVE인 경우만 필터링
+                pt.name.eq("PROBLEMSET")
+                    .or(pu.programUserStatus.eq(ProgramUserStatus.ACTIVE)),
                 // 이미 리뷰를 단 제출건은 제외
                 JPAExpressions
                     .selectOne()

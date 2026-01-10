@@ -159,4 +159,7 @@ public class SubmissionController {
         );
         return new SuccessResponse("프로그램 문제의 제출 조회를 성공했습니다.", submissionStatsPageResponseDto);
     }
+
+//    @PatchMapping("/{submissionId}")
+//    public SuccessResponse increaseViewCount
 }

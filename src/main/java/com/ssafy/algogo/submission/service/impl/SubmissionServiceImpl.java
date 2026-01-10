@@ -80,6 +80,9 @@ public class SubmissionServiceImpl implements SubmissionService {
             submissionRequestDto.getProgramProblemId()).orElseThrow(
             () -> new CustomException("존재하지 않는 프로그램 문제입니다.", ErrorCode.PROGRAM_PROBLEM_NOT_FOUND));
 
+        boolean isParticipant = submissionRepository.existsByUserIdAndProgramProblemId(userId,
+            programProblem.getId());
+
         // 코드는 S3에 저장
         String s3CodeUrl = s3Service.uploadText(userId, submissionRequestDto.getCode());
 
@@ -94,10 +97,13 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         // 프로그램 문제 제출 수 +1
         programProblem.increaseSubmissionCount();
-
-        // 프로그램 문제 풀이 수 +1
+        // 프로그램 문제 정답 수 +1
         if (submission.getIsSuccess().equals(Boolean.TRUE)) {
             programProblem.increaseSolvedCount();
+        }
+        // 프로그램 문제 참여자 수 +1
+        if (!isParticipant) {
+            programProblem.increaseParticipantCount();
         }
 
         // 제출 시 사용한 알고리즘 저장

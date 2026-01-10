@@ -27,4 +27,5 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long>,
         """)
     Optional<Submission> findByIdWithAll(@Param("submissionId") Long submissionId);
 
+    boolean existsByUserIdAndProgramProblemId(Long userId, Long programProblemId);
 }
