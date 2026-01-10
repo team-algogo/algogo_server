@@ -14,6 +14,7 @@ import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionMePageResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionMeResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionStatsInfosResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionStatsPageResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionStatsResponseDto;
 import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
@@ -233,7 +234,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     @Override
-    public SubmissionStatsPageResponseDto getSubmissionStats(Long userId,
+    public SubmissionStatsPageResponseDto getSubmissionStatsLists(Long userId,
         Long programProblemId, UserSubmissionRequestDto userSubmissionRequestDto,
         Pageable pageable) {
         User user = userRepository.findById(userId)
@@ -248,5 +249,33 @@ public class SubmissionServiceImpl implements SubmissionService {
             userSubmissionRequestDto, pageable);
 
         return SubmissionStatsPageResponseDto.from(submissionStatsLists);
+    }
+
+    @Override
+    public SubmissionStatsInfosResponseDto getSubmissionStatsInfos(Long userId,
+        Long programProblemId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+
+        ProgramProblem programProblem = programProblemRepository.findById(programProblemId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 프로그램 문제입니다.",
+                ErrorCode.PROGRAM_PROBLEM_NOT_FOUND));
+
+        // 전체 제출 조회
+        Long submissionCount = submissionRepository.countSubmissionsByProgramProblemId(
+            programProblemId);
+        // 정답 제출 조회
+        Long successCount = submissionRepository.countSubmissionsByProgramProblemIdAndIsSuccess(
+            programProblemId, Boolean.TRUE);
+        // 계산
+        Long failureCount = submissionCount - successCount;
+
+        Integer successRate = Math.round(((float) successCount / submissionCount) * 100);
+
+        return SubmissionStatsInfosResponseDto.from(
+            submissionCount,
+            successCount,
+            failureCount,
+            successRate);
     }
 }
