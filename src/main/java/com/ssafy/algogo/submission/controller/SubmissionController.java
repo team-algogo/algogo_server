@@ -8,6 +8,7 @@ import com.ssafy.algogo.submission.dto.response.SubmissionAuthorActiveResponseDt
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionMePageResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionStatsInfosResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionStatsPageResponseDto;
 import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
 import com.ssafy.algogo.submission.service.SubmissionService;
@@ -127,8 +128,8 @@ public class SubmissionController {
         return new SuccessResponse("트렌드 제출 조회를 성공했습니다.", trendIdsResponseDto);
     }
 
-    @GetMapping("/stats/{programProblemId}")
-    public SuccessResponse getSubmissionStats(
+    @GetMapping("/stats/{programProblemId}/lists")
+    public SuccessResponse getSubmissionStatsLists(
         @AuthenticationPrincipal CustomUserDetails customUserDetails,
         @PathVariable Long programProblemId,
         @RequestParam(value = "language", required = false) String language,
@@ -154,9 +155,20 @@ public class SubmissionController {
         Pageable pageable = PageRequest.of(page, size,
             Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
 
-        SubmissionStatsPageResponseDto submissionStatsPageResponseDto = submissionService.getSubmissionStats(
+        SubmissionStatsPageResponseDto submissionStatsPageResponseDto = submissionService.getSubmissionStatsLists(
             customUserDetails.getUserId(), programProblemId, userSubmissionRequestDto, pageable
         );
         return new SuccessResponse("프로그램 문제의 제출 조회를 성공했습니다.", submissionStatsPageResponseDto);
+    }
+
+    @GetMapping("/stats/{programProblemId}")
+    public SuccessResponse getSubmissionStats(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable Long programProblemId
+    ) {
+        SubmissionStatsInfosResponseDto submissionStatsInfos = submissionService.getSubmissionStatsInfos(
+            customUserDetails.getUserId(), programProblemId);
+
+        return new SuccessResponse("프로그램 문제의 제출 통계 조회를 성공했습니다.", submissionStatsInfos);
     }
 }
