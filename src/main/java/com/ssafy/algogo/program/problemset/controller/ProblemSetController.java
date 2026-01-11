@@ -1,6 +1,10 @@
 package com.ssafy.algogo.program.problemset.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
+import com.ssafy.algogo.common.advice.CustomException;
+import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemCreateRequestDto;
 import com.ssafy.algogo.problem.dto.request.ProgramProblemDeleteRequestDto;
@@ -14,7 +18,10 @@ import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -22,6 +29,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,8 +40,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -75,29 +85,46 @@ public class ProblemSetController {
 	}
 
 	// 자율 문제집 생성
+	@PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
-	@PostMapping("")
 	@ResponseStatus(HttpStatus.CREATED)
 	public SuccessResponse createProblemSet(
-		@RequestBody @Valid ProblemSetCreateRequestDto createRequestDto
+		@RequestPart(value = "dto", required = true) String dtoJson,
+		@RequestPart(value = "thumbnail", required = true) MultipartFile thumbnail
 	) {
-		ProblemSetResponseDto data = problemSetService.createProblemSet(
-			createRequestDto);
-		return new SuccessResponse("문제집 생성을 성공했습니다.", data);
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			ProblemSetCreateRequestDto dto = mapper.readValue(dtoJson,
+				ProblemSetCreateRequestDto.class);
+
+			log.info("파싱 성공: title={}, categories={}",
+				dto.getTitle(), dto.getCategories());
+
+			ProblemSetResponseDto data = problemSetService.createProblemSet(dto, thumbnail);
+			return new SuccessResponse("문제집 생성 성공", data);
+		} catch (Exception e) {
+			log.error("요청 처리 실패: {}", e.getMessage());
+			throw new CustomException("요청 데이터 오류: " + e.getMessage(), ErrorCode.BAD_REQUEST);
+		}
 	}
 
 	// 자율 문제집 수정
+	@PutMapping("/{programId}")
 	@PreAuthorize("hasRole('ADMIN')")
-	@PutMapping("/{program_id}")
 	@ResponseStatus(HttpStatus.OK)
-	public SuccessResponse modifyProblemSet(@PathVariable Long program_id,
-		@RequestBody @Valid ProblemSetModifyRequestDto problemSetModifyRequestDto) {
+	public SuccessResponse modifyProblemSet(
+		@PathVariable Long programId,
+		@RequestPart("dto") String dtoJson,
+		@RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail
+	) throws JsonProcessingException {
+		ObjectMapper mapper = new ObjectMapper();
+		ProblemSetModifyRequestDto dto = mapper.readValue(dtoJson,
+			ProblemSetModifyRequestDto.class);
 
-		ProblemSetResponseDto data = problemSetService.modifyProblemSet(
-			program_id, problemSetModifyRequestDto);
-
-		return new SuccessResponse("문제집 수정을 성공했습니다.", data);
+		ProblemSetResponseDto data = problemSetService.modifyProblemSet(programId, dto);
+		return new SuccessResponse("문제집 수정 성공", data);
 	}
+
 
 	// 자율 문제집 삭제
 	@PreAuthorize("hasRole('ADMIN')")

@@ -24,189 +24,203 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @RequiredArgsConstructor
 public class S3Service {
 
-    private final S3Client s3Client;
+	private final S3Client s3Client;
 
-    @Value("${spring.cloud.aws.s3.bucket}")
-    private String bucketName;
+	@Value("${spring.cloud.aws.s3.bucket}")
+	private String bucketName;
 
-    @Value("${cloud.aws.cloudfront.domain}")
-    private String cloudfrontDomain;
+	@Value("${cloud.aws.cloudfront.domain}")
+	private String cloudfrontDomain;
 
-    @Value("${file.upload.profile-image-path}")
-    private String profileImagePath;
+	@Value("${file.upload.profile-image-path}")
+	private String profileImagePath;
 
-    @Value("${file.upload.submission-code-path}")
-    private String submissionCodePath;
+	@Value("${file.upload.submission-code-path}")
+	private String submissionCodePath;
 
-    @Value("${file.upload.allowed-extensions}")
-    private String allowedExtensions;
+	@Value("${file.upload.allowed-extensions}")
+	private String allowedExtensions;
 
-    @Value("${file.upload.max-size}")
-    private long maxSize;
+	@Value("${file.upload.max-size}")
+	private long maxSize;
 
-    private static final List<String> ALLOWED_MIME_TYPES = Arrays.asList(
-        "image/jpeg", "image/png", "image/jpg", "image/webp"
-    );
+	@Value("${file.upload.problemset-thumbnail-path}")
+	private String problemsetThumbnailPath;
 
-    public String uploadProfileImage(MultipartFile file, Long userId) {
+	private static final List<String> ALLOWED_MIME_TYPES = Arrays.asList(
+		"image/jpeg", "image/png", "image/jpg", "image/webp"
+	);
 
-        // 1. 파일 검증
-        validateFile(file);
+	public String uploadProfileImage(MultipartFile file, Long userId) {
 
-        // 2. S3 key 생성 (profile/{userId}/{UUID}.{확장자})
-        String s3Key = generateS3Key(file, userId, profileImagePath);
+		// 1. 파일 검증
+		validateFile(file);
 
-        // 3. S3 업로드
-        uploadToS3(file, s3Key);
-        log.info("S3 업로드 완료: {}", s3Key);
-        log.info("S3 업로드 유저 PK: {}", userId);
+		// 2. S3 key 생성 (profile/{userId}/{UUID}.{확장자})
+		String s3Key = generateS3Key(file, userId, profileImagePath);
 
-        // 4. CloudFront URL 반환
-        return convertToCloudFrontUrl(s3Key);
-    }
+		// 3. S3 업로드
+		uploadToS3(file, s3Key);
+		log.info("S3 업로드 완료: {}", s3Key);
+		log.info("S3 업로드 유저 PK: {}", userId);
 
-    public void deleteImage(String imageUrl) {
-        if (imageUrl == null | imageUrl.isEmpty()) {
-            return;
-        }
+		// 4. CloudFront URL 반환
+		return convertToCloudFrontUrl(s3Key);
+	}
 
-        try {
-            String s3Key = extractS3Key(imageUrl);
+	public void deleteImage(String imageUrl) {
+		if (imageUrl == null | imageUrl.isEmpty()) {
+			return;
+		}
 
-            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                .bucket(bucketName)
-                .key(s3Key)
-                .build();
+		try {
+			String s3Key = extractS3Key(imageUrl);
 
-            s3Client.deleteObject(deleteObjectRequest);
-            log.info("S3 이미지 삭제 완료: {}", s3Key);
-        } catch (Exception e) {
-            log.error("S3 이미지 삭제 실패: {}", imageUrl, e);
-            // 실패해도 비즈니스 로직은 진행,
-        }
-    }
+			DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+				.bucket(bucketName)
+				.key(s3Key)
+				.build();
 
-    public String uploadText(Long userId, String text) {
-        if (text.isBlank()) {
-            throw new CustomException("제출 code text가 비어있습니다.", ErrorCode.FAILED_FILE_UPLOAD);
-        }
+			s3Client.deleteObject(deleteObjectRequest);
+			log.info("S3 이미지 삭제 완료: {}", s3Key);
+		} catch (Exception e) {
+			log.error("S3 이미지 삭제 실패: {}", imageUrl, e);
+			// 실패해도 비즈니스 로직은 진행,
+		}
+	}
 
-        String s3Key = generateS3Key(userId, submissionCodePath);
-        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-            .bucket(bucketName)
-            .key(s3Key)
-            .contentType("text/plain; charset=UTF-8")
-            .build();
+	public String uploadText(Long userId, String text) {
+		if (text.isBlank()) {
+			throw new CustomException("제출 code text가 비어있습니다.", ErrorCode.FAILED_FILE_UPLOAD);
+		}
 
-        s3Client.putObject(putObjectRequest, RequestBody.fromString(text));
-        return convertToCloudFrontUrl(s3Key);
-    }
+		String s3Key = generateS3Key(userId, submissionCodePath);
+		PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+			.bucket(bucketName)
+			.key(s3Key)
+			.contentType("text/plain; charset=UTF-8")
+			.build();
 
-    // TODO : FileUploadException 발생 vs CustomException 발생 ?
-    private void validateFile(MultipartFile file) {
+		s3Client.putObject(putObjectRequest, RequestBody.fromString(text));
+		return convertToCloudFrontUrl(s3Key);
+	}
 
-        if (file == null || file.isEmpty()) {
-            throw new CustomException("파일이 비어있습니다.", ErrorCode.EMPTY_FILE);
-        }
+	// TODO : FileUploadException 발생 vs CustomException 발생 ?
+	private void validateFile(MultipartFile file) {
 
-        if (file.getSize() > maxSize) {
-            throw new CustomException(
-                String.format("파일 크기는 %dMB를 초과할 수 없습니다.", maxSize / 1024 / 1024),
-                ErrorCode.OVERSIZE_FILE);
-        }
+		if (file == null || file.isEmpty()) {
+			throw new CustomException("파일이 비어있습니다.", ErrorCode.EMPTY_FILE);
+		}
 
-        String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_MIME_TYPES.contains(contentType)) {
-            throw new CustomException("지원하지 않는 파일 형식입니다.", ErrorCode.INVALID_FILE_TYPE);
-        }
+		if (file.getSize() > maxSize) {
+			throw new CustomException(
+				String.format("파일 크기는 %dMB를 초과할 수 없습니다.", maxSize / 1024 / 1024),
+				ErrorCode.OVERSIZE_FILE);
+		}
 
-        String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || !hasValidExtension(originalFilename)) {
-            throw new CustomException("허용되지 않은 파일 확장자입니다.", ErrorCode.INVALID_FILE_EXTENSION);
-        }
+		String contentType = file.getContentType();
+		if (contentType == null || !ALLOWED_MIME_TYPES.contains(contentType)) {
+			throw new CustomException("지원하지 않는 파일 형식입니다.", ErrorCode.INVALID_FILE_TYPE);
+		}
 
-    }
+		String originalFilename = file.getOriginalFilename();
+		if (originalFilename == null || !hasValidExtension(originalFilename)) {
+			throw new CustomException("허용되지 않은 파일 확장자입니다.", ErrorCode.INVALID_FILE_EXTENSION);
+		}
 
-    // S3 key 생성
-    private String generateS3Key(MultipartFile file, Long userId, String path) {
-        String originalFilename = file.getOriginalFilename();
-        String extension = extractExtension(originalFilename);
-        String uniqueFilename = UUID.randomUUID().toString() + "." + extension;
+	}
 
-        return path + userId + "/" + uniqueFilename;
-    }
+	// S3 key 생성
+	private String generateS3Key(MultipartFile file, Long userId, String path) {
+		String originalFilename = file.getOriginalFilename();
+		String extension = extractExtension(originalFilename);
+		String uniqueFilename = UUID.randomUUID().toString() + "." + extension;
 
-    private String generateS3Key(Long userId, String path) {
-        return path + userId + "/" + UUID.randomUUID().toString() + ".txt";
-    }
+		return path + userId + "/" + uniqueFilename;
+	}
 
-    private void uploadToS3(MultipartFile file, String s3Key) {
-        try {
-            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key(s3Key)
-                .contentType(file.getContentType())
-                .contentLength(file.getSize())
-                .build();
-            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
-        } catch (IOException e) {
-            log.error("S3 업로드 실패: {}", s3Key, e);
-            throw new CustomException("파일 업로드에 실패했습니다.", ErrorCode.FAILED_FILE_UPLOAD);
-        }
-    }
+	private String generateS3Key(Long userId, String path) {
+		return path + userId + "/" + UUID.randomUUID().toString() + ".txt";
+	}
 
-    // S3 key를 CloudFront URL로 변환
-    private String convertToCloudFrontUrl(String s3Key) {
-        return "https://" + cloudfrontDomain + "/" + s3Key;
-    }
+	private void uploadToS3(MultipartFile file, String s3Key) {
+		try {
+			PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+				.bucket(bucketName)
+				.key(s3Key)
+				.contentType(file.getContentType())
+				.contentLength(file.getSize())
+				.build();
+			s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
+		} catch (IOException e) {
+			log.error("S3 업로드 실패: {}", s3Key, e);
+			throw new CustomException("파일 업로드에 실패했습니다.", ErrorCode.FAILED_FILE_UPLOAD);
+		}
+	}
 
-    // CloudFront URL에서 S3 key 추출
-    private String extractS3Key(String cloudFrontUrl) {
-        return cloudFrontUrl.replace("https://" + cloudfrontDomain + "/", "");
-    }
+	// S3 key를 CloudFront URL로 변환
+	private String convertToCloudFrontUrl(String s3Key) {
+		return "https://" + cloudfrontDomain + "/" + s3Key;
+	}
 
-    // 파일 확장자 추출
-    private String extractExtension(String filename) {
-        int lastDotIndex = filename.lastIndexOf(".");
-        if (lastDotIndex == -1) {
-            throw new CustomException("파일 확장자가 없습니다.", ErrorCode.NOT_FOUND_FILE_EXTENSION);
-        }
-        return filename.substring(lastDotIndex + 1).toLowerCase();
-    }
+	// CloudFront URL에서 S3 key 추출
+	private String extractS3Key(String cloudFrontUrl) {
+		return cloudFrontUrl.replace("https://" + cloudfrontDomain + "/", "");
+	}
 
-    // 허용된 확장자인지 확인
-    private boolean hasValidExtension(String filename) {
-        String extension = extractExtension(filename);
-        return Arrays.asList(allowedExtensions.split(",")).contains(extension);
-    }
+	// 파일 확장자 추출
+	private String extractExtension(String filename) {
+		int lastDotIndex = filename.lastIndexOf(".");
+		if (lastDotIndex == -1) {
+			throw new CustomException("파일 확장자가 없습니다.", ErrorCode.NOT_FOUND_FILE_EXTENSION);
+		}
+		return filename.substring(lastDotIndex + 1).toLowerCase();
+	}
 
-    /**
-     * CloudFront URL에서 코드 텍스트 다운로드
-     * 
-     * @param cloudFrontUrl CloudFront URL
-     * @return 코드 텍스트 내용
-     */
-    public String downloadText(String cloudFrontUrl) {
-        if (cloudFrontUrl == null || cloudFrontUrl.isEmpty()) {
-            throw new CustomException("URL이 비어있습니다.", ErrorCode.INVALID_PARAMETER);
-        }
+	// 허용된 확장자인지 확인
+	private boolean hasValidExtension(String filename) {
+		String extension = extractExtension(filename);
+		return Arrays.asList(allowedExtensions.split(",")).contains(extension);
+	}
 
-        try {
-            String s3Key = extractS3Key(cloudFrontUrl);
-            
-            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucketName)
-                .key(s3Key)
-                .build();
+	/**
+	 * CloudFront URL에서 코드 텍스트 다운로드
+	 *
+	 * @param cloudFrontUrl CloudFront URL
+	 * @return 코드 텍스트 내용
+	 */
+	public String downloadText(String cloudFrontUrl) {
+		if (cloudFrontUrl == null || cloudFrontUrl.isEmpty()) {
+			throw new CustomException("URL이 비어있습니다.", ErrorCode.INVALID_PARAMETER);
+		}
 
-            ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest);
-            String content = new String(response.readAllBytes());
-            response.close();
-            
-            return content;
-        } catch (Exception e) {
-            log.error("S3 코드 다운로드 실패: {}", cloudFrontUrl, e);
-            throw new CustomException("코드 다운로드에 실패했습니다.", ErrorCode.FAILED_FILE_UPLOAD);
-        }
-    }
+		try {
+			String s3Key = extractS3Key(cloudFrontUrl);
+
+			GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+				.bucket(bucketName)
+				.key(s3Key)
+				.build();
+
+			ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest);
+			String content = new String(response.readAllBytes());
+			response.close();
+
+			return content;
+		} catch (Exception e) {
+			log.error("S3 코드 다운로드 실패: {}", cloudFrontUrl, e);
+			throw new CustomException("코드 다운로드에 실패했습니다.", ErrorCode.FAILED_FILE_UPLOAD);
+		}
+	}
+
+	public String uploadProblemsetThumbnail(MultipartFile file) {
+		validateFile(file);
+
+		String s3Key = generateS3Key(file, 0L, problemsetThumbnailPath);
+
+		uploadToS3(file, s3Key);
+		log.info("문제집 썸네일 S3 업로드 완료: {}", s3Key);
+
+		return convertToCloudFrontUrl(s3Key);
+	}
 }

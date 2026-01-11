@@ -56,4 +56,10 @@ public class Program extends BaseTime {
             this.description = description;
         }
     }
+    public void updateProgram(String title, String description, String thumbnail) {
+        this.title = title;
+        this.description = description;
+        this.thumbnail = thumbnail;
+    }
+
 }
