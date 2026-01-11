@@ -121,5 +121,4 @@ public class SecurityConfig {
         //새로운 AuthenticationManager로서 ProviderManager구현체에 등록할 authenticationProvider를 넣고 설정
         return new ProviderManager(List.of(authenticationProvider));
     }
-
 }
