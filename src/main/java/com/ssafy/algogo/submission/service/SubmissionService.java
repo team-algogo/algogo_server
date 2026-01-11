@@ -6,6 +6,7 @@ import com.ssafy.algogo.submission.dto.response.SubmissionAuthorActiveResponseDt
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionMePageResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionStatsInfosResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionStatsPageResponseDto;
 import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
 import org.springframework.data.domain.Pageable;
@@ -27,8 +28,9 @@ public interface SubmissionService {
 
     SubmissionAuthorActiveResponseDto getSubmissionAuthorActive(Long submissionId);
 
-    SubmissionStatsPageResponseDto getSubmissionStats(Long userId,
+    SubmissionStatsPageResponseDto getSubmissionStatsLists(Long userId,
         Long programProblemId,
         UserSubmissionRequestDto userSubmissionRequestDto, Pageable pageable);
 
+    SubmissionStatsInfosResponseDto getSubmissionStatsInfos(Long userId, Long programProblemId);
 }

@@ -11,6 +11,7 @@ import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchPageResp
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ProblemSetService {
 
@@ -25,7 +26,7 @@ public interface ProblemSetService {
 
 	// 자율 문제집 생성
 	ProblemSetResponseDto createProblemSet(
-		ProblemSetCreateRequestDto problemSetCreateRequestDto);
+		ProblemSetCreateRequestDto problemSetCreateRequestDto, MultipartFile thumbnail);
 
 	// 자율 문제집 수정
 	ProblemSetResponseDto modifyProblemSet(Long programId, ProblemSetModifyRequestDto dto);

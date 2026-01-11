@@ -4,11 +4,14 @@ import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.dto.PageInfo;
 import com.ssafy.algogo.common.dto.SortInfo;
+import com.ssafy.algogo.common.utils.S3Service;
 import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.problem.repository.ProblemRepository;
 import com.ssafy.algogo.problem.repository.ProgramProblemRepository;
 import com.ssafy.algogo.problem.service.ProgramProblemService;
+import com.ssafy.algogo.program.entity.Category;
 import com.ssafy.algogo.program.entity.Program;
+import com.ssafy.algogo.program.entity.ProgramCategory;
 import com.ssafy.algogo.program.entity.ProgramType;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
@@ -18,17 +21,17 @@ import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetPageResponse
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchPageResponseDto;
-import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
 import com.ssafy.algogo.program.repository.CategoryRepository;
+import com.ssafy.algogo.program.repository.ProgramCategoryRepository;
 import com.ssafy.algogo.program.repository.ProgramRepository;
 import com.ssafy.algogo.program.repository.ProgramTypeRepository;
 import com.ssafy.algogo.program.repository.ProgramUserRepository;
 import com.ssafy.algogo.program.repository.query.ProgramQueryRepository;
 import com.ssafy.algogo.user.repository.UserRepository;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,6 +39,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -52,6 +56,8 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 	private final ProgramQueryRepository programQueryRepository;
 	private final CategoryRepository categoryRepository;
 	private final ProgramProblemService programProblemService;
+	private final S3Service s3Service;
+	private final ProgramCategoryRepository programCategoryRepository;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -128,44 +134,154 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 
 
 	@Override
+	@Transactional
 	public ProblemSetResponseDto createProblemSet(
-		ProblemSetCreateRequestDto problemSetCreateRequestDto) {
+		ProblemSetCreateRequestDto createRequestDto,
+		MultipartFile thumbnail
+	) {
 
-		if (programRepository.existsByTitle(problemSetCreateRequestDto.getTitle())) {
-			throw new CustomException("이미 존재하는 문제집 제목입니다.",
-				ErrorCode.PROBLEM_SET_ALREADY_EXISTS);
+		// 중복 제목 검사
+		if (programRepository.existsByTitle(createRequestDto.getTitle())) {
+			throw new CustomException(
+				"이미 존재하는 문제집 제목입니다.",
+				ErrorCode.PROBLEM_SET_ALREADY_EXISTS
+			);
 		}
-		ProgramType programType = programTypeRepository.findByName("problemset").orElseThrow(
-			() -> new CustomException("problemset 타입 데이터가 DB에 존재하지 않습니다.",
-				ErrorCode.PROGRAM_TYPE_NOT_FOUND));
 
+		// ProgramType 조회
+		ProgramType programType = programTypeRepository.findByName("problemset")
+			.orElseThrow(() -> new CustomException(
+				"problemset 타입 데이터가 DB에 존재하지 않습니다.",
+				ErrorCode.PROGRAM_TYPE_NOT_FOUND
+			));
+
+		// 파일 검증 & S3 업로드
+		if (thumbnail == null || thumbnail.isEmpty()) {
+			throw new CustomException("썸네일 파일이 필수입니다.", ErrorCode.BAD_REQUEST);
+		}
+		String thumbnailUrl = s3Service.uploadProblemsetThumbnail(thumbnail);
+		log.info("S3 업로드 완료: {}", thumbnailUrl);
+
+		// Program 엔티티 생성 & 저장
 		Program program = Program.builder()
 			.programType(programType)
-			.title(problemSetCreateRequestDto.getTitle())
-			.description(problemSetCreateRequestDto.getDescription())
-			.thumbnail(problemSetCreateRequestDto.getThumbnail())
+			.title(createRequestDto.getTitle())
+			.description(createRequestDto.getDescription())
+			.thumbnail(thumbnailUrl)
 			.build();
-
 		Program newProgram = programRepository.save(program);
 
-		return ProblemSetResponseDto.from(newProgram);
+		// 카테고리 연관관계 저장 (DB에만)
+		List<String> savedCategories = new ArrayList<>();
+		if (createRequestDto.getCategories() != null && !createRequestDto.getCategories()
+			.isEmpty()) {
+			createRequestDto.getCategories().forEach(categoryName -> {
+				Category category = categoryRepository.findByName(categoryName)
+					.orElseThrow(() -> new CustomException(
+						categoryName + " 카테고리가 존재하지 않습니다.",
+						ErrorCode.BAD_REQUEST
+					));
+
+				ProgramCategory programCategory = ProgramCategory.builder()
+					.program(newProgram)
+					.category(category)
+					.build();
+				programCategoryRepository.save(programCategory);
+				savedCategories.add(categoryName);
+			});
+			log.info("카테고리 저장 완료: {}", savedCategories);
+		} else {
+			log.warn("카테고리 없음 or 빈 리스트");
+		}
+
+		// Response 직접 생성 (Program 없이, categories 포함!)
+		return new ProblemSetResponseDto(
+			newProgram.getId(),
+			newProgram.getTitle(),
+			newProgram.getDescription(),
+			newProgram.getThumbnail(),
+			newProgram.getCreatedAt(),
+			newProgram.getModifiedAt(),
+			newProgram.getProgramType().getName(),
+			savedCategories,
+			0L,
+			0L
+		);
 	}
+
 
 	@Override
+	@Transactional
 	public ProblemSetResponseDto modifyProblemSet(Long programId,
-		ProblemSetModifyRequestDto dto) {
+		ProblemSetModifyRequestDto modifyRequestDto) {
+		log.info("문제집 수정 시작: ID={}, categories={}", programId, modifyRequestDto.getCategories());
 
+		// 1. Program 조회
 		Program program = programRepository.findById(programId)
-			.orElseThrow(
-				() -> new CustomException("해당 문제집을 찾을 수 없습니다.", ErrorCode.PROGRAM_ID_NOT_FOUND));
+			.orElseThrow(() -> new CustomException("문제집 없음", ErrorCode.PROGRAM_ID_NOT_FOUND));
 
-		program.updateProgram(dto.getTitle(), dto.getDescription());
-		// 프로텍티드로 되어서 변경이 안됨, 썸네일 왜 없음?
+		// 2. 기본 정보 업데이트
+		if (modifyRequestDto.getThumbnail() != null && !modifyRequestDto.getThumbnail().isEmpty()) {
+			// 기존 S3 삭제
+			if (program.getThumbnail() != null) {
+				s3Service.deleteImage(program.getThumbnail());
+			}
+			// 새 썸네일 업로드
+			String newThumbnailUrl = s3Service.uploadProblemsetThumbnail(
+				modifyRequestDto.getThumbnail());
+			program.updateProgram(modifyRequestDto.getTitle(), modifyRequestDto.getDescription(),
+				newThumbnailUrl);
+			log.info("썸네일 변경: {}", newThumbnailUrl);
+		} else {
+			program.updateProgram(modifyRequestDto.getTitle(), modifyRequestDto.getDescription());
+		}
 
-		program = programRepository.save(program);
+		// 3. Program 저장
+		Program updatedProgram = programRepository.save(program);
+		log.info("기본 정보 업데이트 완료");
 
-		return ProblemSetResponseDto.from(program);
+		// 4. 카테고리 전체 교체
+		programCategoryRepository.deleteByProgramId(programId);
+		log.info("기존 카테고리 삭제 완료");
+
+		List<String> savedCategories = new ArrayList<>();
+		if (modifyRequestDto.getCategories() != null && !modifyRequestDto.getCategories()
+			.isEmpty()) {
+			log.info("새 카테고리 저장 시작: {}", modifyRequestDto.getCategories());
+			for (String categoryName : modifyRequestDto.getCategories()) {
+				Category category = categoryRepository.findByName(categoryName)
+					.orElseThrow(() -> new CustomException(
+						categoryName + " 카테고리가 존재하지 않습니다.",
+						ErrorCode.BAD_REQUEST
+					));
+
+				ProgramCategory programCategory = ProgramCategory.builder()
+					.program(updatedProgram)
+					.category(category)
+					.build();
+				programCategoryRepository.save(programCategory);
+				savedCategories.add(categoryName);
+			}
+			log.info("카테고리 저장 완료: {}", savedCategories);
+		} else {
+			log.info("카테고리 변경 없음");
+		}
+
+		// 5. Response 생성
+		return new ProblemSetResponseDto(
+			updatedProgram.getId(),
+			updatedProgram.getTitle(),
+			updatedProgram.getDescription(),
+			updatedProgram.getThumbnail(),
+			updatedProgram.getCreatedAt(),
+			updatedProgram.getModifiedAt(),
+			updatedProgram.getProgramType().getName(),
+			savedCategories.isEmpty() ? List.of() : savedCategories,  // 빈 경우 빈 리스트
+			0L,
+			0L
+		);
 	}
+
 
 	@Override
 	public void deleteProblemSet(Long programId) {
