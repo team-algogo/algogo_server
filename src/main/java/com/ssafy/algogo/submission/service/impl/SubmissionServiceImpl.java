@@ -5,11 +5,14 @@ import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.utils.S3Service;
 import com.ssafy.algogo.problem.entity.ProgramProblem;
 import com.ssafy.algogo.problem.repository.ProgramProblemRepository;
+import com.ssafy.algogo.program.entity.Program;
+import com.ssafy.algogo.program.repository.ProgramRepository;
 import com.ssafy.algogo.review.repository.RequireReviewRepository;
 import com.ssafy.algogo.submission.dto.ReviewRematchTargetQueryDto;
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionAuthorActiveResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionAuthorStatusResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionMePageResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionMeResponseDto;
@@ -53,9 +56,9 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final SubmissionAlgorithmRepository submissionAlgorithmRepository;
     private final AlgorithmRepository algorithmRepository;
     private final RequireReviewRepository requireReviewRepository;
+    private final ProgramRepository programRepository;
 
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final ReviewMatchService reviewMatchService;
     private final S3Service s3Service;
 
     @Override
@@ -277,5 +280,25 @@ public class SubmissionServiceImpl implements SubmissionService {
             successCount,
             failureCount,
             successRate);
+    }
+
+    @Override
+    public SubmissionAuthorStatusResponseDto canUserMoreSubmission(
+        Long userId,
+        Long programId
+    ) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+
+        Program program = programRepository.findById(programId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 프로그램입니다.",
+                ErrorCode.PROGRAM_ID_NOT_FOUND));
+
+        String programType = programRepository.getProgramTypeByProgramId(programId)
+            .orElseThrow(()-> new CustomException("문제집 타입 조회 시 찾지 못하였습니다.", ErrorCode.PROGRAM_TYPE_NOT_FOUND));
+
+        boolean canMoreSubmit = submissionRepository.canUserMoreSubmit(userId, programType, programId);
+
+        return new SubmissionAuthorStatusResponseDto(canMoreSubmit);
     }
 }

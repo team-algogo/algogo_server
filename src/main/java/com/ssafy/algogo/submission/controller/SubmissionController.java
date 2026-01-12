@@ -5,6 +5,7 @@ import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionAuthorActiveResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionAuthorStatusResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionMePageResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
@@ -170,5 +171,15 @@ public class SubmissionController {
             customUserDetails.getUserId(), programProblemId);
 
         return new SuccessResponse("프로그램 문제의 제출 통계 조회를 성공했습니다.", submissionStatsInfos);
+    }
+
+    @GetMapping("/more/{programId}")
+    public SuccessResponse getUserSubmissionStatus(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable Long programId
+    ){
+        SubmissionAuthorStatusResponseDto canMoreSubmission = submissionService.canUserMoreSubmission(
+            customUserDetails.getUserId(), programId);
+        return new SuccessResponse("유저의 추가 제출 가능 여부 조회를 성공했습니다.", canMoreSubmission);
     }
 }
