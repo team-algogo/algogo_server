@@ -28,4 +28,6 @@ public interface SubmissionQueryRepository {
     Page<SubmissionStatsResponseDto> findAllSubmissionsByProgramProblem(Long programProblemId,
         UserSubmissionRequestDto userSubmissionRequestDto,
         Pageable pageable);
+
+    boolean canUserMoreSubmit(Long userId, String programType, Long programId);
 }
