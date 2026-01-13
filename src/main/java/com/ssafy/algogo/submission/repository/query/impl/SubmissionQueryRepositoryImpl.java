@@ -460,6 +460,30 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
         return new PageImpl<>(contents, pageable, totalCount);
     }
 
+    @Override
+    public boolean canUserMoreSubmit(Long userId, String inputProgramType, Long programId) {
+        QRequireReview rr = requireReview;
+
+        Long count = jpaQueryFactory
+            .select(rr.count())
+            .from(rr)
+            // submission -> programs_problems -> programs -> program_types 순으로 조인
+            .join(rr.subjectSubmission, submission)
+            .join(submission.programProblem, programProblem)
+            .join(programProblem.program, program)
+            .join(programType).on(program.programType.id.eq(programType.id))
+            .where(
+                rr.subjectUser.id.eq(userId),
+                rr.isDone.isFalse(),
+                programType.name.eq(inputProgramType),
+                // 그룹일 경우에만 programId로 카운트 (문제집은 전체 대상이므로 조건 제외)
+                "GROUP".equals(inputProgramType) ? program.id.eq(programId) : null
+            )
+            .fetchOne();
+
+            return count != null && count < 5;
+    }
+
     private Predicate findUserSubmissionsDynamicConditions(
         UserSubmissionRequestDto userSubmissionRequestDto) {
         return ExpressionUtils.allOf(
