@@ -35,15 +35,18 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     private final RedisJwtService redisJwtService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+        FilterChain filterChain) throws ServletException, IOException {
 
-        if (request.getMethod().equals("OPTIONS")) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
         }
 
         String authHeader = request.getHeader("Authorization");
-        String accessToken = (authHeader != null && authHeader.startsWith("Bearer ")) ? authHeader.substring(BEARER_PREFIX_COUNT) : null;
+        String accessToken =
+            (authHeader != null && authHeader.startsWith("Bearer ")) ? authHeader.substring(
+                BEARER_PREFIX_COUNT) : null;
         String refreshToken = CookieUtils.getTokenFromCookies("refreshToken", request);
 
         try {
@@ -89,8 +92,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         Long userId = Long.valueOf(token.get("subject"));
         String role = token.get("role");
         Collection<? extends GrantedAuthority> authorities = (role != null && !role.isEmpty())
-                ? Collections.singletonList(new SimpleGrantedAuthority(role))
-                : Collections.emptyList();
+            ? Collections.singletonList(new SimpleGrantedAuthority(role))
+            : Collections.emptyList();
 
         // 로그아웃 검증
         if (!redisJwtService.exists(userId)) {
@@ -98,15 +101,17 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             throw new CustomException("이미 로그아웃한 사용자입니다.", ErrorCode.ACCESS_DENIED);
         }
 
-        CustomUserDetails principal = new CustomUserDetails(userId, userId.toString(), "", authorities);
+        CustomUserDetails principal = new CustomUserDetails(userId, userId.toString(), "",
+            authorities);
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(principal, null, authorities)
+            new UsernamePasswordAuthenticationToken(principal, null, authorities)
         );
 
         log.info("Authenticated with Access Token - User: {}, IP: {}", userId, ip);
     }
 
-    private void reissueTokens(String refreshToken, HttpServletRequest request, HttpServletResponse response) {
+    private void reissueTokens(String refreshToken, HttpServletRequest request,
+        HttpServletResponse response) {
         Map<String, String> token = jwtTokenProvider.extractToken(refreshToken, "ip", "role");
 
         Long userId = Long.valueOf(token.get("subject"));
@@ -134,12 +139,13 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
         // 새로운 인증 객체 생성
         Collection<? extends GrantedAuthority> authorities = (role != null && !role.isEmpty())
-                ? Collections.singletonList(new SimpleGrantedAuthority(role))
-                : Collections.emptyList();
+            ? Collections.singletonList(new SimpleGrantedAuthority(role))
+            : Collections.emptyList();
 
-        CustomUserDetails principal = new CustomUserDetails(userId, userId.toString(), "", authorities);
+        CustomUserDetails principal = new CustomUserDetails(userId, userId.toString(), "",
+            authorities);
         UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(principal, null, authorities);
+            new UsernamePasswordAuthenticationToken(principal, null, authorities);
 
         // 새 토큰 발급
         String newAccessToken = jwtTokenProvider.createAccessToken(authentication, currentIp);
@@ -151,7 +157,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         // 쿠키/헤더에 새 토큰 설정
         response.setHeader("Authorization", newAccessToken);
         CookieUtils.addTokenCookie(response, "refreshToken", newRefreshToken,
-                jwtTokenProvider.getRefreshTokenValidTime());
+            jwtTokenProvider.getRefreshTokenValidTime());
 
         // SecurityContext에 인증 정보 설정
         SecurityContextHolder.getContext().setAuthentication(authentication);

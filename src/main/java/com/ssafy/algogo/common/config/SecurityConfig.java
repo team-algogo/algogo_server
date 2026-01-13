@@ -47,6 +47,7 @@ public class SecurityConfig {
             .addFilterBefore(new JwtAuthenticationTokenFilter(jwtTokenProvider, redisJwtService),
                 UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // 김성훈 프론트 체크 패스 API
                 .requestMatchers(
@@ -74,6 +75,7 @@ public class SecurityConfig {
                 .requestMatchers("/test/auth/admin").hasRole("ADMIN") // 유저권한 테스트용
                 .requestMatchers("/test/auth/user").hasRole("USER")
                 .anyRequest().authenticated())
+
             .build();
     }
 
@@ -91,10 +93,7 @@ public class SecurityConfig {
             "https://localhost:3000",
             "http://localhost:5173",
             "https://localhost:5173",
-            "http://43.201.209.14",
-            "https://43.201.209.14",
-            "https://www.algogo.kr",
-            "https://algogo.kr"
+            "https://api.algogo.kr"
         )); // 허용할 프론트엔드 도메인
         configuration.setAllowedMethods(
             List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 메서드
