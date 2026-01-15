@@ -481,7 +481,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
             )
             .fetchOne();
 
-            return count != null && count < 5;
+        return count != null && count == 0;
     }
 
     private Predicate findUserSubmissionsDynamicConditions(
