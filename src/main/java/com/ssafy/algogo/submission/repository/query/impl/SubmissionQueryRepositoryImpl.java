@@ -477,7 +477,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                 rr.isDone.isFalse(),
                 programType.name.eq(inputProgramType),
                 // 그룹일 경우에만 programId로 카운트 (문제집은 전체 대상이므로 조건 제외)
-                "GROUP".equals(inputProgramType) ? program.id.eq(programId) : null
+                program.id.eq(programId)
             )
             .fetchOne();
 
