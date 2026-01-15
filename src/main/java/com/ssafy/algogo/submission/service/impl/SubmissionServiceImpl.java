@@ -30,7 +30,6 @@ import com.ssafy.algogo.submission.event.SubmissionRematchEvent;
 import com.ssafy.algogo.submission.repository.AlgorithmRepository;
 import com.ssafy.algogo.submission.repository.SubmissionAlgorithmRepository;
 import com.ssafy.algogo.submission.repository.SubmissionRepository;
-import com.ssafy.algogo.submission.service.ReviewMatchService;
 import com.ssafy.algogo.submission.service.SubmissionService;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
@@ -86,6 +85,15 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         boolean isParticipant = submissionRepository.existsByUserIdAndProgramProblemId(userId,
             programProblem.getId());
+
+        boolean canMoreSubmit = submissionRepository.canUserMoreSubmit(userId,
+            programProblem.getProgram().getProgramType().toString(), programProblem.getProgram()
+                .getId());
+
+        if (!canMoreSubmit) {
+            throw new CustomException("요구된 리뷰가 해결되지 않아 제출 불가능합니다.",
+                ErrorCode.SUBMISSION_CAN_NOT_MORE);
+        }
 
         // 코드는 S3에 저장
         String s3CodeUrl = s3Service.uploadText(userId, submissionRequestDto.getCode());
@@ -295,9 +303,11 @@ public class SubmissionServiceImpl implements SubmissionService {
                 ErrorCode.PROGRAM_ID_NOT_FOUND));
 
         String programType = programRepository.getProgramTypeByProgramId(programId)
-            .orElseThrow(()-> new CustomException("문제집 타입 조회 시 찾지 못하였습니다.", ErrorCode.PROGRAM_TYPE_NOT_FOUND));
+            .orElseThrow(() -> new CustomException("문제집 타입 조회 시 찾지 못하였습니다.",
+                ErrorCode.PROGRAM_TYPE_NOT_FOUND));
 
-        boolean canMoreSubmit = submissionRepository.canUserMoreSubmit(userId, programType, programId);
+        boolean canMoreSubmit = submissionRepository.canUserMoreSubmit(userId, programType,
+            programId);
 
         return new SubmissionAuthorStatusResponseDto(canMoreSubmit);
     }
