@@ -5,25 +5,31 @@ import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.utils.S3Service;
 import com.ssafy.algogo.problem.entity.ProgramProblem;
 import com.ssafy.algogo.problem.repository.ProgramProblemRepository;
+import com.ssafy.algogo.program.entity.Program;
+import com.ssafy.algogo.program.repository.ProgramRepository;
 import com.ssafy.algogo.review.repository.RequireReviewRepository;
 import com.ssafy.algogo.submission.dto.ReviewRematchTargetQueryDto;
 import com.ssafy.algogo.submission.dto.request.SubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.request.UserSubmissionRequestDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionAuthorActiveResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionAuthorStatusResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionListResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionMePageResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionMeResponseDto;
 import com.ssafy.algogo.submission.dto.response.SubmissionResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionStatsInfosResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionStatsPageResponseDto;
+import com.ssafy.algogo.submission.dto.response.SubmissionStatsResponseDto;
 import com.ssafy.algogo.submission.dto.response.TrendIdsResponseDto;
-import com.ssafy.algogo.submission.dto.response.UserSubmissionPageResponseDto;
-import com.ssafy.algogo.submission.dto.response.UserSubmissionResponseDto;
 import com.ssafy.algogo.submission.entity.Algorithm;
 import com.ssafy.algogo.submission.entity.Submission;
 import com.ssafy.algogo.submission.entity.SubmissionAlgorithm;
+import com.ssafy.algogo.submission.event.SubmissionAiEvaluationEvent;
 import com.ssafy.algogo.submission.event.SubmissionEvent;
 import com.ssafy.algogo.submission.event.SubmissionRematchEvent;
 import com.ssafy.algogo.submission.repository.AlgorithmRepository;
 import com.ssafy.algogo.submission.repository.SubmissionAlgorithmRepository;
 import com.ssafy.algogo.submission.repository.SubmissionRepository;
-import com.ssafy.algogo.submission.service.ReviewMatchService;
 import com.ssafy.algogo.submission.service.SubmissionService;
 import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.repository.UserRepository;
@@ -49,9 +55,9 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final SubmissionAlgorithmRepository submissionAlgorithmRepository;
     private final AlgorithmRepository algorithmRepository;
     private final RequireReviewRepository requireReviewRepository;
+    private final ProgramRepository programRepository;
 
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final ReviewMatchService reviewMatchService;
     private final S3Service s3Service;
 
     @Override
@@ -77,6 +83,18 @@ public class SubmissionServiceImpl implements SubmissionService {
             submissionRequestDto.getProgramProblemId()).orElseThrow(
             () -> new CustomException("존재하지 않는 프로그램 문제입니다.", ErrorCode.PROGRAM_PROBLEM_NOT_FOUND));
 
+        boolean isParticipant = submissionRepository.existsByUserIdAndProgramProblemId(userId,
+            programProblem.getId());
+
+        boolean canMoreSubmit = submissionRepository.canUserMoreSubmit(userId,
+            programProblem.getProgram().getProgramType().toString(), programProblem.getProgram()
+                .getId());
+
+        if (!canMoreSubmit) {
+            throw new CustomException("요구된 리뷰가 해결되지 않아 제출 불가능합니다.",
+                ErrorCode.SUBMISSION_CAN_NOT_MORE);
+        }
+
         // 코드는 S3에 저장
         String s3CodeUrl = s3Service.uploadText(userId, submissionRequestDto.getCode());
 
@@ -91,10 +109,13 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         // 프로그램 문제 제출 수 +1
         programProblem.increaseSubmissionCount();
-
-        // 프로그램 문제 풀이 수 +1
+        // 프로그램 문제 정답 수 +1
         if (submission.getIsSuccess().equals(Boolean.TRUE)) {
             programProblem.increaseSolvedCount();
+        }
+        // 프로그램 문제 참여자 수 +1
+        if (!isParticipant) {
+            programProblem.increaseParticipantCount();
         }
 
         // 제출 시 사용한 알고리즘 저장
@@ -107,6 +128,11 @@ public class SubmissionServiceImpl implements SubmissionService {
         // 비동기 적용을 위해 Event 발행
         applicationEventPublisher.publishEvent(
             new SubmissionEvent(submission, usedAlgorithmList, 2));
+
+        // ai 점수 평가 Event 발행(비동기, 트랜잭션 분리)
+        applicationEventPublisher.publishEvent(
+            new SubmissionAiEvaluationEvent(submission.getId())
+        );
 
         return SubmissionResponseDto.from(submission, usedAlgorithmList);
     }
@@ -178,14 +204,14 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserSubmissionPageResponseDto getSubmissionMe(Long userId,
+    public SubmissionMePageResponseDto getSubmissionMe(Long userId,
         UserSubmissionRequestDto userSubmissionRequestDto, Pageable pageable) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
 
-        Page<UserSubmissionResponseDto> submissionMeList = submissionRepository.findAllUserSubmissionList(
+        Page<SubmissionMeResponseDto> submissionMeList = submissionRepository.findAllUserSubmissionList(
             user.getId(), userSubmissionRequestDto, pageable);
-        return UserSubmissionPageResponseDto.from(submissionMeList);
+        return SubmissionMePageResponseDto.from(submissionMeList);
     }
 
     @Override
@@ -216,5 +242,73 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
 
         return new SubmissionAuthorActiveResponseDto(isActive);
+    }
+
+    @Override
+    public SubmissionStatsPageResponseDto getSubmissionStatsLists(Long userId,
+        Long programProblemId, UserSubmissionRequestDto userSubmissionRequestDto,
+        Pageable pageable) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+
+        ProgramProblem programProblem = programProblemRepository.findById(programProblemId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 프로그램 문제입니다.",
+                ErrorCode.PROGRAM_PROBLEM_NOT_FOUND));
+
+        Page<SubmissionStatsResponseDto> submissionStatsLists = submissionRepository.findAllSubmissionsByProgramProblem(
+            programProblemId,
+            userSubmissionRequestDto, pageable);
+
+        return SubmissionStatsPageResponseDto.from(submissionStatsLists);
+    }
+
+    @Override
+    public SubmissionStatsInfosResponseDto getSubmissionStatsInfos(Long userId,
+        Long programProblemId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+
+        ProgramProblem programProblem = programProblemRepository.findById(programProblemId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 프로그램 문제입니다.",
+                ErrorCode.PROGRAM_PROBLEM_NOT_FOUND));
+
+        // 전체 제출 조회
+        Long submissionCount = submissionRepository.countSubmissionsByProgramProblemId(
+            programProblemId);
+        // 정답 제출 조회
+        Long successCount = submissionRepository.countSubmissionsByProgramProblemIdAndIsSuccess(
+            programProblemId, Boolean.TRUE);
+        // 계산
+        Long failureCount = submissionCount - successCount;
+
+        Integer successRate = Math.round(((float) successCount / submissionCount) * 100);
+
+        return SubmissionStatsInfosResponseDto.from(
+            submissionCount,
+            successCount,
+            failureCount,
+            successRate);
+    }
+
+    @Override
+    public SubmissionAuthorStatusResponseDto canUserMoreSubmission(
+        Long userId,
+        Long programId
+    ) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+
+        Program program = programRepository.findById(programId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 프로그램입니다.",
+                ErrorCode.PROGRAM_ID_NOT_FOUND));
+
+        String programType = programRepository.getProgramTypeByProgramId(programId)
+            .orElseThrow(() -> new CustomException("문제집 타입 조회 시 찾지 못하였습니다.",
+                ErrorCode.PROGRAM_TYPE_NOT_FOUND));
+
+        boolean canMoreSubmit = submissionRepository.canUserMoreSubmit(userId, programType,
+            programId);
+
+        return new SubmissionAuthorStatusResponseDto(canMoreSubmit);
     }
 }

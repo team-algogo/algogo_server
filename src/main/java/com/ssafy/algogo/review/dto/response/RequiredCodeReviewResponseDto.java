@@ -1,14 +1,15 @@
 package com.ssafy.algogo.review.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.ssafy.algogo.problem.entity.PlatformType;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record RequiredCodeReviewResponseDto(
-    Long targetSubmissionId,
     String problemTitle,
+    PlatformType problemPlatform,
     String programType,
     String programTitle,
-    String nickname
+    CodeReviewSubmissionInfoDto submission
 ) {
 
 }

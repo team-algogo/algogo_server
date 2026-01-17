@@ -6,6 +6,7 @@ import com.ssafy.algogo.review.dto.request.CreateCodeReviewRequestDto;
 import com.ssafy.algogo.review.dto.request.UpdateCodeReiewRequestDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.CodeReviewTreeResponseDto;
+import com.ssafy.algogo.review.dto.response.CodeReviewResponseDto;
 import com.ssafy.algogo.review.dto.response.UserCodeReviewListResponseDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewListResponseDto;
 import com.ssafy.algogo.review.service.ReviewService;
@@ -39,19 +40,21 @@ public class ReviewController {
         @AuthenticationPrincipal CustomUserDetails customUserDetails,
         @RequestBody @Valid CreateCodeReviewRequestDto reviewRequest) {
 
-        CodeReviewTreeResponseDto codeReviewTreeResponseDto = reviewService.createCodeReview(
+        CodeReviewResponseDto codeReviewResponseDto = reviewService.createCodeReview(
             reviewRequest,
             customUserDetails.getUserId());
 
-        return new SuccessResponse("리뷰 작성을 성공했습니다.", codeReviewTreeResponseDto);
+        return new SuccessResponse("리뷰 작성을 성공했습니다.", codeReviewResponseDto);
     }
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("")
     public SuccessResponse getCodeReviews(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
         @RequestParam("submission_id") Long submissionId) {
 
         CodeReviewListResponseDto codeReviewListResponseDto = reviewService.getReviewsBySubmissionId(
+            customUserDetails.getUserId(),
             submissionId);
 
         return new SuccessResponse("리뷰 작성내역 조회를 성공했습니다.", codeReviewListResponseDto);
@@ -65,10 +68,10 @@ public class ReviewController {
         @PathVariable Long reviewId
     ) {
 
-        CodeReviewTreeResponseDto codeReviewTreeResponseDto = reviewService.editCodeReview(
+        CodeReviewResponseDto codeReviewResponseDto = reviewService.editCodeReview(
             customUserDetails.getUserId(), reviewId, reviewRequest);
 
-        return new SuccessResponse("리뷰 수정을 성공했습니다.", codeReviewTreeResponseDto);
+        return new SuccessResponse("리뷰 수정을 성공했습니다.", codeReviewResponseDto);
     }
 
     @ResponseStatus(HttpStatus.OK)

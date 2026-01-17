@@ -27,13 +27,13 @@ public class JwtTokenProvider {
 
     private final UserRepository userRepository;
 
-    @Value("${jwt.secretKey}")
+    @Value("${jwt.secret-key}")
     private String secretKey;
 
-    @Value("${jwt.accessExpiration}")
+    @Value("${jwt.access-expiration}")
     private long accessTokenValidTime;
 
-    @Value("${jwt.refreshExpiration}")
+    @Value("${jwt.refresh-expiration}")
     private long refreshTokenValidTime;
 
     private Key getSigningKey() {

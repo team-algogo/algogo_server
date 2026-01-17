@@ -167,6 +167,11 @@ public enum ErrorCode {
     GROUP_USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "GROUP_USER_NOT_FOUND"),
 
     /**
+     * 해당 그룹 사용자가 ACTIVE 상태가 아님
+     */
+    PROGRAM_USER_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "PROGRAM_USER_NOT_ACTIVE"),
+
+    /**
      * 초대 엔티티가 존재하지 않음 (invite_id 잘못된 경우)
      */
     GROUP_INVITE_NOT_FOUND(HttpStatus.BAD_REQUEST, "GROUP_INVITE_NOT_FOUND"),
@@ -244,6 +249,10 @@ public enum ErrorCode {
      */
     SUBMISSION_HISTORY_NOT_FOUND(HttpStatus.BAD_REQUEST, "SUBMISSION_HISTORY_NOT_FOUND"),
 
+    /**
+     * 추가 제출 실패
+     */
+    SUBMISSION_CAN_NOT_MORE(HttpStatus.BAD_REQUEST, "SUBMISSION_CAN_NOT_MORE"),
     /**
      * 유저가 제출하려는 알고리즘 ID가 잘못된 경우
      */

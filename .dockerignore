@@ -1,0 +1,24 @@
+# 빌드 산출물/캐시
+build
+.gradle
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+*.iml
+.vscode
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+
+# 기타 (있으면)
+out
+bin
+node_modules

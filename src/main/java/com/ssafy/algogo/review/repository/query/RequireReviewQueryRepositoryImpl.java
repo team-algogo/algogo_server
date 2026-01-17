@@ -6,16 +6,21 @@ import static com.querydsl.core.group.GroupBy.list;
 import static com.ssafy.algogo.problem.entity.QProblem.problem;
 import static com.ssafy.algogo.problem.entity.QProgramProblem.programProblem;
 import static com.ssafy.algogo.program.entity.QProgram.program;
+import static com.ssafy.algogo.review.entity.QReview.review;
 import static com.ssafy.algogo.review.entity.QRequireReview.requireReview;
+import static com.ssafy.algogo.submission.entity.QAlgorithm.algorithm;
 import static com.ssafy.algogo.submission.entity.QSubmission.submission;
 import static com.ssafy.algogo.submission.entity.QSubmissionAlgorithm.submissionAlgorithm;
 import static com.ssafy.algogo.user.entity.QUser.user;
 
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.ssafy.algogo.review.dto.response.CodeReviewSubmissionInfoDto;
 import com.ssafy.algogo.review.dto.response.RequiredCodeReviewResponseDto;
 import com.ssafy.algogo.submission.dto.ReviewRematchTargetQueryDto;
+import com.ssafy.algogo.submission.dto.response.AlgorithmResponseDto;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -30,25 +35,52 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
     @Override
     public List<RequiredCodeReviewResponseDto> getRequiredReviews(Long userId) {
 
-        return query
-            .select(Projections.constructor(
-                RequiredCodeReviewResponseDto.class,
-                submission.id,
-                problem.title,
-                program.programType.name,
-                program.title,
-                submission.user.nickname
+        Expression<Long> reviewCountExpr =
+            JPAExpressions
+                .select(review.count())
+                .from(review)
+                .where(review.submission.eq(submission));
 
-            ))
+        return query
             .from(requireReview)
             .join(requireReview.targetSubmission, submission)
             .join(submission.programProblem, programProblem)
+            .leftJoin(submissionAlgorithm).on(submissionAlgorithm.submission.eq(submission))
+            .leftJoin(submissionAlgorithm.algorithm, algorithm)
             .join(programProblem.problem, problem)
             .join(programProblem.program, program)
-            .join(requireReview.subjectUser, user)
-            .where(requireReview.subjectUser.id.eq(userId))
-            .where(requireReview.isDone.isFalse())
-            .fetch();
+            .where(
+                requireReview.subjectUser.id.eq(userId),
+                requireReview.isDone.isFalse()
+            )
+            .transform(
+                com.querydsl.core.group.GroupBy.groupBy(submission.id).list(
+                    Projections.constructor(
+                        RequiredCodeReviewResponseDto.class,
+                        problem.title,
+                        problem.platformType,
+                        program.programType.name,
+                        program.title,
+                        Projections.constructor(
+                            CodeReviewSubmissionInfoDto.class,
+                            submission.id,
+                            submission.language,
+                            submission.createdAt,
+                            submission.viewCount,
+                            com.querydsl.core.group.GroupBy.set(
+                                Projections.constructor(
+                                    AlgorithmResponseDto.class,
+                                    algorithm.id,
+                                    algorithm.name
+                                )
+                            ),
+                            reviewCountExpr,
+                            submission.user.nickname
+                        )
+
+                    )
+                )
+            );
     }
 
     @Override

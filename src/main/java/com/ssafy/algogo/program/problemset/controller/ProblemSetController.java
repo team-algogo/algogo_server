@@ -1,5 +1,7 @@
 package com.ssafy.algogo.program.problemset.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.algogo.auth.service.security.CustomUserDetails;
 import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
@@ -10,18 +12,24 @@ import com.ssafy.algogo.problem.dto.response.ProgramProblemPageResponseDto;
 import com.ssafy.algogo.problem.service.impl.ProgramProblemServiceImpl;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetCreateRequestDto;
 import com.ssafy.algogo.program.problemset.dto.request.ProblemSetModifyRequestDto;
-import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetListResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
-import com.ssafy.algogo.program.problemset.dto.response.ProblemSetProblemsPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchPageResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,8 +40,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -41,144 +51,166 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/problem-sets")
 public class ProblemSetController {
 
-	private final ProblemSetService problemSetService;
-	private final ProgramProblemServiceImpl programProblemServiceImpl;
+    private final ProblemSetService problemSetService;
+    private final ProgramProblemServiceImpl programProblemServiceImpl;
 
-	/**
-	 * 자율 문제집 리스트 조회 * 동적 쿼리. //@return 성공시 반환할거 적을거임 //@throws 예외 적을거임
-	 */
-	@GetMapping("/lists")
-	@ResponseStatus(HttpStatus.OK)
-	public SuccessResponse getProblemSetList(
-		@RequestParam(required = false) String keyWord,
-		@RequestParam(required = false) String category,
-		@RequestParam(required = false, defaultValue = "createdAt") String sortBy,
-		@RequestParam(required = false, defaultValue = "desc") String sortDirection,
-		@RequestParam(defaultValue = "10") int size,
-		@RequestParam(defaultValue = "0") int page
-	) {
-		ProblemSetListResponseDto data =
-			problemSetService.getProblemSetList(
-				keyWord, category, sortBy, sortDirection, size, page
-			);
+    /**
+     * 자율 문제집 리스트 조회 * 동적 쿼리. //@return 성공시 반환할거 적을거임 //@throws 예외 적을거임
+     */
+    @GetMapping("/lists")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse getProblemSetList(
+        @RequestParam(required = false) String keyWord,
+        @RequestParam(required = false) String category,
+        @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+        @RequestParam(required = false, defaultValue = "desc") String sortDirection,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "0") int page
+    ) {
+        ProblemSetListResponseDto data =
+            problemSetService.getProblemSetList(
+                keyWord, category, sortBy, sortDirection, size, page
+            );
 
-		return new SuccessResponse("자율 문제집 리스트 조회를 성공했습니다.", data);
-	}
-
-
-	// 자율 문제집 조회
-	@GetMapping("/{program_id}")
-	@ResponseStatus(HttpStatus.OK)
-	public SuccessResponse getProblemSet(@PathVariable Long program_id) {
-		ProblemSetResponseDto data = problemSetService.getProblemSet(program_id);
-		return new SuccessResponse("자율 문제집 조회를 성공했습니다.", data);
-	}
-
-	// 자율 문제집 생성
-	@PreAuthorize("hasRole('ADMIN')")
-	@PostMapping("")
-	@ResponseStatus(HttpStatus.CREATED)
-	public SuccessResponse createProblemSet(
-		@RequestBody @Valid ProblemSetCreateRequestDto createRequestDto
-	) {
-		ProblemSetResponseDto data = problemSetService.createProblemSet(
-			createRequestDto);
-		return new SuccessResponse("문제집 생성을 성공했습니다.", data);
-	}
-
-	// 자율 문제집 수정
-	@PreAuthorize("hasRole('ADMIN')")
-	@PutMapping("/{program_id}")
-	@ResponseStatus(HttpStatus.OK)
-	public SuccessResponse modifyProblemSet(@PathVariable Long program_id,
-		@RequestBody @Valid ProblemSetModifyRequestDto problemSetModifyRequestDto) {
-
-		ProblemSetResponseDto data = problemSetService.modifyProblemSet(
-			program_id, problemSetModifyRequestDto);
-
-		return new SuccessResponse("문제집 수정을 성공했습니다.", data);
-	}
-
-	// 자율 문제집 삭제
-	@PreAuthorize("hasRole('ADMIN')")
-	@DeleteMapping("/{program_id}")
-	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public SuccessResponse deleteProblemSet(@PathVariable Long program_id) {
-
-		problemSetService.deleteProblemSet(program_id);
-
-		return new SuccessResponse("자율 문제집 삭제를 성공했습니다.", null);
-	}
-
-	@GetMapping("/{program_id}/problems")
-	@ResponseStatus(HttpStatus.OK)
-	public SuccessResponse getProblemsByProblemSetId(
-		@AuthenticationPrincipal CustomUserDetails user,
-		@PathVariable Long program_id,
-		@RequestParam(defaultValue = "id") String sortBy,
-		@RequestParam(defaultValue = "asc") String sortDirection,
-		@RequestParam(defaultValue = "10") int size,
-		@RequestParam(defaultValue = "0") int page
-	) {
-		//boolean isLogined = (user != null);
-
-		Pageable pageable = PageRequest.of(
-			page,
-			size,
-			Sort.by(Sort.Direction.fromString(sortDirection), sortBy)
-		);
-
-		ProgramProblemPageResponseDto response =
-			problemSetService.getProgramProblemsPage(program_id, pageable);
-
-		return new SuccessResponse("문제집 문제 리스트 조회에 성공했습니다.", response);
-	}
+        return new SuccessResponse("자율 문제집 리스트 조회를 성공했습니다.", data);
+    }
 
 
-	// 문제집 요소 추가(문제추가)
-	@PreAuthorize("hasRole('ADMIN')")
-	@PostMapping("/{program_id}/problems")
-	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public SuccessResponse commonProblemCreate(
-		@PathVariable Long program_id,
-		@RequestBody ProgramProblemCreateRequestDto programProblemCreateRequestDto) {
+    // 자율 문제집 조회
+    @GetMapping("/{program_id}")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse getProblemSet(@PathVariable Long program_id) {
+        ProblemSetResponseDto data = problemSetService.getProblemSet(program_id);
+        return new SuccessResponse("자율 문제집 조회를 성공했습니다.", data);
+    }
 
-		programProblemServiceImpl.createProgramProblem(program_id, programProblemCreateRequestDto);
+    // 자율 문제집 생성
+    @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public SuccessResponse createProblemSet(
+        @RequestPart(value = "dto", required = true) String dtoJson,
+        @RequestPart(value = "thumbnail", required = true) MultipartFile thumbnail
+    ) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            ProblemSetCreateRequestDto dto = mapper.readValue(dtoJson,
+                ProblemSetCreateRequestDto.class);
 
-		return new SuccessResponse("문제집 요소 추가(문제)를 성공했습니다.", null);
-	}
+            log.info("파싱 성공: title={}, categories={}",
+                dto.getTitle(), dto.getCategories());
+
+            ProblemSetResponseDto data = problemSetService.createProblemSet(dto, thumbnail);
+            return new SuccessResponse("문제집 생성 성공", data);
+        } catch (Exception e) {
+            log.error("요청 처리 실패: {}", e.getMessage());
+            throw new CustomException("요청 데이터 오류: " + e.getMessage(), ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    // 자율 문제집 수정
+    @PutMapping("/{programId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse modifyProblemSet(
+        @PathVariable Long programId,
+        @RequestPart("dto") String dtoJson,
+        @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail
+    ) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        ProblemSetModifyRequestDto dto = mapper.readValue(dtoJson,
+            ProblemSetModifyRequestDto.class);
+
+        ProblemSetResponseDto data = problemSetService.modifyProblemSet(programId, dto);
+        return new SuccessResponse("문제집 수정 성공", data);
+    }
 
 
-	// 	문제집 요소 제거(문제제거)
-	@PreAuthorize("hasRole('ADMIN')")
-	@DeleteMapping("/{program_id}/problems")
-	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public SuccessResponse DeleteProblemSetByProblem(@PathVariable Long program_id,
-		@RequestBody @Valid ProgramProblemDeleteRequestDto programProblemsDeleteRequestDto) {
+    // 자율 문제집 삭제
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{program_id}")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse deleteProblemSet(@PathVariable Long program_id) {
 
-		programProblemServiceImpl.deleteProgramProblem(program_id,
-			programProblemsDeleteRequestDto);
+        problemSetService.deleteProblemSet(program_id);
 
-		return new SuccessResponse("문제집 요소 제거를 성공했습니다.", null);
-	}
+        return new SuccessResponse("자율 문제집 삭제를 성공했습니다.", null);
+    }
 
-	// 내가 참여한 문제집 조회
-	@PreAuthorize("hasAnyRole('USER','ADMIN')")
-	@GetMapping("/me")
-	@ResponseStatus(HttpStatus.OK)
-	public SuccessResponse getJoinMe(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+    @GetMapping("/{program_id}/problems")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse getProblemsByProblemSetId(
+        @AuthenticationPrincipal CustomUserDetails user,
+        @PathVariable Long program_id,
+        @RequestParam(defaultValue = "id") String sortBy,
+        @RequestParam(defaultValue = "asc") String sortDirection,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "0") int page
+    ) {
+        //boolean isLogined = (user != null);
 
-		if (customUserDetails == null) {
-			throw new CustomException("인증 정보가 없습니다.", ErrorCode.UNAUTHORIZED);
-		}
+        Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by(Sort.Direction.fromString(sortDirection), sortBy)
+        );
 
-		Long userId = customUserDetails.getUserId();
+        ProgramProblemPageResponseDto response =
+            problemSetService.getProgramProblemsPage(program_id, pageable);
 
-		MyProblemSetListResponseDto data =
-			problemSetService.getMeJoinProblemSet(userId);
+        return new SuccessResponse("문제집 문제 리스트 조회에 성공했습니다.", response);
+    }
 
-		return new SuccessResponse("내가 참여한 문제집 조회에 성공했습니다.", data);
-	}
+
+    // 문제집 요소 추가(문제추가)
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{program_id}/problems")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse commonProblemCreate(
+        @PathVariable Long program_id,
+        @RequestBody ProgramProblemCreateRequestDto programProblemCreateRequestDto) {
+
+        programProblemServiceImpl.createProgramProblem(program_id, programProblemCreateRequestDto);
+
+        return new SuccessResponse("문제집 요소 추가(문제)를 성공했습니다.", null);
+    }
+
+
+    // 	문제집 요소 제거(문제제거)
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{program_id}/problems")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse DeleteProblemSetByProblem(@PathVariable Long program_id,
+        @RequestBody @Valid ProgramProblemDeleteRequestDto programProblemsDeleteRequestDto) {
+
+        programProblemServiceImpl.deleteProgramProblem(program_id,
+            programProblemsDeleteRequestDto);
+
+        return new SuccessResponse("문제집 요소 제거를 성공했습니다.", null);
+    }
+
+    // 내가 참여한 문제집 조회
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/me")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse getMyJoinProblemSet(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+        @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
+        @RequestParam(value = "size", defaultValue = "10") Integer size,
+        @RequestParam(value = "page", defaultValue = "0") Integer page
+    ) {
+        Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by(Sort.Direction.fromString(sortDirection), sortBy)
+        );
+
+        MyProblemSetPageResponseDto response =
+            problemSetService.getMyJoinProblemSet(customUserDetails.getUserId(), pageable);
+
+        return new SuccessResponse("내 문제집 조회 성공", response);
+    }
 
 	/*@GetMapping("/debug/me") // 유저권한 확인용
 	public String debug(Authentication authentication) {
@@ -187,8 +219,43 @@ public class ProblemSetController {
 		return "ok";
 	}*/
 
-	@GetMapping("/categories")
-	public SuccessResponse getCategories() {
-		return new SuccessResponse("카테고리 리스트 조회에 성공했습니다.", problemSetService.getCategoryList());
-	}
+    @GetMapping("/categories")
+    public SuccessResponse getCategories() {
+        return new SuccessResponse("카테고리 리스트 조회에 성공했습니다.", problemSetService.getCategoryList());
+    }
+
+	/*// 문제집 검색
+	@GetMapping("/search")
+	public SuccessResponse searchProblemSet(@RequestParam String keyword) {
+		return new
+			SuccessResponse("문제집 검색에 성공했습니다.", problemSetService.searchProblemSet(keyword));
+	}*/
+
+    // 문제집 제목/설명으로 검색
+    @GetMapping("/search/by-title")
+    public SuccessResponse searchProblemSetByTitle(
+        @RequestParam String keyword,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        ProblemSetSearchPageResponseDto result =
+            problemSetService.searchProblemSetByTitle(keyword, pageable);
+
+        return new SuccessResponse("문제집 제목/설명 검색에 성공했습니다.", result);
+    }
+
+    // 문제집에 속한 문제로 검색
+    @GetMapping("/search/by-problems")
+    public SuccessResponse searchProblemSetByProblems(
+        @RequestParam String keyword,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        ProblemSetSearchPageResponseDto result =
+            problemSetService.searchProblemSetByProblems(keyword, pageable);
+
+        return new SuccessResponse("문제 포함 문제집 검색에 성공했습니다.", result);
+    }
 }

@@ -7,16 +7,34 @@ import static com.ssafy.algogo.program.entity.QProgramCategory.programCategory;
 import static com.ssafy.algogo.program.entity.QProgramType.programType;
 import static com.ssafy.algogo.program.entity.QCategory.category;
 import static com.ssafy.algogo.problem.entity.QProgramProblem.programProblem;
+import static com.ssafy.algogo.problem.entity.QProblem.problem;
+
 
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.ssafy.algogo.problem.entity.QProblem;
+import com.ssafy.algogo.problem.entity.QProgramProblem;
+import com.ssafy.algogo.program.entity.QProgram;
+import com.ssafy.algogo.program.entity.QProgramCategory;
+import com.ssafy.algogo.program.entity.QProgramType;
+import com.ssafy.algogo.program.entity.QProgramUser;
+import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
+import com.ssafy.algogo.program.group.entity.QGroupsUser;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchResponseDto;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
@@ -164,6 +182,329 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 			.stream()
 			.findFirst()
 			.orElse(null);
+	}
+
+	/**
+	 * 문제집 제목/설명으로 검색 (페이지네이션)
+	 */
+	@Override
+	public Page<ProblemSetResponseDto> searchProblemSetByTitleOrDescription(
+		String keyword, Pageable pageable) {
+
+		BooleanExpression isProblemSet =
+			program.programType.name.eq("problemset");
+
+		BooleanExpression keywordFilter =
+			program.title.containsIgnoreCase(keyword)
+				.or(program.description.containsIgnoreCase(keyword));
+
+		// 총 개수 조회
+		Long total = queryFactory
+			.select(program.id.countDistinct())
+			.from(program)
+			.join(program.programType, programType)
+			.where(isProblemSet, keywordFilter)
+			.fetchOne();
+
+		total = total != null ? total : 0L;
+
+		NumberExpression<Long> popularityScore =
+			programProblem.participantCount.sum().coalesce(0L);
+
+		NumberExpression<Long> problemCountExpr =
+			programProblem.id.countDistinct().coalesce(0L);
+
+		// 페이지네이션된 결과 조회
+		List<ProblemSetResponseDto> content = queryFactory
+			.from(program)
+			.join(program.programType, programType)
+			.leftJoin(programProblem).on(programProblem.program.eq(program))
+			.leftJoin(programCategory).on(programCategory.program.eq(program))
+			.leftJoin(programCategory.category, category)
+			.where(isProblemSet, keywordFilter)
+			.groupBy(program.id, programType.id)
+			.orderBy(program.createdAt.desc())
+			.offset(pageable.getOffset())
+			.limit(pageable.getPageSize())
+			.transform(
+				groupBy(program.id).list(
+					Projections.constructor(
+						ProblemSetResponseDto.class,
+						program.id,
+						program.title,
+						program.description,
+						program.thumbnail,
+						program.createdAt,
+						program.modifiedAt,
+						programType.name,
+						list(category.name),
+						popularityScore,
+						problemCountExpr
+					)
+				)
+			);
+
+		return new PageImpl<>(content, pageable, total);
+	}
+
+	/**
+	 * 문제집에 속한 문제로 검색 (페이지네이션)
+	 */
+	@Override
+	public Page<ProblemSetResponseDto> searchProblemSetByProblems(
+		String keyword, Pageable pageable) {
+
+		BooleanExpression isProblemSet =
+			program.programType.name.eq("problemset");
+
+		BooleanExpression problemKeywordFilter =
+			problem.title.containsIgnoreCase(keyword);
+
+		// 1단계: 매칭되는 문제집 ID 찾기
+		List<Long> programIds = queryFactory
+			.selectDistinct(program.id)
+			.from(program)
+			.join(program.programType, programType)
+			.innerJoin(programProblem).on(programProblem.program.eq(program))
+			.innerJoin(programProblem.problem, problem)
+			.where(isProblemSet, problemKeywordFilter)
+			.fetch();
+
+		System.out.println("=== Found Program IDs: " + programIds);
+
+		if (programIds.isEmpty()) {
+			return new PageImpl<>(List.of(), pageable, 0);
+		}
+
+		// 2단계: 총 개수
+		long total = programIds.size();
+
+		// 3단계: 페이지네이션된 ID들
+		List<Long> paginatedIds = programIds.stream()
+			.skip(pageable.getOffset())
+			.limit(pageable.getPageSize())
+			.collect(Collectors.toList());
+
+		System.out.println("=== Paginated IDs: " + paginatedIds);
+
+		NumberExpression<Long> popularityScore =
+			programProblem.participantCount.sum().coalesce(0L);
+
+		NumberExpression<Long> problemCountExpr =
+			programProblem.id.countDistinct().coalesce(0L);
+
+		// 4단계: transform() 패턴 사용 (기존 findProblemSetDetail과 동일)
+		List<ProblemSetResponseDto> content = queryFactory
+			.from(program)
+			.join(program.programType, programType)
+			.leftJoin(programProblem).on(programProblem.program.eq(program))
+			.leftJoin(programCategory).on(programCategory.program.eq(program))
+			.leftJoin(programCategory.category, category)
+			.where(program.id.in(paginatedIds))
+			.groupBy(program.id, programType.id)
+			.orderBy(program.createdAt.desc())
+			.transform(
+				groupBy(program.id).list(
+					Projections.constructor(
+						ProblemSetResponseDto.class,
+						program.id,
+						program.title,
+						program.description,
+						program.thumbnail,
+						program.createdAt,
+						program.modifiedAt,
+						programType.name,
+						list(category.name),
+						popularityScore,
+						problemCountExpr
+					)
+				)
+			);
+
+		System.out.println("=== Content Size: " + content.size());
+		System.out.println("=== Content: " + content);
+
+		return new PageImpl<>(content, pageable, total);
+	}
+
+
+	/*@Override
+	public List<ProblemSetResponseDto> searchProblemSetByKeyword(String keyword) {
+		// 띄어쓰기 제거 (Java)
+		String normalizedKeyword = keyword.replaceAll("\\s+", "");
+
+		NumberExpression<Long> popularityScore =
+			programProblem.participantCount.sum().coalesce(0L);
+
+		NumberExpression<Long> problemCountExpr =
+			programProblem.id.countDistinct().coalesce(0L);
+
+		return queryFactory
+			.from(program)
+			.join(program.programType, programType)
+			.leftJoin(programProblem).on(programProblem.program.eq(program))
+			.leftJoin(programProblem.problem, problem)
+			.leftJoin(programCategory).on(programCategory.program.eq(program))
+			.leftJoin(programCategory.category, category)
+			.where(
+				program.programType.name.eq("problemset"),
+				// DB에서도 띄어쓰기 제거
+				Expressions.stringTemplate(
+						"REPLACE(LOWER({0}), ' ', '')",
+						program.title
+					).contains(normalizedKeyword.toLowerCase())
+					.or(Expressions.stringTemplate(
+						"REPLACE(LOWER({0}), ' ', '')",
+						program.description
+					).contains(normalizedKeyword.toLowerCase()))
+					.or(Expressions.stringTemplate(
+						"REPLACE(LOWER({0}), ' ', '')",
+						problem.title
+					).contains(normalizedKeyword.toLowerCase()))
+			)
+			.groupBy(program.id, programType.id)
+			.transform(
+				groupBy(program.id).list(
+					Projections.constructor(
+						ProblemSetResponseDto.class,
+						program.id,
+						program.title,
+						program.description,
+						program.thumbnail,
+						program.createdAt,
+						program.modifiedAt,
+						programType.name,
+						list(category.name),
+						popularityScore,
+						problemCountExpr
+					)
+				)
+			);
+	}*/
+
+	@Override
+	public Page<ProblemSetResponseDto> findMyJoinProblemSets(
+		List<Long> programIds,
+		Long userId,
+		Pageable pageable
+	) {
+		QProgram program = QProgram.program;
+		QProgramType programType = QProgramType.programType;
+		QProgramUser programUser = new QProgramUser("programUser");
+		QProgramProblem programProblem = QProgramProblem.programProblem;
+		QProgramCategory programCategory = QProgramCategory.programCategory;
+
+		List<Long> allProgramIds = queryFactory
+			.select(program.id)
+			.distinct()
+			.from(program)
+			.innerJoin(program.programType, programType)
+			.innerJoin(programUser)
+			.on(
+				programUser.program.id.eq(program.id),
+				programUser.user.id.eq(userId),
+				programUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)
+			)
+			.where(
+				program.id.in(programIds),
+				programType.id.eq(2L)
+			)
+			.orderBy(program.createdAt.desc())
+			.fetch();
+
+		Map<Long, List<String>> categoriesMap = queryFactory
+			.select(program.id, programCategory.category.name)
+			.from(programCategory)
+			.innerJoin(programCategory.program, program)
+			.where(program.id.in(allProgramIds))
+			.fetch()
+			.stream()
+			.collect(Collectors.groupingBy(
+				tuple -> tuple.get(0, Long.class),
+				Collectors.mapping(
+					tuple -> tuple.get(1, String.class),
+					Collectors.toList()
+				)
+			));
+
+		Map<Long, Long> totalParticipantsMap = queryFactory
+			.select(program.id, programUser.id.countDistinct())
+			.from(programUser)
+			.innerJoin(programUser.program, program)
+			.where(program.id.in(allProgramIds))
+			.groupBy(program.id)
+			.fetch()
+			.stream()
+			.collect(Collectors.toMap(
+				tuple -> tuple.get(0, Long.class),
+				tuple -> tuple.get(1, Long.class)
+			));
+
+		Map<Long, Long> problemCountMap = queryFactory
+			.select(program.id, programProblem.id.countDistinct())
+			.from(programProblem)
+			.innerJoin(programProblem.program, program)
+			.where(program.id.in(allProgramIds))
+			.groupBy(program.id)
+			.fetch()
+			.stream()
+			.collect(Collectors.toMap(
+				tuple -> tuple.get(0, Long.class),
+				tuple -> tuple.get(1, Long.class)
+			));
+
+		List<ProblemSetResponseDto> content = queryFactory
+			.select(
+				Projections.constructor(
+					ProblemSetResponseDto.class,
+					program.id,
+					program.title,
+					program.description,
+					program.thumbnail,
+					program.createdAt,
+					program.modifiedAt,
+					programType.name,
+					Expressions.asSimple(List.of()),
+					Expressions.asSimple(0L),
+					Expressions.asSimple(0L)
+				)
+			)
+			.from(program)
+			.innerJoin(program.programType, programType)
+			.innerJoin(programUser)
+			.on(
+				programUser.program.id.eq(program.id),
+				programUser.user.id.eq(userId),
+				programUser.programUserStatus.eq(ProgramUserStatus.ACTIVE)
+			)
+			.where(
+				program.id.in(programIds),
+				programType.id.eq(2L)
+			)
+			.distinct()
+			.orderBy(program.createdAt.desc())
+			.offset(pageable.getOffset())
+			.limit(pageable.getPageSize())
+			.fetch();
+
+		content = content.stream()
+			.map(dto -> new ProblemSetResponseDto(
+				dto.programId(),
+				dto.title(),
+				dto.description(),
+				dto.thumbnail(),
+				dto.createAt(),
+				dto.modifiedAt(),
+				dto.programType(),
+				categoriesMap.getOrDefault(dto.programId(), List.of()),
+				totalParticipantsMap.getOrDefault(dto.programId(), 0L),
+				problemCountMap.getOrDefault(dto.programId(), 0L)
+			))
+			.collect(Collectors.toList());
+
+		Long total = (long) allProgramIds.size();
+
+		return new PageImpl<>(content, pageable, total);
 	}
 
 

@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -72,7 +73,18 @@ public class Submission extends BaseTime {
     @JoinColumn(name = "program_problem_id")
     private ProgramProblem programProblem;
 
+    @Column(name = "ai_score", precision = 5, scale = 2)
+    private BigDecimal aiScore;
+
+    @Column(name = "ai_score_reason", columnDefinition = "TEXT")
+    private String aiScoreReason;
+
     public void increaseViewCount() {
         this.viewCount++;
+    }
+
+    public void updateAiEvaluation(java.math.BigDecimal aiScore, String aiScoreReason) {
+        this.aiScore = aiScore;
+        this.aiScoreReason = aiScoreReason;
     }
 }

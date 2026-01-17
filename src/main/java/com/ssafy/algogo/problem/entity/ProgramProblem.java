@@ -109,6 +109,10 @@ public class ProgramProblem {
     }
 
     public void increaseSolvedCount() {
-        this.submissionCount++;
+        this.solvedCount++;
+    }
+
+    public void increaseParticipantCount() {
+        this.participantCount++;
     }
 }

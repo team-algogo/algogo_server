@@ -51,7 +51,16 @@ public class AlarmController {
             555L,   // reviewId
             null,   // programProblemId
             null,   // programId
-            null    // userId
+            null,   // userId
+            null,   // userNickname
+            null,   // programName
+            null,   // problemTitle
+            null,   // joinId
+            null,   // inviteId
+            null,   // targetSubmissionAuthorNickname
+            null,   // parentReviewId
+            null,   // parentUserId
+            null    // parentUserName
         );
 
         alarmService.createAndSendAlarm(
@@ -91,4 +100,5 @@ public class AlarmController {
         return new SuccessResponse("알림 삭제를 성공했습니다.", null);
     }
 
+    
 }
