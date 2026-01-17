@@ -18,13 +18,14 @@ import com.ssafy.algogo.program.group.dto.request.UpdateGroupMemberRoleRequestDt
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetReceivedGroupInviteListResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetSentGroupJoinListResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomPageResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.dto.response.MyGroupRoomPageResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
 import com.ssafy.algogo.program.group.service.GroupService;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -334,5 +335,26 @@ public class GroupController {
         return new SuccessResponse("내 그룹 조회 성공", response);
     }
 
+    @GetMapping("/invites/received")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse getReceivedGroupInvites(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        GetReceivedGroupInviteListResponseDto response =
+            groupService.getReceivedGroupInvites(customUserDetails.getUserId());
+
+        return new SuccessResponse("받은 그룹 초대 조회 성공", response);
+    }
+
+    @GetMapping("/joins/sent")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse getSentGroupJoinRequests(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        GetSentGroupJoinListResponseDto response =
+            groupService.getSentGroupJoinRequests(customUserDetails.getUserId());
+
+        return new SuccessResponse("내가 보낸 그룹 참여 신청 조회 성공", response);
+    }
 
 }
