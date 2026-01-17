@@ -2,9 +2,10 @@ package com.ssafy.algogo.program.group.repository.query;
 
 import static com.ssafy.algogo.problem.entity.QProgramProblem.programProblem;
 import static com.ssafy.algogo.program.entity.QProgram.program;
-import static com.ssafy.algogo.program.entity.QProgramUser.programUser;
 import static com.ssafy.algogo.program.group.entity.QGroupRoom.groupRoom;
-import static com.ssafy.algogo.program.group.entity.QGroupsUser.groupsUser;
+import static com.ssafy.algogo.program.entity.QProgramInvite.programInvite;
+import static com.ssafy.algogo.program.entity.QProgramJoin.programJoin;
+
 
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
@@ -12,6 +13,8 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.ssafy.algogo.program.group.dto.response.GetReceivedGroupInviteResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetSentGroupJoinResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.dto.response.MyGroupRoomResponseDto;
 import com.ssafy.algogo.program.group.entity.GroupRole;
@@ -272,5 +275,127 @@ public class GroupQueryRepositoryImpl implements GroupQueryRepository {
         long total = totalCount != null ? totalCount : 0L;
 
         return new PageImpl<>(content, pageable, total);
+    }
+
+    @Override
+    public List<GetReceivedGroupInviteResponseDto> findReceivedGroupInvitesWithRoom(Long userId) {
+        QGroupsUser memberUser = new QGroupsUser("memberUser"); // 전체 멤버 수
+        QGroupsUser selfUser = new QGroupsUser("selfUser");     // 로그인 유저 기준
+
+        return query
+            .select(Projections.constructor(
+                GetReceivedGroupInviteResponseDto.class,
+                programInvite.id,
+                programInvite.inviteStatus,
+                // GroupRoomResponseDto
+                Projections.constructor(
+                    GroupRoomResponseDto.class,
+                    groupRoom.id,
+                    program.title,
+                    program.description,
+                    program.createdAt,
+                    program.modifiedAt,
+                    groupRoom.capacity,
+                    memberUser.id.countDistinct(),
+                    programProblem.id.countDistinct(),
+                    selfUser.id.isNotNull(),
+                    selfUser.groupRole
+                )
+            ))
+            .from(programInvite)
+            .join(groupRoom).on(programInvite.program.id.eq(groupRoom.id))
+            .join(program).on(program.id.eq(groupRoom.id))
+
+            // 멤버 수
+            .leftJoin(memberUser).on(
+                memberUser.program.id.eq(groupRoom.id)
+                    .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
+            )
+
+            // 문제 수
+            .leftJoin(programProblem)
+            .on(programProblem.program.id.eq(groupRoom.id))
+
+            // 로그인 유저 기준 정보
+            .leftJoin(selfUser).on(
+                selfUser.program.id.eq(groupRoom.id)
+                    .and(selfUser.user.id.eq(userId))
+                    .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
+            )
+
+            // 내가 받은 초대
+            .where(programInvite.user.id.eq(userId))
+
+            .groupBy(
+                programInvite.id,
+                programInvite.inviteStatus,
+                groupRoom.id,
+                program.id,
+                selfUser.id,
+                selfUser.groupRole
+            )
+            .fetch();
+    }
+
+    @Override
+    public List<GetSentGroupJoinResponseDto> findSentGroupJoinRequestsWithRoom(Long userId) {
+
+        QGroupsUser memberUser = new QGroupsUser("memberUser"); // 전체 멤버 수
+        QGroupsUser selfUser = new QGroupsUser("selfUser");     // 로그인 유저 기준
+
+        return query
+            .select(Projections.constructor(
+                GetSentGroupJoinResponseDto.class,
+                programJoin.id,
+                programJoin.joinStatus,
+
+                // GroupRoomResponseDto
+                Projections.constructor(
+                    GroupRoomResponseDto.class,
+                    groupRoom.id,
+                    program.title,
+                    program.description,
+                    program.createdAt,
+                    program.modifiedAt,
+                    groupRoom.capacity,
+                    memberUser.id.countDistinct(),
+                    programProblem.id.countDistinct(),
+                    selfUser.id.isNotNull(),
+                    selfUser.groupRole
+                )
+            ))
+            .from(programJoin)
+            .join(groupRoom).on(programJoin.program.id.eq(groupRoom.id))
+            .join(program).on(program.id.eq(groupRoom.id))
+
+            // 멤버 수
+            .leftJoin(memberUser).on(
+                memberUser.program.id.eq(groupRoom.id)
+                    .and(memberUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
+            )
+
+            // 문제 수
+            .leftJoin(programProblem)
+            .on(programProblem.program.id.eq(groupRoom.id))
+
+            // 로그인 유저 기준 정보
+            .leftJoin(selfUser).on(
+                selfUser.program.id.eq(groupRoom.id)
+                    .and(selfUser.user.id.eq(userId))
+                    .and(selfUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
+            )
+
+            // 내가 보낸 신청
+            .where(programJoin.user.id.eq(userId))
+
+            .groupBy(
+                programJoin.id,
+                programJoin.joinStatus,
+                groupRoom.id,
+                program.id,
+                selfUser.id,
+                selfUser.groupRole
+            )
+            .fetch();
     }
 }

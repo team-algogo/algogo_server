@@ -1,6 +1,8 @@
 package com.ssafy.algogo.program.group.repository.query;
 
 
+import com.ssafy.algogo.program.group.dto.response.GetReceivedGroupInviteResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetSentGroupJoinResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.dto.response.MyGroupRoomResponseDto;
 import java.util.List;
@@ -20,4 +22,10 @@ public interface GroupQueryRepository {
         Long userId);
 
     GroupRoomResponseDto getGroupRoomDetailWithUser(Long programId, Long userId);
+
+    List<GetReceivedGroupInviteResponseDto>
+    findReceivedGroupInvitesWithRoom(Long userId);
+
+    List<GetSentGroupJoinResponseDto>
+    findSentGroupJoinRequestsWithRoom(Long userId);
 }
