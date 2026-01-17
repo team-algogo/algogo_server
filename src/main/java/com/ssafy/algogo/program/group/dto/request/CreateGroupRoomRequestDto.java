@@ -24,6 +24,6 @@ public class CreateGroupRoomRequestDto {
 
     @NotNull(message = "capacity is required")
     @Min(value = 1, message = "capacity must be at least 1")
-    @Max(value = 1000, message = "capacity must be at most 1000")
+    @Max(value = 100, message = "capacity must be at most 100")
     private Long capacity;
 }
