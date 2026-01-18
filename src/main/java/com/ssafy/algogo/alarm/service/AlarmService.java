@@ -136,8 +136,8 @@ public class AlarmService {
             } catch (Exception e) {
                 log.warn("SSE send failed, removing emitter. userId={}, error={}", userId,
                     e.toString());
+                emitterRepository.removeEmitter(userId, emitter);
                 emitter.complete();
-                iterator.remove();
             }
         }
     }
