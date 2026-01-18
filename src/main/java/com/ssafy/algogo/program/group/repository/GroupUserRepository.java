@@ -51,4 +51,6 @@ public interface GroupUserRepository extends JpaRepository<GroupsUser, Long> {
           and gu.groupRole = 'ADMIN'
         """)
     Optional<User> findAdminByProgramId(Long programId);
+
+    long countByProgramIdAndProgramUserStatus(Long programId, ProgramUserStatus status); // -> 활성상태 인원 체크
 }

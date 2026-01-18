@@ -9,14 +9,21 @@ import com.ssafy.algogo.user.entity.User;
 import com.ssafy.algogo.user.entity.UserRole;
 import com.ssafy.algogo.user.repository.UserRepository;
 import com.ssafy.algogo.user.service.UserService;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,17 +34,30 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private static final Long SEARCH_CONTENT_LIMIT = 20L;
-    private static final String DEFAULT_USER_IMAGE = "https://d3ud9ocg2cusae.cloudfront.net/files/8/0f3b175d-1d3f-4b70-8438-5466f154a0b6.png";
+    public static final String DEFAULT_USER_IMAGE = "https://d3ud9ocg2cusae.cloudfront.net/files/8/0f3b175d-1d3f-4b70-8438-5466f154a0b6.png";
+    private static final String AUTH_CODE_PREFIX = "email_code:";
+    private static final String VERIFIED_PREFIX = "email_verified:";
+    private static final long CODE_LIMIT_TIME = 3 * 60L; // 3분 (인증번호 유효시간)
+    private static final long VERIFIED_LIMIT_TIME = 10 * 60L; // 10분 (인증 완료 후 가입 가능 시간)
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final S3Service s3Service;
+    private final StringRedisTemplate redisTemplate;
+    private final JavaMailSender javaMailSender;
 
     @Override
     public SignupResponseDto signup(SignupRequestDto signupRequestDto) {
 
+        String email = signupRequestDto.getEmail();
+        String isVerified = redisTemplate.opsForValue().get(VERIFIED_PREFIX + email);
+
+        if (isVerified == null || !isVerified.equals("true")) {
+            throw new CustomException("이메일 인증이 완료되지 않았습니다.", ErrorCode.INVALID_PARAMETER);
+        }
+
         if (userRepository.existsByEmail(signupRequestDto.getEmail())) {
-            throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.ALREADY_EXISTS_EMAIL);
+            throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.ALREADY_EXISTS_EMAIL);  // 재검사
         }
 
         if (userRepository.existsByNickname(signupRequestDto.getNickname())) {
@@ -54,6 +74,8 @@ public class UserServiceImpl implements UserService {
 
         User user = userBuilder.build();
         userRepository.save(user); // -> 얘는 더티체킹이 아니라 신규 객체기때문에 save를 해야한다, 수정은 기존 데이터를 이미 JPA가 알고있기에 감시하고 더티체킹,
+
+        redisTemplate.delete(VERIFIED_PREFIX + email);
 
         return SignupResponseDto.from(user);
     }
@@ -144,7 +166,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public ListSearchUserResponseDto searchUserListByContent(String content) {
 
-        if(content.isEmpty()) {
+        if (content.isEmpty()) {
             throw new CustomException("빈값은 검색할 수 없습니다.", ErrorCode.SEARCH_EMPTY_CONTENT);
         }
 
@@ -163,5 +185,51 @@ public class UserServiceImpl implements UserService {
 
         return new ListSearchUserResponseDto(users);
     }
+
+    @Override
+    public void sendToEmail(SendEmailCodeRequestDto sendEmailCodeRequestDto) {
+        if (userRepository.existsByEmail(sendEmailCodeRequestDto.getEmail())) {
+            throw new CustomException("이미 가입된 이메일입니다.", ErrorCode.ALREADY_EXISTS_EMAIL);
+        }
+
+        String code = String.valueOf((int) (Math.random() * 899999) + 100000);
+        redisTemplate.opsForValue().set(
+                AUTH_CODE_PREFIX + sendEmailCodeRequestDto.getEmail(),
+                code,
+                Duration.ofSeconds(CODE_LIMIT_TIME)
+        );
+
+        sendEmail(sendEmailCodeRequestDto.getEmail(), code);
+    }
+
+    @Override
+    public void verifiedCode(CheckEmailCodeRequestDto checkEmailCodeRequestDto) {
+        String savedCode = redisTemplate.opsForValue().get(AUTH_CODE_PREFIX + checkEmailCodeRequestDto.getEmail());
+
+        if (savedCode == null || !savedCode.equals(checkEmailCodeRequestDto.getCode())) {
+            throw new CustomException("인증번호가 일치하지 않거나 만료되었습니다.", ErrorCode.INVALID_PARAMETER);
+        }
+        // 인증 성공 -> 기존 인증번호 삭제 -> 인증됨 상태를 10분간 기록
+        redisTemplate.delete(AUTH_CODE_PREFIX + checkEmailCodeRequestDto.getEmail());
+        redisTemplate.opsForValue().set(
+                VERIFIED_PREFIX + checkEmailCodeRequestDto.getEmail(),
+                "true",
+                Duration.ofSeconds(VERIFIED_LIMIT_TIME)
+        );
+    }
+
+    private void sendEmail(String toEmail, String code) {
+        try {
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(toEmail);
+            helper.setSubject("[AlgoGo] 회원가입 이메일 인증번호"); // 이부분은 프론트에서 해도되긴하는디
+            helper.setText("인증번호: <h3>" + code + "</h3><br>3분 내에 입력해주세요.", true);
+            javaMailSender.send(message);
+        } catch (MessagingException e) {
+            throw new CustomException("이메일 발송 실패", ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
 }

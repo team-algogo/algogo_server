@@ -201,6 +201,12 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(
                 () -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
+        long currentParticipantCount = groupUserRepository.countByProgramIdAndProgramUserStatus(programId, ProgramUserStatus.ACTIVE);
+
+        if(currentParticipantCount >= groupRoom.getCapacity()) {
+            throw new CustomException("그룹방 정원이 가득 차서 신청할 수 없습니다.", ErrorCode.BAD_REQUEST);
+        }
+
         programService.applyProgramJoin(userId, programId);
 
         // 생성된 joinId 조회
@@ -441,6 +447,15 @@ public class GroupServiceImpl implements GroupService {
 
         // 처리 로직
         if ("ACCEPTED".equals(updateGroupInviteStateRequestDto.getIsAccepted())) {
+
+            // [추가] 1. 현재 참여 중인 인원 수 확인
+            long currentParticipantCount = groupUserRepository.countByProgramIdAndProgramUserStatus(
+                    programId, ProgramUserStatus.ACTIVE);
+
+            // [추가] 2. 정원 체크
+            if (currentParticipantCount >= groupRoom.getCapacity()) {
+                throw new CustomException("그룹방 정원이 가득 차서 초대를 수락할 수 없습니다.", ErrorCode.BAD_REQUEST);
+            }
 
             Optional<ProgramUser> existingProgramUser =
                 programUserRepository.findByUserIdAndProgramId(userId, programId);
