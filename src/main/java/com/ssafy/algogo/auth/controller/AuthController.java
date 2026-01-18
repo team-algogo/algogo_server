@@ -43,7 +43,7 @@ public class AuthController {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
         authService.logout(userId);
         CookieUtils.deleteTokenCookie(response);
-        return SuccessResponse.success("로그웃에 성공했습니다.", null);
+        return SuccessResponse.success("로그아웃에 성공했습니다.", null);
     }
 
     @GetMapping("/me")

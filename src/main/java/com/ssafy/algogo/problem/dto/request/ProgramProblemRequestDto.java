@@ -17,7 +17,6 @@ public class ProgramProblemRequestDto {
 
     @NotNull(message = "problemId는 필수 값입니다.")
     private Long problemId;
-    @FutureOrPresent(message = "startDate는 현재 시간 이후여야 합니다.")
     private LocalDateTime startDate;
     @FutureOrPresent(message = "endDate는 현재 시간 이후여야 합니다.")
     private LocalDateTime endDate;

@@ -11,7 +11,13 @@ import lombok.*;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
-    name = "algorithms"
+    name = "algorithms",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_algorithms_name",
+            columnNames = {"name"}
+        )
+    }
 )
 public class Algorithm {
 

@@ -250,6 +250,10 @@ public enum ErrorCode {
     SUBMISSION_HISTORY_NOT_FOUND(HttpStatus.BAD_REQUEST, "SUBMISSION_HISTORY_NOT_FOUND"),
 
     /**
+     * 추가 제출 실패
+     */
+    SUBMISSION_CAN_NOT_MORE(HttpStatus.BAD_REQUEST, "SUBMISSION_CAN_NOT_MORE"),
+    /**
      * 유저가 제출하려는 알고리즘 ID가 잘못된 경우
      */
     INVALID_ALGORITHM(HttpStatus.BAD_REQUEST, "INVALID_ALGORITHM"),

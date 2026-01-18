@@ -1,6 +1,7 @@
 package com.ssafy.algogo.user.entity;
 
 import com.ssafy.algogo.common.utils.BaseTime;
+import com.ssafy.algogo.user.service.impl.UserServiceImpl;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -34,7 +35,8 @@ public class User extends BaseTime {
     private String description = "안녕하세요";
 
     @Column(name = "profile_image")
-    private String profileImage;
+    @Builder.Default
+    private String profileImage = UserServiceImpl.DEFAULT_USER_IMAGE;
 
     @NotNull
     private String nickname;
