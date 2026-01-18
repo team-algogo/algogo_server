@@ -286,7 +286,6 @@ public class GroupController {
 
     @GetMapping("/{programId}/problems/lists")
     @ResponseStatus(HttpStatus.OK)
-    @GroupAuthorize(minRole = GroupRole.USER)
     public SuccessResponse getGroupProblems(
         @PathVariable @GroupId Long programId,
         @RequestParam(value = "sortBy", defaultValue = "endDate") String sortBy,
