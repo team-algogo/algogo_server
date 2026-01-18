@@ -60,7 +60,8 @@ public class SecurityConfig {
                     "/api/v1/groups/lists/**",
                     "/api/v1/users/signup",
                     "/api/v1/users/check/**",
-                    "/api/v1/auths/forgot-password"
+                    "/api/v1/auths/forgot-password",
+                    "/api/v1/users/emails/**"
                 ).permitAll()
 
                 .requestMatchers(HttpMethod.GET,
