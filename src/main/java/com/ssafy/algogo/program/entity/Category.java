@@ -10,7 +10,10 @@ import lombok.*;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
-    name = "categories"
+    name = "categories",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_category_name", columnNames = {"name"})
+    }
 )
 public class Category {
 

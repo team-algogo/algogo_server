@@ -25,4 +25,7 @@ public interface UserService {
 
     ListSearchUserResponseDto searchUserListByContent(String content);
 
+    void sendToEmail(SendEmailCodeRequestDto sendEmailCodeRequestDto);
+
+    void verifiedCode(CheckEmailCodeRequestDto checkEmailCodeRequestDto);
 }

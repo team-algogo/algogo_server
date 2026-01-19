@@ -64,6 +64,9 @@ dependencies {
 
     // blue/green health check
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    
+    // email 인증
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 tasks.named('test') {

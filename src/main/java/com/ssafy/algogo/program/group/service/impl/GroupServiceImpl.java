@@ -27,6 +27,8 @@ import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetReceivedGroupInviteListResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetSentGroupJoinListResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomPageResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.dto.response.MyGroupRoomPageResponseDto;
@@ -199,11 +201,17 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(
                 () -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
+        long currentParticipantCount = groupUserRepository.countByProgramIdAndProgramUserStatus(programId, ProgramUserStatus.ACTIVE);
+
+        if(currentParticipantCount >= groupRoom.getCapacity()) {
+            throw new CustomException("그룹방 정원이 가득 차서 신청할 수 없습니다.", ErrorCode.BAD_REQUEST);
+        }
+
         programService.applyProgramJoin(userId, programId);
 
         // 생성된 joinId 조회
         ProgramJoin programJoin = programJoinRepository.findByUserIdAndProgramIdAndJoinStatus(
-            userId, programId, JoinStatus.PENDING)
+                userId, programId, JoinStatus.PENDING)
             .orElseThrow(() -> new CustomException("참여 신청 정보를 찾을 수 없습니다.",
                 ErrorCode.PROGRAM_JOIN_NOT_FOUND));
 
@@ -224,10 +232,10 @@ public class GroupServiceImpl implements GroupService {
             admin.getId(),
             "GROUP_JOIN_APPLY",
             new AlarmPayload(
-                null, 
-                null, 
-                null, 
-                programId, 
+                null,
+                null,
+                null,
+                programId,
                 userId,
                 userNickname,
                 programName,
@@ -318,7 +326,7 @@ public class GroupServiceImpl implements GroupService {
 
         String programName = program.getTitle();
         String applicantNickname = applicant.getNickname();
-        
+
         // 상태를 변경한 사람(방장) 정보
         User admin = groupUserRepository.findAdminByProgramId(programId)
             .orElseThrow(
@@ -330,10 +338,10 @@ public class GroupServiceImpl implements GroupService {
             applicant.getId(),
             "GROUP_JOIN_UPDATE",
             new AlarmPayload(
-                null, 
-                null, 
-                null, 
-                programId, 
+                null,
+                null,
+                null,
+                programId,
                 admin.getId(),
                 adminNickname,
                 programName,
@@ -370,7 +378,7 @@ public class GroupServiceImpl implements GroupService {
 
         // 생성된 inviteId 조회
         ProgramInvite programInvite = programInviteRepository.findByProgramIdAndUserIdAndInviteStatus(
-            programId, applyProgramInviteRequestDto.getUserId(), InviteStatus.PENDING)
+                programId, applyProgramInviteRequestDto.getUserId(), InviteStatus.PENDING)
             .orElseThrow(() -> new CustomException("초대 정보를 찾을 수 없습니다.",
                 ErrorCode.PROGRAM_INVITE_NOT_FOUND));
 
@@ -390,10 +398,10 @@ public class GroupServiceImpl implements GroupService {
             applyProgramInviteRequestDto.getUserId(),
             "GROUP_INVITE_APPLY",
             new AlarmPayload(
-                null, 
-                null, 
-                null, 
-                programId, 
+                null,
+                null,
+                null,
+                programId,
                 admin.getId(),
                 adminNickname,
                 programName,
@@ -439,6 +447,15 @@ public class GroupServiceImpl implements GroupService {
 
         // 처리 로직
         if ("ACCEPTED".equals(updateGroupInviteStateRequestDto.getIsAccepted())) {
+
+            // [추가] 1. 현재 참여 중인 인원 수 확인
+            long currentParticipantCount = groupUserRepository.countByProgramIdAndProgramUserStatus(
+                    programId, ProgramUserStatus.ACTIVE);
+
+            // [추가] 2. 정원 체크
+            if (currentParticipantCount >= groupRoom.getCapacity()) {
+                throw new CustomException("그룹방 정원이 가득 차서 초대를 수락할 수 없습니다.", ErrorCode.BAD_REQUEST);
+            }
 
             Optional<ProgramUser> existingProgramUser =
                 programUserRepository.findByUserIdAndProgramId(userId, programId);
@@ -496,10 +513,10 @@ public class GroupServiceImpl implements GroupService {
             admin.getId(),
             "GROUP_INVITE_UPDATE",
             new AlarmPayload(
-                null, 
-                null, 
-                null, 
-                programId, 
+                null,
+                null,
+                null,
+                programId,
                 invitedUser.getId(),
                 invitedUserNickname,
                 programName,
@@ -683,6 +700,20 @@ public class GroupServiceImpl implements GroupService {
             groupRepository.findMyGroupRooms(programIds, userId, pageable);
 
         return MyGroupRoomPageResponseDto.from(page);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public GetReceivedGroupInviteListResponseDto getReceivedGroupInvites(Long userId) {
+        return new GetReceivedGroupInviteListResponseDto(
+            groupRepository.findReceivedGroupInvitesWithRoom(userId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public GetSentGroupJoinListResponseDto getSentGroupJoinRequests(Long userId) {
+        return new GetSentGroupJoinListResponseDto(
+            groupRepository.findSentGroupJoinRequestsWithRoom(userId));
     }
 
 

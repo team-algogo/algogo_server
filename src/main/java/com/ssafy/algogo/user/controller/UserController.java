@@ -7,6 +7,7 @@ import com.ssafy.algogo.user.dto.response.*;
 import com.ssafy.algogo.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users")
@@ -112,5 +114,20 @@ public class UserController {
             content);
         return SuccessResponse.success("유저 조회에 성공했습니다.", listSearchUserResponseDto);
     }
+
+    @PostMapping("/emails/verification/request")
+    @ResponseStatus(HttpStatus.CREATED)
+    public SuccessResponse sendEmailCode(@RequestBody SendEmailCodeRequestDto sendEmailCodeRequestDto) {
+        userService.sendToEmail(sendEmailCodeRequestDto);
+        return SuccessResponse.success("인증번호가 발송되었습니다.", null);
+    }
+
+    @PostMapping("/emails/verification")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse verificationEmail(@RequestBody CheckEmailCodeRequestDto checkEmailCodeRequestDto) {
+        userService.verifiedCode(checkEmailCodeRequestDto);
+        return SuccessResponse.success("이메일 인증에 성공했습니다.", null);
+    }
+
 
 }

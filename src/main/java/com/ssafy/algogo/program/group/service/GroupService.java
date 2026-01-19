@@ -14,10 +14,11 @@ import com.ssafy.algogo.program.group.dto.request.UpdateGroupMemberRoleRequestDt
 import com.ssafy.algogo.program.group.dto.request.UpdateGroupRoomRequestDto;
 import com.ssafy.algogo.program.group.dto.response.CheckGroupNameResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GetGroupMemberListResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetReceivedGroupInviteListResponseDto;
+import com.ssafy.algogo.program.group.dto.response.GetSentGroupJoinListResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomPageResponseDto;
 import com.ssafy.algogo.program.group.dto.response.GroupRoomResponseDto;
 import com.ssafy.algogo.program.group.dto.response.MyGroupRoomPageResponseDto;
-import java.util.List;
 import org.springframework.data.domain.Pageable;
 
 public interface GroupService {
@@ -69,4 +70,8 @@ public interface GroupService {
     GroupRoomPageResponseDto getGroupRoomList(String keyword, Pageable pageable, Long userId);
 
     MyGroupRoomPageResponseDto getMyGroupRooms(Long userId, Pageable pageable);
+
+    GetReceivedGroupInviteListResponseDto getReceivedGroupInvites(Long userId);
+
+    GetSentGroupJoinListResponseDto getSentGroupJoinRequests(Long userId);
 }
