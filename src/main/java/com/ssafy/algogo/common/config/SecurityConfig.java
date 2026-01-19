@@ -100,7 +100,8 @@ public class SecurityConfig {
             "https://localhost:3000",
             "http://localhost:5173",
             "https://localhost:5173",
-            "https://api.algogo.kr"
+            "https://algogo.kr",
+            "https://www.algogo.kr"
         )); // 허용할 프론트엔드 도메인
         configuration.setAllowedMethods(
             List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 메서드
