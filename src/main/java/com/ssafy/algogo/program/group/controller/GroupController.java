@@ -355,5 +355,6 @@ public class GroupController {
 
         return new SuccessResponse("내가 보낸 그룹 참여 신청 조회 성공", response);
     }
+    
 
 }
