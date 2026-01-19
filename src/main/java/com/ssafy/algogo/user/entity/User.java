@@ -11,13 +11,10 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(
-        name = "users",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_user_email", columnNames = {"email"}),
-                @UniqueConstraint(name = "uk_user_nickname", columnNames = {"nickname"})
-        }
-)
+@Table(name = "users", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_user_email", columnNames = { "email" }),
+        @UniqueConstraint(name = "uk_user_nickname", columnNames = { "nickname" })
+})
 public class User extends BaseTime {
 
     @Id
@@ -53,6 +50,10 @@ public class User extends BaseTime {
 
     public void updateProfileImage(String profileImage) {
         this.profileImage = profileImage;
+    }
+
+    public void updatePassword(String password) {
+        this.password = password;
     }
 
 }
