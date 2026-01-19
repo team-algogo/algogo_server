@@ -49,6 +49,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                // Actuator health
+                .requestMatchers(
+                    "/actuator/health",
+                    "/actuator/health/**"
+                ).permitAll()
+
                 // 김성훈 프론트 체크 패스 API
                 .requestMatchers(
                     "/api/v1/groups/**",
