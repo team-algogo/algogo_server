@@ -129,5 +129,11 @@ public class UserController {
         return SuccessResponse.success("이메일 인증에 성공했습니다.", null);
     }
 
+    @PostMapping("/find-password/{email}")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse findPassword(@PathVariable String email) {
+        userService.sendTempPassword(email);
+        return SuccessResponse.success("임시 비밀번호가 이메일로 전송되었습니다.", null);
+    }
 
 }
