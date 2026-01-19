@@ -112,7 +112,7 @@ pipeline {
         sshagent(credentials: ['app-ec2-ssh']) {
           sh """
             ssh -o StrictHostKeyChecking=no ${APP_HOST} '
-              docker stop backend_${ACTIVE_COLOR} || true
+              docker stop algogo-backend-${ACTIVE_COLOR} || true
             '
           """
         }
