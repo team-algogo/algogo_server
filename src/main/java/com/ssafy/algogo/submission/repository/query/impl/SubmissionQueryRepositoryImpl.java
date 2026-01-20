@@ -154,6 +154,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                             s.memory,
                             s.isSuccess,
                             s.viewCount,
+                            s.user.id.eq(userId),
                             s.createdAt,
                             s.modifiedAt,
                             // algorithm 부분
@@ -219,7 +220,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
             .innerJoin(pg.programType, pt)
             .leftJoin(pu).on(
                 pu.user.id.eq(s.user.id),
-                pu.program.id.eq(p.id)
+                pu.program.id.eq(pg.id)
             )
             .leftJoin(sa).on(sa.submission.eq(s))
             .leftJoin(r).on(r.submission.eq(s),
@@ -227,12 +228,12 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
             .leftJoin(rr).on(rr.targetSubmission.eq(s))
             .where(
                 s.programProblem.id.eq(programProblemId),
-                s.language.eq(language),
+                s.language.eq(language.toLowerCase().trim()),
                 s.user.id.ne(subjectUserId),
                 s.id.ne(subjectSubmissionId),
 
                 // programs_users에 사용자 상태가 ACTIVE인 경우만 필터링
-                pt.name.eq("PROBLEMSET")
+                pt.name.ne("GROUP")
                     .or(pu.programUserStatus.eq(ProgramUserStatus.ACTIVE)),
                 // 이미 리뷰를 단 제출건은 제외
                 JPAExpressions
@@ -256,14 +257,15 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                     .notExists()
 
             )
+            .groupBy(s.id)
             .transform(
                 groupBy(s).as(
                     Projections.constructor(
                         ReviewCandidateQueryDto.class,
                         s,
                         list(sa.algorithm.id),
-                        r.id.count(),
-                        rr.id.count()
+                        r.id.countDistinct(),
+                        rr.id.countDistinct()
                     )
                 )
             );
@@ -359,6 +361,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
 
     @Override
     public Page<SubmissionStatsResponseDto> findAllSubmissionsByProgramProblem(
+        Long userId,
         Long programProblemId,
         UserSubmissionRequestDto userSubmissionRequestDto,
         Pageable pageable) {
@@ -437,6 +440,7 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                             s.memory,
                             s.isSuccess,
                             s.viewCount,
+                            s.user.id.eq(userId),
                             s.createdAt,
                             s.modifiedAt,
                             list(
@@ -476,7 +480,6 @@ public class SubmissionQueryRepositoryImpl implements SubmissionQueryRepository 
                 rr.subjectUser.id.eq(userId),
                 rr.isDone.isFalse(),
                 programType.name.eq(inputProgramType),
-                // 그룹일 경우에만 programId로 카운트 (문제집은 전체 대상이므로 조건 제외)
                 program.id.eq(programId)
             )
             .fetchOne();

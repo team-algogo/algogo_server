@@ -12,10 +12,12 @@ import com.ssafy.algogo.submission.service.ReviewMatchService;
 import com.ssafy.algogo.submission.utils.ReviewMatchRanker;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReviewMatchServiceImpl implements ReviewMatchService {
@@ -40,9 +42,12 @@ public class ReviewMatchServiceImpl implements ReviewMatchService {
             return;
         }
 
+        log.info("*************, reviewMatchCandidates size = {}", reviewMatchCandidates.size());
+
         List<Submission> targetSubmissions;
         // 실제 할당할 개수
         int actualAssignCount = Math.min(assignCount, reviewMatchCandidates.size());
+        log.info("*************, actualAssignCount size = {}", actualAssignCount);
 
         // 후보군에 후보 수가 할당해야하는 수보다 작거나 같을 때
         if (reviewMatchCandidates.size() <= actualAssignCount) {
@@ -54,6 +59,7 @@ public class ReviewMatchServiceImpl implements ReviewMatchService {
 
             targetSubmissions = rankedSubmissions.subList(0, actualAssignCount);
         }
+        log.info("*************, target size = {}", targetSubmissions.size());
 
         List<RequireReview> requireReviewList = targetSubmissions.stream().map(
                 target -> RequireReview.builder().subjectSubmission(subjectSubmission)
