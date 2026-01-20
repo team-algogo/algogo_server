@@ -192,7 +192,7 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(() -> new CustomException(
                 "해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
-        groupRepository.delete(groupRoom);
+        programRepository.deleteById(groupRoom.getId());
     }
 
     @Override
