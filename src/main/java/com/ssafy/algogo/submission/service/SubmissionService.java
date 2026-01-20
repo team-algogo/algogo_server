@@ -14,7 +14,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface SubmissionService {
 
-    SubmissionResponseDto getSubmission(Long submissionId);
+    SubmissionResponseDto getSubmission(Long userId, Long submissionId);
 
     SubmissionResponseDto createSubmission(Long userId, SubmissionRequestDto submissionRequestDto);
 

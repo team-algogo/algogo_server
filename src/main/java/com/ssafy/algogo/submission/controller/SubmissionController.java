@@ -38,8 +38,10 @@ public class SubmissionController {
     private final SubmissionService submissionService;
 
     @GetMapping("/{submissionId}")
-    public SuccessResponse getSubmission(@PathVariable Long submissionId) {
-        SubmissionResponseDto submissionResponseDto = submissionService.getSubmission(submissionId);
+    public SuccessResponse getSubmission(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long submissionId
+    ) {
+        SubmissionResponseDto submissionResponseDto = submissionService.getSubmission(customUserDetails.getUserId(), submissionId);
         return new SuccessResponse("제출 조회를 성공했습니다.", submissionResponseDto);
     }
 
