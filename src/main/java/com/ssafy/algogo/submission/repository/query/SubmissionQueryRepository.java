@@ -25,7 +25,9 @@ public interface SubmissionQueryRepository {
 
     Boolean isSubmissionAuthorActive(Long submissionId);
 
-    Page<SubmissionStatsResponseDto> findAllSubmissionsByProgramProblem(Long programProblemId,
+    Page<SubmissionStatsResponseDto> findAllSubmissionsByProgramProblem(
+        Long userId,
+        Long programProblemId,
         UserSubmissionRequestDto userSubmissionRequestDto,
         Pageable pageable);
 

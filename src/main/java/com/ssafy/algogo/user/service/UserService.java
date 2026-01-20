@@ -28,4 +28,6 @@ public interface UserService {
     void sendToEmail(SendEmailCodeRequestDto sendEmailCodeRequestDto);
 
     void verifiedCode(CheckEmailCodeRequestDto checkEmailCodeRequestDto);
+
+    void sendTempPassword(String email);
 }

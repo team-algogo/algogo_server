@@ -17,4 +17,5 @@ public interface ProgramService {
 
     GetProgramInviteStateListResponseDto getProgramInviteState(Long programId);
 
+    void deleteProgramJoin(Long programId, Long joinId);
 }

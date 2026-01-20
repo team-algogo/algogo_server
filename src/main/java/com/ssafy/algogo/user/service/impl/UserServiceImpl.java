@@ -214,8 +214,20 @@ public class UserServiceImpl implements UserService {
         redisTemplate.opsForValue().set(
                 VERIFIED_PREFIX + checkEmailCodeRequestDto.getEmail(),
                 "true",
-                Duration.ofSeconds(VERIFIED_LIMIT_TIME)
-        );
+                Duration.ofSeconds(VERIFIED_LIMIT_TIME));
+    }
+
+    @Override
+    public void sendTempPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException("해당 이메일의 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
+
+        String tempPassword = com.ssafy.algogo.common.utils.RandomPasswordGenerator.generateRandomPassword(12);
+        String encodedPassword = passwordEncoder.encode(tempPassword);
+
+        user.updatePassword(encodedPassword);
+
+        sendPasswordEmail(email, tempPassword);
     }
 
     private void sendEmail(String toEmail, String code) {
@@ -231,5 +243,17 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    private void sendPasswordEmail(String toEmail, String tempPassword) {
+        try {
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(toEmail);
+            helper.setSubject("[AlgoGo] 임시 비밀번호 발급 안내");
+            helper.setText("요청하신 임시 비밀번호는 다음과 같습니다: <h3>" + tempPassword + "</h3><br>로그인 후 비밀번호를 반드시 변경해주세요.", true);
+            javaMailSender.send(message);
+        } catch (MessagingException e) {
+            throw new CustomException("이메일 발송 실패", ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 }

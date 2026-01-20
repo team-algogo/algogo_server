@@ -192,7 +192,7 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(() -> new CustomException(
                 "해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
-        groupRepository.delete(groupRoom);
+        programRepository.deleteById(groupRoom.getId());
     }
 
     @Override
@@ -201,9 +201,10 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(
                 () -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND));
 
-        long currentParticipantCount = groupUserRepository.countByProgramIdAndProgramUserStatus(programId, ProgramUserStatus.ACTIVE);
+        long currentParticipantCount = groupUserRepository.countByProgramIdAndProgramUserStatus(
+            programId, ProgramUserStatus.ACTIVE);
 
-        if(currentParticipantCount >= groupRoom.getCapacity()) {
+        if (currentParticipantCount >= groupRoom.getCapacity()) {
             throw new CustomException("그룹방 정원이 가득 차서 신청할 수 없습니다.", ErrorCode.BAD_REQUEST);
         }
 
@@ -368,6 +369,16 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    public void deleteGroupJoin(Long programId, Long joinId) {
+        GroupRoom groupRoom = groupRepository.findById(programId)
+            .orElseThrow(
+                () -> new CustomException("해당 그룹방을 찾을 수 없습니다.", ErrorCode.GROUP_NOT_FOUND)
+            );
+
+        programService.deleteProgramJoin(programId, joinId);
+    }
+
+    @Override
     public void applyGroupInvite(Long programId,
         ApplyProgramInviteRequestDto applyProgramInviteRequestDto) {
         GroupRoom groupRoom = groupRepository.findById(programId)
@@ -450,7 +461,7 @@ public class GroupServiceImpl implements GroupService {
 
             // [추가] 1. 현재 참여 중인 인원 수 확인
             long currentParticipantCount = groupUserRepository.countByProgramIdAndProgramUserStatus(
-                    programId, ProgramUserStatus.ACTIVE);
+                programId, ProgramUserStatus.ACTIVE);
 
             // [추가] 2. 정원 체크
             if (currentParticipantCount >= groupRoom.getCapacity()) {

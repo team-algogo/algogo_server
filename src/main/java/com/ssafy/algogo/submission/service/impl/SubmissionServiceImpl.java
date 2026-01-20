@@ -61,16 +61,18 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final S3Service s3Service;
 
     @Override
-    public SubmissionResponseDto getSubmission(Long submissionId) {
+    public SubmissionResponseDto getSubmission(Long userId, Long submissionId) {
         Submission submission = submissionRepository.findById(submissionId).orElseThrow(
             () -> new CustomException("존재하지 않는 제출입니다.", ErrorCode.SUBMISSION_NOT_FOUND));
 
         List<Algorithm> usedAlgorithmList = algorithmRepository.findAllAlgorithmsBySubmissionId(
             submission.getId());
 
+        boolean isOwner = userId.equals(submission.getUser().getId());
+
         submission.increaseViewCount();
 
-        return SubmissionResponseDto.from(submission, usedAlgorithmList);
+        return SubmissionResponseDto.from(submission, usedAlgorithmList, isOwner);
     }
 
     @Override
@@ -87,8 +89,10 @@ public class SubmissionServiceImpl implements SubmissionService {
             programProblem.getId());
 
         boolean canMoreSubmit = submissionRepository.canUserMoreSubmit(userId,
-            programProblem.getProgram().getProgramType().toString(), programProblem.getProgram()
+            programProblem.getProgram().getProgramType().getName(), programProblem.getProgram()
                 .getId());
+
+        log.info("type = {}, canMoreSubmit = {}", programProblem.getProgram().getProgramType().getName(), canMoreSubmit);
 
         if (!canMoreSubmit) {
             throw new CustomException("요구된 리뷰가 해결되지 않아 제출 불가능합니다.",
@@ -97,10 +101,10 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         // 코드는 S3에 저장
         String s3CodeUrl = s3Service.uploadText(userId, submissionRequestDto.getCode());
-
         // 제출 저장
         Submission submission = submissionRepository.save(
-            Submission.builder().language(submissionRequestDto.getLanguage()).code(s3CodeUrl)
+            Submission.builder().language(submissionRequestDto.getLanguage().toLowerCase().trim())
+                .code(s3CodeUrl)
                 .execTime(submissionRequestDto.getExecTime())
                 .memory(submissionRequestDto.getMemory())
                 .strategy(submissionRequestDto.getStrategy())
@@ -134,7 +138,7 @@ public class SubmissionServiceImpl implements SubmissionService {
             new SubmissionAiEvaluationEvent(submission.getId())
         );
 
-        return SubmissionResponseDto.from(submission, usedAlgorithmList);
+        return SubmissionResponseDto.from(submission, usedAlgorithmList, true);
     }
 
     @Override
@@ -199,7 +203,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         return new SubmissionListResponseDto(submissionHistories.stream().map(
             history -> SubmissionResponseDto.from(history,
-                algorithmRepository.findAllAlgorithmsBySubmissionId(history.getId()))).toList());
+                algorithmRepository.findAllAlgorithmsBySubmissionId(history.getId()), true)).toList());
     }
 
     @Override
@@ -256,6 +260,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                 ErrorCode.PROGRAM_PROBLEM_NOT_FOUND));
 
         Page<SubmissionStatsResponseDto> submissionStatsLists = submissionRepository.findAllSubmissionsByProgramProblem(
+            userId,
             programProblemId,
             userSubmissionRequestDto, pageable);
 
