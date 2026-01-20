@@ -183,6 +183,17 @@ public class GroupController {
             getProgramJoinStateListResponseDto);
     }
 
+    @DeleteMapping("/{programId}/join/{joinId}")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse deleteGroupJoin(
+        @PathVariable Long programId,
+        @PathVariable Long joinId
+    ) {
+        groupService.deleteGroupJoin(programId, joinId);
+
+        return new SuccessResponse("그룹 참여 신청을 성공적으로 취소했습니다.", null);
+    }
+
     @PostMapping("/{programId}/invite")
     @ResponseStatus(HttpStatus.OK)
     @GroupAuthorize(minRole = GroupRole.ADMIN)
@@ -355,6 +366,6 @@ public class GroupController {
 
         return new SuccessResponse("내가 보낸 그룹 참여 신청 조회 성공", response);
     }
-    
+
 
 }

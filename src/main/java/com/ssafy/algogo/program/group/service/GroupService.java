@@ -74,4 +74,6 @@ public interface GroupService {
     GetReceivedGroupInviteListResponseDto getReceivedGroupInvites(Long userId);
 
     GetSentGroupJoinListResponseDto getSentGroupJoinRequests(Long userId);
+
+    void deleteGroupJoin(Long programId, Long joinId);
 }

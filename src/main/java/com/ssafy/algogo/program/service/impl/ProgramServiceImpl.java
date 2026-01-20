@@ -91,6 +91,35 @@ public class ProgramServiceImpl implements ProgramService {
     }
 
     @Override
+    public void deleteProgramJoin(Long programId, Long joinId) {
+        ProgramJoin programJoin = programJoinRepository.findById(joinId)
+            .orElseThrow(() -> new CustomException(
+                "해당 참여 신청 정보를 찾을 수 없습니다.",
+                ErrorCode.PROGRAM_JOIN_NOT_FOUND
+            ));
+
+        // 해당 programId 소속인지 검증
+        if (!programJoin.getProgram().getId().equals(programId)) {
+            throw new CustomException(
+                "해당 프로그램의 참여 신청이 아닙니다.",
+                ErrorCode.INVALID_PARAMETER
+            );
+        }
+
+        // 이미 처리된 신청은 취소 불가
+        if (programJoin.getJoinStatus() != JoinStatus.PENDING) {
+            throw new CustomException(
+                "이미 처리된 참여 신청은 취소할 수 없습니다.",
+                ErrorCode.BAD_REQUEST
+            );
+        }
+
+        programJoinRepository.delete(programJoin);
+
+    }
+
+
+    @Override
     public void applyProgramInvite(Long programId,
         ApplyProgramInviteRequestDto applyProgramInviteRequestDto) {
 
