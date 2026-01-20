@@ -21,6 +21,8 @@ import com.ssafy.algogo.program.problemset.dto.response.MyProblemSetPageResponse
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetListResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchPageResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetWithMatchPageResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetWithMatchResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
 import com.ssafy.algogo.program.repository.CategoryRepository;
 import com.ssafy.algogo.program.repository.ProgramCategoryRepository;
@@ -62,13 +64,12 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 	@Override
 	@Transactional(readOnly = true)
 	public ProblemSetListResponseDto getProblemSetList(
-		String keyword,
-		String category,
-		String sortBy,
-		String sortDirection,
-		int size,
-		int page
-	) {
+			String keyword,
+			String category,
+			String sortBy,
+			String sortDirection,
+			int size,
+			int page) {
 		// 1) size, page 보정
 		if (size < 1) {
 			size = 1;
@@ -82,78 +83,66 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 
 		// 2) problemset 타입 존재 여부 체크
 		programTypeRepository.findByName("problemset")
-			.orElseThrow(() -> new CustomException(
-				"problemset 타입 없음", ErrorCode.PROGRAM_TYPE_NOT_FOUND
-			));
+				.orElseThrow(() -> new CustomException(
+						"problemset 타입 없음", ErrorCode.PROGRAM_TYPE_NOT_FOUND));
 
 		// 3) 리스트 조회
-		List<ProblemSetResponseDto> list =
-			programQueryRepository.findProblemSetWithCategoriesAndPopularity(
-				keyword, category, sortBy, sortDirection, size, page
-			);
+		List<ProblemSetResponseDto> list = programQueryRepository.findProblemSetWithCategoriesAndPopularity(
+				keyword, category, sortBy, sortDirection, size, page);
 
 		// 4) 전체 개수 조회
-		long totalElements =
-			programQueryRepository.countProblemSetWithFilter(keyword, category);
+		long totalElements = programQueryRepository.countProblemSetWithFilter(keyword, category);
 
 		// 5) PageInfo 직접 생성
 		int totalPages = (int) Math.ceil((double) totalElements / size);
 		PageInfo pageInfo = new PageInfo(
-			page,          // number
-			size,          // size
-			totalElements, // totalElements
-			totalPages     // totalPages
+				page, // number
+				size, // size
+				totalElements, // totalElements
+				totalPages // totalPages
 		);
 
 		// 6) SortInfo 직접 생성
 		SortInfo sortInfo = new SortInfo(
-			sortBy,
-			sortDirection.toUpperCase()
-		);
+				sortBy,
+				sortDirection.toUpperCase());
 
 		return new ProblemSetListResponseDto(pageInfo, sortInfo, list);
 	}
-
 
 	@Override
 	@Transactional(readOnly = true)
 	public ProblemSetResponseDto getProblemSet(Long programId) {
 
-		ProblemSetResponseDto dto =
-			programQueryRepository.findProblemSetDetail(programId);
+		ProblemSetResponseDto dto = programQueryRepository.findProblemSetDetail(programId);
 
 		if (dto == null) {
 			throw new CustomException(
-				"해당 문제집을 찾을 수 없습니다.",
-				ErrorCode.PROGRAM_ID_NOT_FOUND
-			);
+					"해당 문제집을 찾을 수 없습니다.",
+					ErrorCode.PROGRAM_ID_NOT_FOUND);
 		}
 
 		return dto;
 	}
 
-
 	@Override
 	@Transactional
 	public ProblemSetResponseDto createProblemSet(
-		ProblemSetCreateRequestDto createRequestDto,
-		MultipartFile thumbnail
-	) {
+			ProblemSetCreateRequestDto createRequestDto,
+			MultipartFile thumbnail) {
 
 		// 중복 제목 검사
 		if (programRepository.existsByTitle(createRequestDto.getTitle())) {
 			throw new CustomException(
-				"이미 존재하는 문제집 제목입니다.",
-				ErrorCode.PROBLEM_SET_ALREADY_EXISTS
-			);
+					"이미 존재하는 문제집 제목입니다.",
+					ErrorCode.PROBLEM_SET_ALREADY_EXISTS);
 		}
 
 		// ProgramType 조회
 		ProgramType programType = programTypeRepository.findByName("problemset")
-			.orElseThrow(() -> new CustomException(
-				"problemset 타입 데이터가 DB에 존재하지 않습니다.",
-				ErrorCode.PROGRAM_TYPE_NOT_FOUND
-			));
+				.orElseThrow(() -> new CustomException(
+						"problemset 타입 데이터가 DB에 존재하지 않습니다.",
+						ErrorCode.PROGRAM_TYPE_NOT_FOUND));
 
 		// 파일 검증 & S3 업로드
 		if (thumbnail == null || thumbnail.isEmpty()) {
@@ -164,28 +153,27 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 
 		// Program 엔티티 생성 & 저장
 		Program program = Program.builder()
-			.programType(programType)
-			.title(createRequestDto.getTitle())
-			.description(createRequestDto.getDescription())
-			.thumbnail(thumbnailUrl)
-			.build();
+				.programType(programType)
+				.title(createRequestDto.getTitle())
+				.description(createRequestDto.getDescription())
+				.thumbnail(thumbnailUrl)
+				.build();
 		Program newProgram = programRepository.save(program);
 
 		// 카테고리 연관관계 저장 (DB에만)
 		List<String> savedCategories = new ArrayList<>();
 		if (createRequestDto.getCategories() != null && !createRequestDto.getCategories()
-			.isEmpty()) {
+				.isEmpty()) {
 			createRequestDto.getCategories().forEach(categoryName -> {
 				Category category = categoryRepository.findByName(categoryName)
-					.orElseThrow(() -> new CustomException(
-						categoryName + " 카테고리가 존재하지 않습니다.",
-						ErrorCode.BAD_REQUEST
-					));
+						.orElseThrow(() -> new CustomException(
+								categoryName + " 카테고리가 존재하지 않습니다.",
+								ErrorCode.BAD_REQUEST));
 
 				ProgramCategory programCategory = ProgramCategory.builder()
-					.program(newProgram)
-					.category(category)
-					.build();
+						.program(newProgram)
+						.category(category)
+						.build();
 				programCategoryRepository.save(programCategory);
 				savedCategories.add(categoryName);
 			});
@@ -196,29 +184,27 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 
 		// Response 직접 생성 (Program 없이, categories 포함!)
 		return new ProblemSetResponseDto(
-			newProgram.getId(),
-			newProgram.getTitle(),
-			newProgram.getDescription(),
-			newProgram.getThumbnail(),
-			newProgram.getCreatedAt(),
-			newProgram.getModifiedAt(),
-			newProgram.getProgramType().getName(),
-			savedCategories,
-			0L,
-			0L
-		);
+				newProgram.getId(),
+				newProgram.getTitle(),
+				newProgram.getDescription(),
+				newProgram.getThumbnail(),
+				newProgram.getCreatedAt(),
+				newProgram.getModifiedAt(),
+				newProgram.getProgramType().getName(),
+				savedCategories,
+				0L,
+				0L);
 	}
-
 
 	@Override
 	@Transactional
 	public ProblemSetResponseDto modifyProblemSet(Long programId,
-		ProblemSetModifyRequestDto modifyRequestDto) {
+			ProblemSetModifyRequestDto modifyRequestDto) {
 		log.info("문제집 수정 시작: ID={}, categories={}", programId, modifyRequestDto.getCategories());
 
 		// 1. Program 조회
 		Program program = programRepository.findById(programId)
-			.orElseThrow(() -> new CustomException("문제집 없음", ErrorCode.PROGRAM_ID_NOT_FOUND));
+				.orElseThrow(() -> new CustomException("문제집 없음", ErrorCode.PROGRAM_ID_NOT_FOUND));
 
 		// 2. 기본 정보 업데이트
 		if (modifyRequestDto.getThumbnail() != null && !modifyRequestDto.getThumbnail().isEmpty()) {
@@ -228,9 +214,9 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 			}
 			// 새 썸네일 업로드
 			String newThumbnailUrl = s3Service.uploadProblemsetThumbnail(
-				modifyRequestDto.getThumbnail());
+					modifyRequestDto.getThumbnail());
 			program.updateProgram(modifyRequestDto.getTitle(), modifyRequestDto.getDescription(),
-				newThumbnailUrl);
+					newThumbnailUrl);
 			log.info("썸네일 변경: {}", newThumbnailUrl);
 		} else {
 			program.updateProgram(modifyRequestDto.getTitle(), modifyRequestDto.getDescription());
@@ -246,19 +232,18 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 
 		List<String> savedCategories = new ArrayList<>();
 		if (modifyRequestDto.getCategories() != null && !modifyRequestDto.getCategories()
-			.isEmpty()) {
+				.isEmpty()) {
 			log.info("새 카테고리 저장 시작: {}", modifyRequestDto.getCategories());
 			for (String categoryName : modifyRequestDto.getCategories()) {
 				Category category = categoryRepository.findByName(categoryName)
-					.orElseThrow(() -> new CustomException(
-						categoryName + " 카테고리가 존재하지 않습니다.",
-						ErrorCode.BAD_REQUEST
-					));
+						.orElseThrow(() -> new CustomException(
+								categoryName + " 카테고리가 존재하지 않습니다.",
+								ErrorCode.BAD_REQUEST));
 
 				ProgramCategory programCategory = ProgramCategory.builder()
-					.program(updatedProgram)
-					.category(category)
-					.build();
+						.program(updatedProgram)
+						.category(category)
+						.build();
 				programCategoryRepository.save(programCategory);
 				savedCategories.add(categoryName);
 			}
@@ -269,19 +254,17 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 
 		// 5. Response 생성
 		return new ProblemSetResponseDto(
-			updatedProgram.getId(),
-			updatedProgram.getTitle(),
-			updatedProgram.getDescription(),
-			updatedProgram.getThumbnail(),
-			updatedProgram.getCreatedAt(),
-			updatedProgram.getModifiedAt(),
-			updatedProgram.getProgramType().getName(),
-			savedCategories.isEmpty() ? List.of() : savedCategories,  // 빈 경우 빈 리스트
-			0L,
-			0L
-		);
+				updatedProgram.getId(),
+				updatedProgram.getTitle(),
+				updatedProgram.getDescription(),
+				updatedProgram.getThumbnail(),
+				updatedProgram.getCreatedAt(),
+				updatedProgram.getModifiedAt(),
+				updatedProgram.getProgramType().getName(),
+				savedCategories.isEmpty() ? List.of() : savedCategories, // 빈 경우 빈 리스트
+				0L,
+				0L);
 	}
-
 
 	@Override
 	public void deleteProblemSet(Long programId) {
@@ -293,13 +276,11 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 		programRepository.deleteById(programId);
 	}
 
-
 	@Override
 	@Transactional(readOnly = true)
 	public ProgramProblemPageResponseDto getProgramProblemsPage(
-		Long programId,
-		Pageable pageable
-	) {
+			Long programId,
+			Pageable pageable) {
 		if (!programRepository.existsById(programId)) {
 			throw new CustomException("해당 문제집을 찾을 수 없습니다.", ErrorCode.PROGRAM_ID_NOT_FOUND);
 		}
@@ -307,15 +288,13 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 		return programProblemService.getAllProgramProblems(programId, pageable);
 	}
 
-
 	// 내가 참여한 문제집 조회 (페이징 + 정렬)
 	@Override
 	@Transactional(readOnly = true)
 	public MyProblemSetPageResponseDto getMyJoinProblemSet(Long userId, Pageable pageable) {
 
-		//  사용자가 참여한 문제집 ID 조회
-		List<Long> programIds =
-			programUserRepository.findActiveProblemSetIdsByUserId(userId);
+		// 사용자가 참여한 문제집 ID 조회
+		List<Long> programIds = programUserRepository.findActiveProblemSetIdsByUserId(userId);
 
 		// 참여한 문제집이 없으면 빈 페이지 반환
 		if (programIds.isEmpty()) {
@@ -323,63 +302,59 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 		}
 
 		// ID 리스트로 페이징된 문제집 조회 (QueryDSL)
-		Page<ProblemSetResponseDto> page =
-			programQueryRepository.findMyJoinProblemSets(programIds, userId, pageable);
+		Page<ProblemSetResponseDto> page = programQueryRepository.findMyJoinProblemSets(programIds, userId, pageable);
 
 		// DTO로 변환
 		return MyProblemSetPageResponseDto.from(page);
 	}
 
-
 	@Override
 	public CategoryListResponseDto getCategoryList() {
 		List<CategoryResponseDto> categoryResponseDtoList = categoryRepository.findAll()
-			.stream()
-			.map(CategoryResponseDto::from).toList();
+				.stream()
+				.map(CategoryResponseDto::from).toList();
 		return new CategoryListResponseDto(categoryResponseDtoList);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public ProblemSetSearchPageResponseDto searchProblemSetByTitle(
-		String keyword, Pageable pageable) {
+			String keyword, Pageable pageable) {
 
 		if (keyword == null || keyword.isBlank()) {
 			return ProblemSetSearchPageResponseDto.from(
-				new PageImpl<>(Collections.emptyList(), pageable, 0)
-			);
+					new PageImpl<>(Collections.emptyList(), pageable, 0));
 		}
 
 		String escapeKeyword = escapeLike(keyword);
-		Page<ProblemSetResponseDto> result =
-			programQueryRepository.searchProblemSetByTitleOrDescription(escapeKeyword, pageable);
+		Page<ProblemSetResponseDto> result = programQueryRepository.searchProblemSetByTitleOrDescription(escapeKeyword,
+				pageable);
 
 		return ProblemSetSearchPageResponseDto.from(result);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public ProblemSetSearchPageResponseDto searchProblemSetByProblems(
-		String keyword, Pageable pageable) {
+	public ProblemSetWithMatchPageResponseDto searchProblemSetByProblems(
+			String keyword, Pageable pageable) {
 
 		if (keyword == null || keyword.isBlank()) {
-			return ProblemSetSearchPageResponseDto.from(
-				new PageImpl<>(Collections.emptyList(), pageable, 0)
-			);
+			return ProblemSetWithMatchPageResponseDto.from(
+					new PageImpl<>(Collections.emptyList(), pageable, 0));
 		}
 
 		String escapeKeyword = escapeLike(keyword);
-		Page<ProblemSetResponseDto> result =
-			programQueryRepository.searchProblemSetByProblems(escapeKeyword, pageable);
+		Page<ProblemSetWithMatchResponseDto> result = programQueryRepository.searchProblemSetByProblems(escapeKeyword,
+				pageable);
 
-		return ProblemSetSearchPageResponseDto.from(result);
+		return ProblemSetWithMatchPageResponseDto.from(result);
 	}
 
 	private static String escapeLike(String s) {
 		return s
-			.replace("\\", "\\\\")
-			.replace("%", "\\%")
-			.replace("_", "\\_");
+				.replace("\\", "\\\\")
+				.replace("%", "\\%")
+				.replace("_", "\\_");
 	}
 
 }
