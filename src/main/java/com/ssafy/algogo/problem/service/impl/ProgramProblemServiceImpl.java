@@ -95,4 +95,12 @@ public class ProgramProblemServiceImpl implements ProgramProblemService {
 
 		// PP 삭제했을 때, 연관된 submission, review, required_review, review_user_reaction을 어떻게 처리할 지 추후 고민 후 반영
 	}
+
+	@Override
+	public void updateViewCount(Long programProblemId) {
+		ProgramProblem programProblem = programProblemRepository.findById(programProblemId)
+			.orElseThrow(() -> new CustomException("프로그램 문제 정보가 잘못되었습니다.", ErrorCode.NOT_FOUND));
+
+		programProblem.increaseViewCount();
+	}
 }

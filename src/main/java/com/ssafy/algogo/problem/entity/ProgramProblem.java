@@ -115,4 +115,7 @@ public class ProgramProblem {
     public void increaseParticipantCount() {
         this.participantCount++;
     }
+
+    public void increaseViewCount(){
+        this.viewCount++;}
 }

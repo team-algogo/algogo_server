@@ -2,9 +2,11 @@ package com.ssafy.algogo.problem.controller;
 
 import com.ssafy.algogo.common.advice.SuccessResponse;
 import com.ssafy.algogo.problem.service.ProblemService;
+import com.ssafy.algogo.problem.service.ProgramProblemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProblemController {
 
     private final ProblemService problemService;
+    private final ProgramProblemService programProblemService;
 
     @GetMapping("/{programProblemId}")
     public ResponseEntity<SuccessResponse> getProblem(@PathVariable Long programProblemId) {
@@ -30,4 +33,13 @@ public class ProblemController {
         return ResponseEntity.ok(
             SuccessResponse.success("문제 검색에 성공했습니다.", problemService.searchProblems(keyword)));
     }
+
+    @PatchMapping("/{programProblemId}")
+    public SuccessResponse updateViewCount(
+        @PathVariable Long programProblemId
+    ) {
+        programProblemService.updateViewCount(programProblemId);
+        return new SuccessResponse("문제집 문제 조회", null);
+    }
+
 }
