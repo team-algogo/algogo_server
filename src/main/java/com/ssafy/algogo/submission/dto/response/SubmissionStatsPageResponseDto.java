@@ -6,17 +6,21 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 
 public record SubmissionStatsPageResponseDto(
-    PageInfo page,
-    SortInfo sort,
-    List<SubmissionStatsResponseDto> submissions
-) {
+        PageInfo page,
+        SortInfo sort,
+        List<SubmissionStatsResponseDto> submissions,
+        Long programId,
+        String programType) {
 
     public static SubmissionStatsPageResponseDto from(
-        Page<SubmissionStatsResponseDto> submissionStatsResponses) {
+            Page<SubmissionStatsResponseDto> submissionStatsResponses,
+            Long programId,
+            String programType) {
         return new SubmissionStatsPageResponseDto(
-            PageInfo.of(submissionStatsResponses),
-            SortInfo.of(submissionStatsResponses),
-            submissionStatsResponses.getContent()
-        );
+                PageInfo.of(submissionStatsResponses),
+                SortInfo.of(submissionStatsResponses),
+                submissionStatsResponses.getContent(),
+                programId,
+                programType);
     }
 }

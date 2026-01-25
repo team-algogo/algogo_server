@@ -8,10 +8,11 @@ import org.springframework.data.domain.Page;
 public record MyProblemSetPageResponseDto(
 	PageInfo page,
 	SortInfo sort,
-	List<ProblemSetResponseDto> problemSetLists
+	List<ProblemSetWithProgressResponseDto> problemSetLists
 ) {
 
-	public static MyProblemSetPageResponseDto from(Page<ProblemSetResponseDto> pageData) {
+	public static MyProblemSetPageResponseDto from(
+		Page<ProblemSetWithProgressResponseDto> pageData) {
 		return new MyProblemSetPageResponseDto(
 			PageInfo.of(pageData),
 			SortInfo.of(pageData),
