@@ -32,4 +32,7 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long>,
     Long countSubmissionsByProgramProblemId(Long programProblemId);
 
     Long countSubmissionsByProgramProblemIdAndIsSuccess(Long programProblemId, Boolean isSuccess);
+
+    @Query("SELECT DISTINCT s.programProblem.program.id FROM Submission s WHERE s.user.id = :userId")
+    List<Long> findProgramIdsByUserId(@Param("userId") Long userId);
 }

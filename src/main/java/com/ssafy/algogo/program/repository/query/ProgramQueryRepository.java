@@ -2,6 +2,7 @@ package com.ssafy.algogo.program.repository.query;
 
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetWithMatchResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetWithProgressResponseDto;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,8 +34,8 @@ public interface ProgramQueryRepository {
 	Page<ProblemSetWithMatchResponseDto> searchProblemSetByProblems(
 			String keyword, Pageable pageable);
 
-	Page<ProblemSetResponseDto> findMyJoinProblemSets(
-			List<Long> programIds,
+	Page<ProblemSetWithProgressResponseDto> findMyJoinProblemSets(
 			Long userId,
+			List<Long> programIds,
 			Pageable pageable);
 }

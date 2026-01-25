@@ -27,6 +27,8 @@ import com.ssafy.algogo.program.group.entity.ProgramUserStatus;
 import com.ssafy.algogo.program.group.entity.QGroupsUser;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetWithMatchResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetWithProgressResponseDto;
+import com.ssafy.algogo.submission.entity.QSubmission;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -62,8 +64,10 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 				? category.name.eq(categoryName.trim())
 				: null;
 
+		QSubmission submission = QSubmission.submission;
+
 		// 총 참여자 수
-		NumberExpression<Long> popularityScore = programProblem.participantCount.sum().coalesce(0L);
+		NumberExpression<Long> popularityScore = submission.user.id.countDistinct().coalesce(0L);
 
 		// 프로그램별 문제 개수 (중복 방지하려면 countDistinct)
 		NumberExpression<Long> problemCountExpr = programProblem.id.countDistinct().coalesce(0L);
@@ -81,6 +85,7 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 				.from(program)
 				.join(program.programType, programType)
 				.leftJoin(programProblem).on(programProblem.program.eq(program))
+				.leftJoin(submission).on(submission.programProblem.eq(programProblem))
 				.leftJoin(programCategory).on(programCategory.program.eq(program))
 				.leftJoin(programCategory.category, category)
 				.where(isProblemSet, titleContains, categoryEq)
@@ -132,7 +137,9 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 	@Override
 	public ProblemSetResponseDto findProblemSetDetail(Long programId) {
 
-		NumberExpression<Long> popularityScore = programProblem.participantCount.sum().coalesce(0L);
+		QSubmission submission = QSubmission.submission;
+
+		NumberExpression<Long> popularityScore = submission.user.id.countDistinct().coalesce(0L);
 
 		NumberExpression<Long> problemCountExpr = programProblem.id.countDistinct().coalesce(0L);
 
@@ -140,6 +147,7 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 				.from(program)
 				.join(program.programType, programType)
 				.leftJoin(programProblem).on(programProblem.program.eq(program))
+				.leftJoin(submission).on(submission.programProblem.eq(programProblem))
 				.leftJoin(programCategory).on(programCategory.program.eq(program))
 				.leftJoin(programCategory.category, category)
 				.where(
@@ -187,7 +195,9 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 
 		total = total != null ? total : 0L;
 
-		NumberExpression<Long> popularityScore = programProblem.participantCount.sum().coalesce(0L);
+		QSubmission submission = QSubmission.submission;
+
+		NumberExpression<Long> popularityScore = submission.user.id.countDistinct().coalesce(0L);
 
 		NumberExpression<Long> problemCountExpr = programProblem.id.countDistinct().coalesce(0L);
 
@@ -196,6 +206,7 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 				.from(program)
 				.join(program.programType, programType)
 				.leftJoin(programProblem).on(programProblem.program.eq(program))
+				.leftJoin(submission).on(submission.programProblem.eq(programProblem))
 				.leftJoin(programCategory).on(programCategory.program.eq(program))
 				.leftJoin(programCategory.category, category)
 				.where(isProblemSet, keywordFilter)
@@ -255,7 +266,9 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 				.limit(pageable.getPageSize())
 				.collect(Collectors.toList());
 
-		NumberExpression<Long> popularityScore = programProblem.participantCount.sum().coalesce(0L);
+		QSubmission submission = QSubmission.submission;
+
+		NumberExpression<Long> popularityScore = submission.user.id.countDistinct().coalesce(0L);
 
 		NumberExpression<Long> problemCountExpr = programProblem.id.countDistinct().coalesce(0L);
 
@@ -264,6 +277,7 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 				.from(program)
 				.join(program.programType, programType)
 				.leftJoin(programProblem).on(programProblem.program.eq(program))
+				.leftJoin(submission).on(submission.programProblem.eq(programProblem))
 				.leftJoin(programCategory).on(programCategory.program.eq(program))
 				.leftJoin(programCategory.category, category)
 				.where(program.id.in(paginatedIds))
@@ -326,26 +340,22 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 	}
 
 	@Override
-	public Page<ProblemSetResponseDto> findMyJoinProblemSets(
-			List<Long> programIds,
+	public Page<ProblemSetWithProgressResponseDto> findMyJoinProblemSets(
 			Long userId,
+			List<Long> programIds,
 			Pageable pageable) {
 		QProgram program = QProgram.program;
 		QProgramType programType = QProgramType.programType;
 		QProgramUser programUser = new QProgramUser("programUser");
 		QProgramProblem programProblem = QProgramProblem.programProblem;
 		QProgramCategory programCategory = QProgramCategory.programCategory;
+		QSubmission submission = QSubmission.submission;
 
 		List<Long> allProgramIds = queryFactory
 				.select(program.id)
 				.distinct()
 				.from(program)
 				.innerJoin(program.programType, programType)
-				.innerJoin(programUser)
-				.on(
-						programUser.program.id.eq(program.id),
-						programUser.user.id.eq(userId),
-						programUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
 				.where(
 						program.id.in(programIds),
 						programType.id.eq(2L))
@@ -366,9 +376,10 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 								Collectors.toList())));
 
 		Map<Long, Long> totalParticipantsMap = queryFactory
-				.select(program.id, programUser.id.countDistinct())
-				.from(programUser)
-				.innerJoin(programUser.program, program)
+				.select(program.id, submission.user.id.countDistinct())
+				.from(submission)
+				.innerJoin(submission.programProblem, programProblem)
+				.innerJoin(programProblem.program, program)
 				.where(program.id.in(allProgramIds))
 				.groupBy(program.id)
 				.fetch()
@@ -389,10 +400,27 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 						tuple -> tuple.get(0, Long.class),
 						tuple -> tuple.get(1, Long.class)));
 
-		List<ProblemSetResponseDto> content = queryFactory
+		// 푼 문제 수 (solvedCount) 계산
+		Map<Long, Long> solvedCountMap = queryFactory
+				.select(program.id, submission.programProblem.id.countDistinct())
+				.from(submission)
+				.innerJoin(submission.programProblem, programProblem)
+				.innerJoin(programProblem.program, program)
+				.where(
+						program.id.in(allProgramIds),
+						submission.user.id.eq(userId),
+						submission.isSuccess.isTrue())
+				.groupBy(program.id)
+				.fetch()
+				.stream()
+				.collect(Collectors.toMap(
+						tuple -> tuple.get(0, Long.class),
+						tuple -> tuple.get(1, Long.class)));
+
+		List<ProblemSetWithProgressResponseDto> content = queryFactory
 				.select(
 						Projections.constructor(
-								ProblemSetResponseDto.class,
+								ProblemSetWithProgressResponseDto.class,
 								program.id,
 								program.title,
 								program.description,
@@ -403,14 +431,9 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 								Expressions.asSimple(List.of()),
 								Expressions.asSimple(0L),
 								Expressions.asSimple(0L),
-								Expressions.asSimple(List.of())))
+								Expressions.asSimple(0L))) // solvedCount placeholder
 				.from(program)
 				.innerJoin(program.programType, programType)
-				.innerJoin(programUser)
-				.on(
-						programUser.program.id.eq(program.id),
-						programUser.user.id.eq(userId),
-						programUser.programUserStatus.eq(ProgramUserStatus.ACTIVE))
 				.where(
 						program.id.in(programIds),
 						programType.id.eq(2L))
@@ -421,7 +444,7 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 				.fetch();
 
 		content = content.stream()
-				.map(dto -> new ProblemSetResponseDto(
+				.map(dto -> new ProblemSetWithProgressResponseDto(
 						dto.programId(),
 						dto.title(),
 						dto.description(),
@@ -431,7 +454,8 @@ public class ProgramQueryRepositoryImpl implements ProgramQueryRepository {
 						dto.programType(),
 						categoriesMap.getOrDefault(dto.programId(), List.of()),
 						totalParticipantsMap.getOrDefault(dto.programId(), 0L),
-						problemCountMap.getOrDefault(dto.programId(), 0L)))
+						problemCountMap.getOrDefault(dto.programId(), 0L),
+						solvedCountMap.getOrDefault(dto.programId(), 0L)))
 				.collect(Collectors.toList());
 
 		Long total = (long) allProgramIds.size();
