@@ -30,7 +30,7 @@ public interface ProblemSetService {
 			ProblemSetCreateRequestDto problemSetCreateRequestDto, MultipartFile thumbnail);
 
 	// 자율 문제집 수정
-	ProblemSetResponseDto modifyProblemSet(Long programId, ProblemSetModifyRequestDto dto);
+	ProblemSetResponseDto modifyProblemSet(Long programId, ProblemSetModifyRequestDto dto, MultipartFile thumbnail);
 
 	// 자율 문제집 삭제
 	void deleteProblemSet(Long programId);
