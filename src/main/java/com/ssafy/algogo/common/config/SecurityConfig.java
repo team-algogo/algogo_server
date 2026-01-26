@@ -38,53 +38,55 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-            .cors(Customizer.withDefaults())
-            .sessionManagement(
-                session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .csrf(AbstractHttpConfigurer::disable)
-            .formLogin(AbstractHttpConfigurer::disable)
-            .httpBasic(AbstractHttpConfigurer::disable)
-            .addFilterBefore(new JwtAuthenticationTokenFilter(jwtTokenProvider, redisJwtService),
-                UsernamePasswordAuthenticationFilter.class)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .cors(Customizer.withDefaults())
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .addFilterBefore(new JwtAuthenticationTokenFilter(jwtTokenProvider, redisJwtService),
+                        UsernamePasswordAuthenticationFilter.class)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // Actuator health
-                .requestMatchers(
-                    "/actuator/health",
-                    "/actuator/health/**"
-                ).permitAll()
+                        // Actuator health
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/health/**",
+                                "/actuator/prometheus",
+                                "/actuator/info"
+                        ).permitAll()
 
-                // 김성훈 프론트 체크 패스 API
-                .requestMatchers(
-                    "/api/v1/groups/**",
-                    "/api/v1/auths/logout"
-                ).permitAll()
+                        // 김성훈 프론트 체크 패스 API
+                        .requestMatchers(
+                                "/api/v1/groups/**",
+                                "/api/v1/auths/logout"
+                        ).permitAll()
 
-                .requestMatchers(
-                    "/api/v1/auths/login",
-                    "/api/v1/groups/lists/**",
-                    "/api/v1/users/signup",
-                    "/api/v1/users/check/**",
-                    "/api/v1/auths/forgot-password",
-                    "/api/v1/users/emails/**",
-                    "/api/v1/users/find-password/**"
-                ).permitAll()
+                        .requestMatchers(
+                                "/api/v1/auths/login",
+                                "/api/v1/groups/lists/**",
+                                "/api/v1/users/signup",
+                                "/api/v1/users/check/**",
+                                "/api/v1/auths/forgot-password",
+                                "/api/v1/users/emails/**",
+                                "/api/v1/users/find-password/**"
+                        ).permitAll()
 
-                .requestMatchers(HttpMethod.GET,
-                    "/api/v1/problem-sets/**",
-                    "/api/v1/groups/lists",
-                    "/api/v1/problems/**",
-                    "/api/v1/submissions/**",
-                    "/api/v1/submissions/trends").permitAll()
-                // /api/v1/groups/lists/me -> ?? || /api/v1/problem-sets/me -> ??
-                // /api/v1/submissions/me -> ??
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/problem-sets/**",
+                                "/api/v1/groups/lists",
+                                "/api/v1/problems/**",
+                                "/api/v1/submissions/**",
+                                "/api/v1/submissions/trends").permitAll()
+                        // /api/v1/groups/lists/me -> ?? || /api/v1/problem-sets/me -> ??
+                        // /api/v1/submissions/me -> ??
 
-                .requestMatchers("/test/auth/admin").hasRole("ADMIN") // 유저권한 테스트용
-                .requestMatchers("/test/auth/user").hasRole("USER")
-                .anyRequest().authenticated())
+                        .requestMatchers("/test/auth/admin").hasRole("ADMIN") // 유저권한 테스트용
+                        .requestMatchers("/test/auth/user").hasRole("USER")
+                        .anyRequest().authenticated())
 
-            .build();
+                .build();
     }
 
     @Bean
@@ -97,19 +99,19 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true); // 쿠키를 포함한 요청 허용
         configuration.setAllowedOrigins(List.of(
-            "http://localhost:3000",
-            "https://localhost:3000",
-            "http://localhost:5173",
-            "https://localhost:5173",
-            "https://algogo.kr",
-            "https://www.algogo.kr"
+                "http://localhost:3000",
+                "https://localhost:3000",
+                "http://localhost:5173",
+                "https://localhost:5173",
+                "https://algogo.kr",
+                "https://www.algogo.kr"
         )); // 허용할 프론트엔드 도메인
         configuration.setAllowedMethods(
-            List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 메서드
+                List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 메서드
         configuration.setAllowedHeaders(List.of(
-            "Authorization",
-            "Content-Type",
-            "X-Requested-With"
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With"
         )); //프론트엔드에서 요청을 보낼 때 포함할 수 있는 헤더
         configuration.setExposedHeaders(List.of("Authorization")); // 프론트에서 응답에서 조회할 수 있는 헤더
 
