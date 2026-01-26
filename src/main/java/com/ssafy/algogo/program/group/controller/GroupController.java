@@ -247,7 +247,7 @@ public class GroupController {
 
     @GetMapping("/{programId}/users")
     @ResponseStatus(HttpStatus.OK)
-    @GroupAuthorize(minRole = GroupRole.USER)
+//    @GroupAuthorize(minRole = GroupRole.USER)
     public SuccessResponse getGroupMember(
         @PathVariable @GroupId Long programId
     ) {
