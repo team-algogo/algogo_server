@@ -318,4 +318,25 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         return new SubmissionAuthorStatusResponseDto(canMoreSubmit);
     }
+
+    @Override
+    public void retryAiEvaluation(Long userId, Long submissionId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 회원입니다.", ErrorCode.USER_NOT_FOUND));
+
+        Submission submission = submissionRepository.findById(submissionId)
+            .orElseThrow(() -> new CustomException("존재하지 않는 제출입니다.", ErrorCode.SUBMISSION_NOT_FOUND));
+
+        // 작성자 본인만 재시도 가능
+        if (!submission.getUser().equals(user)) {
+            throw new CustomException("본인의 제출만 AI 평가를 재시도할 수 있습니다.", ErrorCode.FORBIDDEN);
+        }
+
+        log.info("[AI 평가 재시도] submissionId: {}, userId: {}", submissionId, userId);
+
+        // AI 평가 이벤트 재발행 (비동기 처리)
+        applicationEventPublisher.publishEvent(
+            new SubmissionAiEvaluationEvent(submission.getId())
+        );
+    }
 }

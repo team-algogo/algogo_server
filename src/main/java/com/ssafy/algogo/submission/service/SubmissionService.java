@@ -36,4 +36,6 @@ public interface SubmissionService {
     SubmissionStatsInfosResponseDto getSubmissionStatsInfos(Long userId, Long programProblemId);
 
     SubmissionAuthorStatusResponseDto canUserMoreSubmission(Long userId, Long programId);
+
+    void retryAiEvaluation(Long userId, Long submissionId);
 }

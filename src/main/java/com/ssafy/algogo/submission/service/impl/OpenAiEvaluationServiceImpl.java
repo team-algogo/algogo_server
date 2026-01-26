@@ -6,6 +6,7 @@ import com.ssafy.algogo.common.advice.CustomException;
 import com.ssafy.algogo.common.advice.ErrorCode;
 import com.ssafy.algogo.common.config.OpenAIConfig;
 import com.ssafy.algogo.submission.service.OpenAiEvaluationService;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,7 +41,7 @@ public class OpenAiEvaluationServiceImpl implements OpenAiEvaluationService {
     private static final int MIN_NORMALIZED_SCORE = 0;
     private static final int MAX_NORMALIZED_SCORE = 100;
     private static final Pattern SCORE_PATTERN = Pattern.compile("점수:\\s*(\\d+)",
-        Pattern.CASE_INSENSITIVE);
+            Pattern.CASE_INSENSITIVE);
     private static final Pattern NUMBER_PATTERN = Pattern.compile("\\b([1-5])\\b");
 
     private final OpenAIConfig openAIConfig;
@@ -53,14 +55,14 @@ public class OpenAiEvaluationServiceImpl implements OpenAiEvaluationService {
             Map<String, Object> requestBody = buildScoreRequest(scorePrompt);
 
             String responseBody = webClient.post()
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
 
             if (responseBody == null) {
                 throw new CustomException("OpenAI API 응답이 null입니다.",
-                    ErrorCode.INTERNAL_SERVER_ERROR);
+                        ErrorCode.INTERNAL_SERVER_ERROR);
             }
 
             JsonNode jsonNode = objectMapper.readTree(responseBody);
@@ -72,16 +74,16 @@ public class OpenAiEvaluationServiceImpl implements OpenAiEvaluationService {
 
         } catch (WebClientResponseException e) {
             log.error("[G-Eval] OpenAI API HTTP 오류 - status: {}, body: {}",
-                e.getStatusCode(), e.getResponseBodyAsString());
+                    e.getStatusCode(), e.getResponseBodyAsString());
             throw new CustomException(
-                "OpenAI API 호출 실패: " + e.getMessage(),
-                ErrorCode.INTERNAL_SERVER_ERROR
+                    "OpenAI API 호출 실패: " + e.getMessage(),
+                    ErrorCode.INTERNAL_SERVER_ERROR
             );
         } catch (Exception e) {
             log.error("[G-Eval] 점수 산정 오류", e);
             throw new CustomException(
-                "점수 산정 중 오류 발생: " + e.getMessage(),
-                ErrorCode.INTERNAL_SERVER_ERROR
+                    "점수 산정 중 오류 발생: " + e.getMessage(),
+                    ErrorCode.INTERNAL_SERVER_ERROR
             );
         }
     }
@@ -92,14 +94,14 @@ public class OpenAiEvaluationServiceImpl implements OpenAiEvaluationService {
             Map<String, Object> requestBody = buildReasonRequest(reasonPrompt);
 
             String responseBody = webClient.post()
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
 
             if (responseBody == null) {
-                throw new CustomException("OpenAI API 응답이 null입니다.",
-                    ErrorCode.INTERNAL_SERVER_ERROR);
+                log.error("[평가 이유 생성] OpenAI API 응답이 null입니다.");
+                return "AI 평가 이유를 생성하지 못했습니다. (응답 없음)";
             }
 
             JsonNode jsonNode = objectMapper.readTree(responseBody);
@@ -111,17 +113,11 @@ public class OpenAiEvaluationServiceImpl implements OpenAiEvaluationService {
 
         } catch (WebClientResponseException e) {
             log.error("[평가 이유 생성] OpenAI API HTTP 오류 - status: {}, body: {}",
-                e.getStatusCode(), e.getResponseBodyAsString());
-            throw new CustomException(
-                "OpenAI API 호출 실패: " + e.getMessage(),
-                ErrorCode.INTERNAL_SERVER_ERROR
-            );
+                    e.getStatusCode(), e.getResponseBodyAsString());
+            return "AI 평가 이유를 생성하지 못했습니다. (API 오류: " + e.getStatusCode() + ")";
         } catch (Exception e) {
             log.error("[평가 이유 생성] 오류", e);
-            throw new CustomException(
-                "평가 이유 생성 중 오류 발생: " + e.getMessage(),
-                ErrorCode.INTERNAL_SERVER_ERROR
-            );
+            return "AI 평가 이유를 생성하지 못했습니다. (오류: " + e.getMessage() + ")";
         }
     }
 
@@ -174,7 +170,7 @@ public class OpenAiEvaluationServiceImpl implements OpenAiEvaluationService {
 
         requestBody.put("messages", messages);
         requestBody.put("temperature", 0.2);
-        requestBody.put("max_tokens", 500);
+        requestBody.put("max_tokens", 1000);
         return requestBody;
     }
 
@@ -245,7 +241,7 @@ public class OpenAiEvaluationServiceImpl implements OpenAiEvaluationService {
                         // log-sum-exp: log(exp(a) + exp(b)) = max(a,b) + log(1 + exp(-|a-b|))
                         double existing = scoreLogprobs.get(score);
                         scoreLogprobs.put(score, Math.max(existing, logprob) +
-                            Math.log1p(Math.exp(-Math.abs(existing - logprob))));
+                                Math.log1p(Math.exp(-Math.abs(existing - logprob))));
                     } else {
                         scoreLogprobs.put(score, logprob);
                     }
@@ -284,7 +280,7 @@ public class OpenAiEvaluationServiceImpl implements OpenAiEvaluationService {
             }
         } else {
             throw new CustomException("확률 합이 0입니다. logprobs 파싱 오류 가능성.",
-                ErrorCode.INTERNAL_SERVER_ERROR);
+                    ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
         // 기대값 계산: rawScore = Σ(i × P(i))
@@ -294,11 +290,11 @@ public class OpenAiEvaluationServiceImpl implements OpenAiEvaluationService {
         }
 
         BigDecimal rawScore = BigDecimal.valueOf(expectedValue)
-            .setScale(2, RoundingMode.HALF_UP);
+                .setScale(2, RoundingMode.HALF_UP);
 
         log.info(
-            "[G-Eval] logprobs 기반 점수 계산 - scoreLogprobs: {}, probabilities: {}, expectedValue: {}, rawScore: {}",
-            scoreLogprobs, probabilities, expectedValue, rawScore);
+                "[G-Eval] logprobs 기반 점수 계산 - scoreLogprobs: {}, probabilities: {}, expectedValue: {}, rawScore: {}",
+                scoreLogprobs, probabilities, expectedValue, rawScore);
 
         return rawScore;
     }
@@ -344,10 +340,10 @@ public class OpenAiEvaluationServiceImpl implements OpenAiEvaluationService {
         }
 
         BigDecimal normalized = rawScore
-            .subtract(BigDecimal.valueOf(MIN_SCORE))
-            .divide(BigDecimal.valueOf(MAX_SCORE - MIN_SCORE), 4, RoundingMode.HALF_UP)
-            .multiply(BigDecimal.valueOf(MAX_NORMALIZED_SCORE - MIN_NORMALIZED_SCORE))
-            .add(BigDecimal.valueOf(MIN_NORMALIZED_SCORE));
+                .subtract(BigDecimal.valueOf(MIN_SCORE))
+                .divide(BigDecimal.valueOf(MAX_SCORE - MIN_SCORE), 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(MAX_NORMALIZED_SCORE - MIN_NORMALIZED_SCORE))
+                .add(BigDecimal.valueOf(MIN_NORMALIZED_SCORE));
 
         return normalized.setScale(2, RoundingMode.HALF_UP);
     }
@@ -376,34 +372,128 @@ public class OpenAiEvaluationServiceImpl implements OpenAiEvaluationService {
     }
 
     /**
-     * JSON 응답에서 reason 추출
+     * JSON 응답에서 reason 추출 (개선된 버전)
+     * <p>
+     * 1. Markdown 코드 블록(```json ... ```) 제거
+     * 2. JSON 파싱 시도
+     * 3. 실패 시 부분 텍스트 추출 또는 전체 텍스트 반환
      */
     private String parseReasonFromJson(String responseText) {
         if (responseText == null || responseText.trim().isEmpty()) {
-            throw new CustomException("응답 텍스트가 비어있습니다.", ErrorCode.INTERNAL_SERVER_ERROR);
+            log.warn("[평가 이유 생성] 응답 텍스트가 비어있습니다.");
+            return "AI 평가 이유를 생성하지 못했습니다.";
         }
 
         try {
-            int jsonStart = responseText.indexOf("{");
-            int jsonEnd = responseText.lastIndexOf("}") + 1;
+            // Markdown 코드 블록 제거
+            String cleanedText = responseText.trim();
+
+            // ```json으로 시작하는 경우 제거
+            if (cleanedText.startsWith("```json")) {
+                cleanedText = cleanedText.substring(7); // "```json" 길이만큼 제거
+            } else if (cleanedText.startsWith("```")) {
+                cleanedText = cleanedText.substring(3); // "```" 길이만큼 제거
+            }
+
+            // ```으로 끝나는 경우 제거
+            if (cleanedText.endsWith("```")) {
+                cleanedText = cleanedText.substring(0, cleanedText.length() - 3);
+            }
+
+            cleanedText = cleanedText.trim();
+
+            // JSON 파싱 시도
+            int jsonStart = cleanedText.indexOf("{");
+            int jsonEnd = cleanedText.lastIndexOf("}") + 1;
 
             if (jsonStart >= 0 && jsonEnd > jsonStart) {
-                String jsonStr = responseText.substring(jsonStart, jsonEnd);
-                JsonNode jsonNode = objectMapper.readTree(jsonStr);
-                JsonNode reasonNode = jsonNode.get("reason");
+                String jsonStr = cleanedText.substring(jsonStart, jsonEnd);
 
-                if (reasonNode != null) {
-                    return reasonNode.asText();
+                try {
+                    JsonNode jsonNode = objectMapper.readTree(jsonStr);
+                    JsonNode reasonNode = jsonNode.get("reason");
+
+                    if (reasonNode != null && !reasonNode.asText().trim().isEmpty()) {
+                        return reasonNode.asText();
+                    }
+                } catch (Exception e) {
+                    log.warn("[평가 이유 생성] 완전한 JSON 파싱 실패, 부분 텍스트 추출 시도 - {}", e.getMessage());
                 }
             }
 
-            throw new CustomException("JSON에서 reason을 찾을 수 없습니다: " + responseText,
-                ErrorCode.INTERNAL_SERVER_ERROR);
+            // JSON 파싱 실패 시 - 부분 reason 필드 추출 시도
+            // "reason": "..." 패턴으로 reason 값만 추출
+            int reasonStart = cleanedText.indexOf("\"reason\"");
+            if (reasonStart >= 0) {
+                int colonIndex = cleanedText.indexOf(":", reasonStart);
+                if (colonIndex >= 0) {
+                    int valueStart = cleanedText.indexOf("\"", colonIndex);
+                    if (valueStart >= 0) {
+                        valueStart++; // 따옴표 다음부터 시작
+
+                        // 닫는 따옴표 찾기 (이스케이프된 따옴표는 무시)
+                        int valueEnd = valueStart;
+                        boolean escaped = false;
+                        while (valueEnd < cleanedText.length()) {
+                            char c = cleanedText.charAt(valueEnd);
+                            if (escaped) {
+                                escaped = false;
+                            } else if (c == '\\') {
+                                escaped = true;
+                            } else if (c == '"') {
+                                // 닫는 따옴표 발견
+                                String extractedReason = cleanedText.substring(valueStart, valueEnd);
+                                // 이스케이프 문자 처리
+                                extractedReason = extractedReason.replace("\\n", "\n")
+                                        .replace("\\\"", "\"")
+                                        .replace("\\\\", "\\");
+
+                                if (!extractedReason.trim().isEmpty()) {
+                                    log.info("[평가 이유 생성] 부분 reason 필드 추출 성공");
+                                    return extractedReason;
+                                }
+                                break;
+                            }
+                            valueEnd++;
+                        }
+
+                        // 닫는 따옴표를 찾지 못한 경우 (잘린 경우) - 끝까지 추출
+                        if (valueEnd >= cleanedText.length() || cleanedText.charAt(valueEnd) != '"') {
+                            String partialReason = cleanedText.substring(valueStart);
+                            // 마지막 완전한 문장까지만 추출
+                            int lastPeriod = partialReason.lastIndexOf(".");
+                            int lastNewline = partialReason.lastIndexOf("\\n");
+                            int cutPoint = Math.max(lastPeriod, lastNewline);
+
+                            if (cutPoint > 0) {
+                                partialReason = partialReason.substring(0, cutPoint + 1);
+                            }
+
+                            partialReason = partialReason.replace("\\n", "\n")
+                                    .replace("\\\"", "\"")
+                                    .replace("\\\\", "\\");
+
+                            if (!partialReason.trim().isEmpty()) {
+                                log.warn("[평가 이유 생성] JSON이 잘려있어 부분 텍스트 반환");
+                                return partialReason + "\n\n(평가 내용이 길어 일부만 표시됩니다)";
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 모든 파싱 실패 - 원본 텍스트 반환
+            log.warn("[평가 이유 생성] JSON 파싱 및 부분 추출 실패, 원본 텍스트 반환");
+            return cleanedText.length() > 1000
+                    ? cleanedText.substring(0, 1000) + "\n\n(평가 내용이 길어 일부만 표시됩니다)"
+                    : cleanedText;
 
         } catch (Exception e) {
-            log.error("[평가 이유 생성] JSON 파싱 오류 - responseText: {}", responseText, e);
-            throw new CustomException("평가 이유 파싱 실패: " + e.getMessage(),
-                ErrorCode.INTERNAL_SERVER_ERROR);
+            log.error("[평가 이유 생성] 예외 발생 - responseText: {}", responseText, e);
+            // 예외 발생 시에도 원본 텍스트 반환
+            return responseText.length() > 1000
+                    ? responseText.substring(0, 1000) + "\n\n(평가 내용이 길어 일부만 표시됩니다)"
+                    : responseText;
         }
     }
 }
