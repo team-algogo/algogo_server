@@ -10,6 +10,7 @@ import static com.ssafy.algogo.review.entity.QReview.review;
 import static com.ssafy.algogo.review.entity.QRequireReview.requireReview;
 import static com.ssafy.algogo.submission.entity.QAlgorithm.algorithm;
 import static com.ssafy.algogo.submission.entity.QSubmission.submission;
+import com.ssafy.algogo.submission.entity.QSubmission;
 import static com.ssafy.algogo.submission.entity.QSubmissionAlgorithm.submissionAlgorithm;
 import static com.ssafy.algogo.user.entity.QUser.user;
 
@@ -35,6 +36,8 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
     @Override
     public List<RequiredCodeReviewResponseDto> getRequiredReviews(Long userId) {
 
+        QSubmission subjectSubmission = new QSubmission("subjectSubmission");
+
         Expression<Long> reviewCountExpr =
             JPAExpressions
                 .select(review.count())
@@ -44,6 +47,7 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
         return query
             .from(requireReview)
             .join(requireReview.targetSubmission, submission)
+            .join(requireReview.subjectSubmission, subjectSubmission)
             .join(submission.programProblem, programProblem)
             .leftJoin(submissionAlgorithm).on(submissionAlgorithm.submission.eq(submission))
             .leftJoin(submissionAlgorithm.algorithm, algorithm)
@@ -76,8 +80,8 @@ public class RequireReviewQueryRepositoryImpl implements RequireReviewQueryRepos
                             ),
                             reviewCountExpr,
                             submission.user.nickname
-                        )
-
+                        ),
+                        subjectSubmission.createdAt
                     )
                 )
             );
