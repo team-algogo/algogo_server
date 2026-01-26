@@ -184,4 +184,13 @@ public class SubmissionController {
             customUserDetails.getUserId(), programId);
         return new SuccessResponse("유저의 추가 제출 가능 여부 조회를 성공했습니다.", canMoreSubmission);
     }
+
+    @PostMapping("/{submissionId}/ai-evaluation/retry")
+    public SuccessResponse retryAiEvaluation(
+        @AuthenticationPrincipal CustomUserDetails customUserDetails,
+        @PathVariable Long submissionId
+    ) {
+        submissionService.retryAiEvaluation(customUserDetails.getUserId(), submissionId);
+        return new SuccessResponse("AI 평가 재시도 요청을 성공했습니다. 잠시 후 결과를 확인해주세요.", null);
+    }
 }
