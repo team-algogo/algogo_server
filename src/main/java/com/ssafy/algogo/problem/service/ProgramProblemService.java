@@ -17,4 +17,6 @@ public interface ProgramProblemService {
 
     void deleteProgramProblem(Long programId,
         ProgramProblemDeleteRequestDto programProblemDeleteRequestDto);
+
+    void updateViewCount(Long programProblemId);
 }

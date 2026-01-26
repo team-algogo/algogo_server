@@ -264,7 +264,9 @@ public class SubmissionServiceImpl implements SubmissionService {
             programProblemId,
             userSubmissionRequestDto, pageable);
 
-        return SubmissionStatsPageResponseDto.from(submissionStatsLists);
+        return SubmissionStatsPageResponseDto.from(submissionStatsLists,
+                programProblem.getProgram().getId(),
+                programProblem.getProgram().getProgramType().getName());
     }
 
     @Override

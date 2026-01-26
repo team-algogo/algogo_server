@@ -23,6 +23,7 @@ import com.ssafy.algogo.program.problemset.dto.response.ProblemSetResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetSearchPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetWithMatchPageResponseDto;
 import com.ssafy.algogo.program.problemset.dto.response.ProblemSetWithMatchResponseDto;
+import com.ssafy.algogo.program.problemset.dto.response.ProblemSetWithProgressResponseDto;
 import com.ssafy.algogo.program.problemset.service.ProblemSetService;
 import com.ssafy.algogo.program.repository.CategoryRepository;
 import com.ssafy.algogo.program.repository.ProgramCategoryRepository;
@@ -43,6 +44,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ssafy.algogo.submission.repository.SubmissionRepository;
+
 @Slf4j
 @Service
 @Transactional
@@ -60,6 +63,7 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 	private final ProgramProblemService programProblemService;
 	private final S3Service s3Service;
 	private final ProgramCategoryRepository programCategoryRepository;
+	private final SubmissionRepository submissionRepository;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -293,8 +297,8 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 	@Transactional(readOnly = true)
 	public MyProblemSetPageResponseDto getMyJoinProblemSet(Long userId, Pageable pageable) {
 
-		// 사용자가 참여한 문제집 ID 조회
-		List<Long> programIds = programUserRepository.findActiveProblemSetIdsByUserId(userId);
+		// 사용자가 참여한 문제집 ID 조회 (제출 이력 기반)
+		List<Long> programIds = submissionRepository.findProgramIdsByUserId(userId);
 
 		// 참여한 문제집이 없으면 빈 페이지 반환
 		if (programIds.isEmpty()) {
@@ -302,7 +306,8 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 		}
 
 		// ID 리스트로 페이징된 문제집 조회 (QueryDSL)
-		Page<ProblemSetResponseDto> page = programQueryRepository.findMyJoinProblemSets(programIds, userId, pageable);
+		Page<ProblemSetWithProgressResponseDto> page = programQueryRepository.findMyJoinProblemSets(
+				userId, programIds, pageable);
 
 		// DTO로 변환
 		return MyProblemSetPageResponseDto.from(page);
