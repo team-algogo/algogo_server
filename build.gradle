@@ -67,6 +67,12 @@ dependencies {
     
     // email 인증
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // 1. 모니터링을 위한 핵심 도구
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // 2. 프로메테우스가 이해할 수 있는 형식으로 데이터를 변환
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+
 }
 
 tasks.named('test') {
