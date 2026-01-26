@@ -203,7 +203,7 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 	@Override
 	@Transactional
 	public ProblemSetResponseDto modifyProblemSet(Long programId,
-			ProblemSetModifyRequestDto modifyRequestDto) {
+			ProblemSetModifyRequestDto modifyRequestDto, MultipartFile thumbnail) {
 		log.info("문제집 수정 시작: ID={}, categories={}", programId, modifyRequestDto.getCategories());
 
 		// 1. Program 조회
@@ -211,14 +211,14 @@ public class ProblemSetServiceImpl implements ProblemSetService {
 				.orElseThrow(() -> new CustomException("문제집 없음", ErrorCode.PROGRAM_ID_NOT_FOUND));
 
 		// 2. 기본 정보 업데이트
-		if (modifyRequestDto.getThumbnail() != null && !modifyRequestDto.getThumbnail().isEmpty()) {
+		if (thumbnail != null && !thumbnail.isEmpty()) {
 			// 기존 S3 삭제
 			if (program.getThumbnail() != null) {
 				s3Service.deleteImage(program.getThumbnail());
 			}
 			// 새 썸네일 업로드
 			String newThumbnailUrl = s3Service.uploadProblemsetThumbnail(
-					modifyRequestDto.getThumbnail());
+					thumbnail);
 			program.updateProgram(modifyRequestDto.getTitle(), modifyRequestDto.getDescription(),
 					newThumbnailUrl);
 			log.info("썸네일 변경: {}", newThumbnailUrl);

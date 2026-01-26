@@ -117,7 +117,7 @@ public class ProblemSetController {
 		ProblemSetModifyRequestDto dto = mapper.readValue(dtoJson,
 			ProblemSetModifyRequestDto.class);
 
-		ProblemSetResponseDto data = problemSetService.modifyProblemSet(programId, dto);
+		ProblemSetResponseDto data = problemSetService.modifyProblemSet(programId, dto, thumbnail);
 		return new SuccessResponse("문제집 수정 성공", data);
 	}
 
