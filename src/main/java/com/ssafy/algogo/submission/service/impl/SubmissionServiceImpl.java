@@ -156,6 +156,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         // 요구된 리뷰 중 수행 X 조회
         List<ReviewRematchTargetQueryDto> reviewRematchTargetList = requireReviewRepository.findAllReviewRematchTargets(
             submission.getId());
+        submission.getProgramProblem().reflectDeletion(submission.getIsSuccess());
         // 원 제출 삭제 -> 요구된 리뷰 삭제(@OnCascade.DELETE)
         submissionRepository.delete(submission);
 
