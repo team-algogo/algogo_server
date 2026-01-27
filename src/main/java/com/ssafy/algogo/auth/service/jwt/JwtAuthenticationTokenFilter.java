@@ -57,7 +57,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                     authenticateWithAccessToken(accessToken, request);
                 } catch (Exception e) {
                     // 2. AT가 만료되었거나 문제가 있다면 RT 확인
-                    log.info("Access Token invalid, checking Refresh Token...");
+                    log.debug("Access Token invalid, checking Refresh Token...");
                     if (refreshToken != null) {
                         jwtTokenProvider.isValidateToken(refreshToken);
                         reissueTokens(refreshToken, request, response);
@@ -71,7 +71,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
                 reissueTokens(refreshToken, request, response);
             }
         } catch (Exception e) {
-            log.error("JWT Authentication failed: {}", e.getMessage());
+            log.debug("JWT Authentication failed: {}", e.getMessage());
             // 필요 시 여기서 401 에러를 직접 응답하거나 context를 비웁니다.
         }
 
@@ -85,7 +85,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         String currentIp = jwtTokenProvider.getIpFromRequest(request);
 
         if (ip == null || !ip.equals(currentIp)) {
-            log.warn("IP mismatch - Token IP: {}, Request IP: {}", ip, currentIp);
+            log.debug("IP mismatch - Token IP: {}, Request IP: {}", ip, currentIp);
             throw new CustomException("IP 불일치", ErrorCode.ACCESS_DENIED);
         }
 
@@ -107,7 +107,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             new UsernamePasswordAuthenticationToken(principal, null, authorities)
         );
 
-        log.info("Authenticated with Access Token - User: {}, IP: {}", userId, ip);
+        log.debug("Authenticated with Access Token - User: {}, IP: {}", userId, ip);
     }
 
     private void reissueTokens(String refreshToken, HttpServletRequest request,
@@ -121,13 +121,13 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
         // IP 검증
         if (tokenIp == null || !tokenIp.equals(currentIp)) {
-            log.warn("Refresh Token IP mismatch - User: {}", userId);
+            log.debug("Refresh Token IP mismatch - User: {}", userId);
             throw new CustomException("IP 불일치", ErrorCode.ACCESS_DENIED);
         }
 
         // Redis에서 저장된 RT와 비교 검증
         if (!redisJwtService.validate(userId, refreshToken, currentIp)) {
-            log.warn("Invalid Refresh Token in Redis - User: {}", userId);
+            log.debug("Invalid Refresh Token in Redis - User: {}", userId);
             throw new CustomException("유효하지 않은 Refresh Token", ErrorCode.EXPIRED_TOKEN);
         }
 
@@ -162,7 +162,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         // SecurityContext에 인증 정보 설정
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        log.info("Tokens reissued - User: {}, IP: {}", userId, currentIp);
+        log.debug("Tokens reissued - User: {}, IP: {}", userId, currentIp);
     }
 
 
