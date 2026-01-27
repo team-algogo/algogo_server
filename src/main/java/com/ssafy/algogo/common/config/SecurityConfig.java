@@ -5,6 +5,7 @@ import com.ssafy.algogo.auth.service.jwt.JwtTokenProvider;
 import com.ssafy.algogo.auth.service.jwt.RedisJwtService;
 import com.ssafy.algogo.auth.service.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -35,58 +36,47 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisJwtService redisJwtService;
 
+    @Value("${app.security.enable-local-cors:false}")
+    private boolean enableLocalCors;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .cors(Customizer.withDefaults())
-                .sessionManagement(
-                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+        if (enableLocalCors) {
+            http.cors(Customizer.withDefaults());
+        } else {
+            http.cors(AbstractHttpConfigurer::disable);
+        }
+
+        http.sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-                .addFilterBefore(new JwtAuthenticationTokenFilter(jwtTokenProvider, redisJwtService),
-                        UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
+                        new JwtAuthenticationTokenFilter(jwtTokenProvider, redisJwtService),
+                        UsernamePasswordAuthenticationFilter.class
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Actuator health
                         .requestMatchers(
                                 "/actuator/health",
-                                "/actuator/health/**",
-                                "/actuator/prometheus",
                                 "/actuator/info"
-                        ).permitAll()
-
-                        // 김성훈 프론트 체크 패스 API
-                        .requestMatchers(
-                                "/api/v1/groups/**",
-                                "/api/v1/auths/logout"
                         ).permitAll()
 
                         .requestMatchers(
                                 "/api/v1/auths/login",
-                                "/api/v1/groups/lists/**",
                                 "/api/v1/users/signup",
                                 "/api/v1/users/check/**",
-                                "/api/v1/auths/forgot-password",
                                 "/api/v1/users/emails/**",
                                 "/api/v1/users/find-password/**"
                         ).permitAll()
 
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/v1/problem-sets/**",
-                                "/api/v1/groups/lists",
-                                "/api/v1/problems/**",
-                                "/api/v1/submissions/**",
-                                "/api/v1/submissions/trends").permitAll()
-                        // /api/v1/groups/lists/me -> ?? || /api/v1/problem-sets/me -> ??
-                        // /api/v1/submissions/me -> ??
+                        .anyRequest().authenticated()
+                );
 
-                        .requestMatchers("/test/auth/admin").hasRole("ADMIN") // 유저권한 테스트용
-                        .requestMatchers("/test/auth/user").hasRole("USER")
-                        .anyRequest().authenticated())
-
-                .build();
+        return http.build();
     }
 
     @Bean
@@ -102,9 +92,7 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "https://localhost:3000",
                 "http://localhost:5173",
-                "https://localhost:5173",
-                "https://algogo.kr",
-                "https://www.algogo.kr"
+                "https://localhost:5173"
         )); // 허용할 프론트엔드 도메인
         configuration.setAllowedMethods(
                 List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 메서드
