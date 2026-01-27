@@ -117,5 +117,14 @@ public class ProgramProblem {
     }
 
     public void increaseViewCount(){
-        this.viewCount++;}
+        this.viewCount++;
+    }
+
+    public void reflectDeletion(boolean isSuccess){
+        this.participantCount--;
+        this.submissionCount--;
+        if (isSuccess) {
+            this.solvedCount--;
+        }
+    }
 }
