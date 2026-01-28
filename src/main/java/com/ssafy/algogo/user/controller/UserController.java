@@ -85,6 +85,16 @@ public class UserController {
         return SuccessResponse.success("사용자 정보 수정에 성공했습니다.", updateUserInfoResponseDto);
     }
 
+    @PatchMapping("/password")
+    @ResponseStatus(HttpStatus.OK)
+    public SuccessResponse updatePassword(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @RequestBody @Valid UpdatePasswordRequestDto updatePasswordRequestDto) {
+        Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
+        userService.updatePassword(userId, updatePasswordRequestDto);
+        return SuccessResponse.success("비밀번호 수정에 성공했습니다.", null);
+    }
+
     @PostMapping("/profile-images")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse uploadProfileImage(

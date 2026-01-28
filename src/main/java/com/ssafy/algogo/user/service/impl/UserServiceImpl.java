@@ -12,21 +12,16 @@ import com.ssafy.algogo.user.service.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.BadRequestException;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -135,6 +130,18 @@ public class UserServiceImpl implements UserService {
         user.updateUserInfo(updateUserInfoRequestDto.getNickname(), updateUserInfoRequestDto.getDescription());
 
         return UpdateUserInfoResponseDto.from(user);
+    }
+
+    @Override
+    public void updatePassword(Long userId, UpdatePasswordRequestDto updatePasswordRequestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(updatePasswordRequestDto.getCurrentPassword(), user.getPassword())) {
+            throw new CustomException("현재 비밀번호가 일치하지 않습니다.", ErrorCode.INVALID_PARAMETER);
+        }
+
+        user.updatePassword(passwordEncoder.encode(updatePasswordRequestDto.getNewPassword()));
     }
 
     @Override
