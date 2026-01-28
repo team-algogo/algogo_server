@@ -1,6 +1,5 @@
 package com.ssafy.algogo.user.service;
 
-
 import com.ssafy.algogo.user.dto.request.*;
 import com.ssafy.algogo.user.dto.response.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +17,8 @@ public interface UserService {
     UserInfoResponseDto getOneUserInfo(Long userId);
 
     UpdateUserInfoResponseDto updateUserInfo(Long userId, UpdateUserInfoRequestDto updateUserInfoRequestDto);
+
+    void updatePassword(Long userId, UpdatePasswordRequestDto updatePasswordRequestDto);
 
     UpdateUserProfileImageResponseDto updateUserProfileImage(Long userId, MultipartFile image);
 
