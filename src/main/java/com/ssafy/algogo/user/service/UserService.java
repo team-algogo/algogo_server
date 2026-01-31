@@ -12,7 +12,8 @@ public interface UserService {
 
     CheckDuplicateEmailResponseDto isAvailableEmail(CheckDuplicateEmailRequestDto checkDuplicateEmailRequestDto);
 
-    CheckDuplicateNicknameResponseDto isAvailableNickname(CheckDuplicateNicknameRequestDto checkDuplicateNicknameRequestDto);
+    CheckDuplicateNicknameResponseDto isAvailableNickname(
+            CheckDuplicateNicknameRequestDto checkDuplicateNicknameRequestDto);
 
     UserInfoResponseDto getOneUserInfo(Long userId);
 
@@ -30,5 +31,7 @@ public interface UserService {
 
     void verifiedCode(CheckEmailCodeRequestDto checkEmailCodeRequestDto);
 
-    void sendTempPassword(String email);
+    void resetPassword(ResetPasswordRequestDto resetPasswordRequestDto);
+
+    void sendPasswordResetCode(SendEmailCodeRequestDto sendEmailCodeRequestDto);
 }
