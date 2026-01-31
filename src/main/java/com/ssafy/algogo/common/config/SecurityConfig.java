@@ -66,19 +66,18 @@ public class SecurityConfig {
                                 "/actuator/prometheus"
                         ).permitAll()
 
-                        .requestMatchers(
-                                "/api/v1/auths/login",
-                                "/api/v1/users/signup",
-                                "/api/v1/users/check/**",
-                                "/api/v1/users/emails/**",
-                                "/api/v1/users/find-password/**"
-                        ).permitAll()
+						.requestMatchers(
+							"/api/v1/auths/login",
+							"/api/v1/users/signup",
+							"/api/v1/users/check/**",
+							"/api/v1/users/emails/**",
+							"/api/v1/users/password-reset/**",
+							"/api/v1/users/reset-password")
+						.permitAll()
+					.anyRequest().authenticated());
 
-                        .anyRequest().authenticated()
-                );
-
-        return http.build();
-    }
+		return http.build();
+	}
 
     @Bean
     public PasswordEncoder passwordEncoder() {

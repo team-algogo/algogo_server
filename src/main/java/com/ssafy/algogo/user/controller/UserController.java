@@ -33,9 +33,9 @@ public class UserController {
     @PostMapping("/check/emails")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse checkDuplicateEmail(
-        @RequestBody @Valid CheckDuplicateEmailRequestDto checkDuplicateEmailRequestDto) {
+            @RequestBody @Valid CheckDuplicateEmailRequestDto checkDuplicateEmailRequestDto) {
         CheckDuplicateEmailResponseDto checkDuplicateEmailResponseDto = userService.isAvailableEmail(
-            checkDuplicateEmailRequestDto);
+                checkDuplicateEmailRequestDto);
         if (checkDuplicateEmailResponseDto.isAvailable()) {
             return SuccessResponse.success("사용가능한 이메일입니다.", checkDuplicateEmailResponseDto);
         } else {
@@ -46,9 +46,9 @@ public class UserController {
     @PostMapping("/check/nicknames")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse checkDuplicateNickname(
-        @RequestBody @Valid CheckDuplicateNicknameRequestDto checkDuplicateNicknameRequestDto) {
+            @RequestBody @Valid CheckDuplicateNicknameRequestDto checkDuplicateNicknameRequestDto) {
         CheckDuplicateNicknameResponseDto checkDuplicateNicknameResponseDto = userService.isAvailableNickname(
-            checkDuplicateNicknameRequestDto);
+                checkDuplicateNicknameRequestDto);
         if (checkDuplicateNicknameResponseDto.isAvailable()) {
             return SuccessResponse.success("사용가능한 닉네임입니다.", checkDuplicateNicknameResponseDto);
         } else {
@@ -59,7 +59,7 @@ public class UserController {
     @GetMapping("/profiles")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse getUserInfo(
-        @AuthenticationPrincipal CustomUserDetails customUserDetails) {
+            @AuthenticationPrincipal CustomUserDetails customUserDetails) {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
         UserInfoResponseDto userInfoResponseDto = userService.getOneUserInfo(userId);
         return SuccessResponse.success("유저 정보 조회에 성공했습니다.", userInfoResponseDto);
@@ -68,8 +68,7 @@ public class UserController {
     @GetMapping("/profiles/{userId}")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse getOtherUserInfo(
-        @PathVariable Long userId
-    ) {
+            @PathVariable Long userId) {
         UserInfoResponseDto userInfoResponseDto = userService.getOneUserInfo(userId);
         return SuccessResponse.success("유저 정보 조회에 성공했습니다.", userInfoResponseDto);
     }
@@ -77,11 +76,11 @@ public class UserController {
     @PutMapping("/profiles")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse updateUserInfo(
-        @AuthenticationPrincipal CustomUserDetails customUserDetails,
-        @RequestBody UpdateUserInfoRequestDto updateUserInfoRequestDto) {
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @RequestBody UpdateUserInfoRequestDto updateUserInfoRequestDto) {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
         UpdateUserInfoResponseDto updateUserInfoResponseDto = userService.updateUserInfo(userId,
-            updateUserInfoRequestDto);
+                updateUserInfoRequestDto);
         return SuccessResponse.success("사용자 정보 수정에 성공했습니다.", updateUserInfoResponseDto);
     }
 
@@ -98,22 +97,21 @@ public class UserController {
     @PostMapping("/profile-images")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse uploadProfileImage(
-        @AuthenticationPrincipal CustomUserDetails customUserDetails,
-        @RequestPart("image") MultipartFile image
-    ) {
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @RequestPart("image") MultipartFile image) {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
         UpdateUserProfileImageResponseDto updateUserProfileImageResponseDto = userService.updateUserProfileImage(
-            userId, image);
+                userId, image);
         return SuccessResponse.success("프로필 사진 수정에 성공했습니다.", updateUserProfileImageResponseDto);
     }
 
     @PutMapping("/profile-images")
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse deleteProfileImage(
-        @AuthenticationPrincipal CustomUserDetails customUserDetails) {
+            @AuthenticationPrincipal CustomUserDetails customUserDetails) {
         Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
         UpdateUserProfileImageResponseDto updateUserProfileImageResponseDto = userService.updateDefaultProfileImage(
-            userId);
+                userId);
         return SuccessResponse.success("프로필 사진 삭제에 성공했습니다.", updateUserProfileImageResponseDto);
     }
 
@@ -121,7 +119,7 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public SuccessResponse searchUsersInGroupRoom(@RequestParam("content") String content) {
         ListSearchUserResponseDto listSearchUserResponseDto = userService.searchUserListByContent(
-            content);
+                content);
         return SuccessResponse.success("유저 조회에 성공했습니다.", listSearchUserResponseDto);
     }
 
@@ -139,11 +137,18 @@ public class UserController {
         return SuccessResponse.success("이메일 인증에 성공했습니다.", null);
     }
 
-    @PostMapping("/find-password/{email}")
+    @PostMapping("/password-reset/verification/request")
+    @ResponseStatus(HttpStatus.CREATED)
+    public SuccessResponse sendPasswordResetCode(@RequestBody SendEmailCodeRequestDto sendEmailCodeRequestDto) {
+        userService.sendPasswordResetCode(sendEmailCodeRequestDto);
+        return SuccessResponse.success("인증번호가 발송되었습니다.", null);
+    }
+
+    @PostMapping("/reset-password")
     @ResponseStatus(HttpStatus.OK)
-    public SuccessResponse findPassword(@PathVariable String email) {
-        userService.sendTempPassword(email);
-        return SuccessResponse.success("임시 비밀번호가 이메일로 전송되었습니다.", null);
+    public SuccessResponse resetPassword(@RequestBody @Valid ResetPasswordRequestDto resetPasswordRequestDto) {
+        userService.resetPassword(resetPasswordRequestDto);
+        return SuccessResponse.success("비밀번호가 성공적으로 변경되었습니다.", null);
     }
 
 }
