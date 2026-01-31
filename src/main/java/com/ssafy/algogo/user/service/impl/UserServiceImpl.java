@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (userRepository.existsByEmail(signupRequestDto.getEmail())) {
-            throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.ALREADY_EXISTS_EMAIL);  // 재검사
+            throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.ALREADY_EXISTS_EMAIL); // 재검사
         }
 
         if (userRepository.existsByNickname(signupRequestDto.getNickname())) {
@@ -77,7 +77,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public CheckDuplicateEmailResponseDto isAvailableEmail(CheckDuplicateEmailRequestDto checkDuplicateEmailRequestDto) {
+    public CheckDuplicateEmailResponseDto isAvailableEmail(
+            CheckDuplicateEmailRequestDto checkDuplicateEmailRequestDto) {
 
         boolean result = userRepository.existsByEmail(checkDuplicateEmailRequestDto.getEmail());
         CheckDuplicateEmailResponseDto responseDto = null;
@@ -93,7 +94,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public CheckDuplicateNicknameResponseDto isAvailableNickname(CheckDuplicateNicknameRequestDto checkDuplicateNicknameRequestDto) {
+    public CheckDuplicateNicknameResponseDto isAvailableNickname(
+            CheckDuplicateNicknameRequestDto checkDuplicateNicknameRequestDto) {
         boolean result = userRepository.existsByNickname(checkDuplicateNicknameRequestDto.getNickname());
         CheckDuplicateNicknameResponseDto responseDto = null;
 
@@ -125,7 +127,8 @@ public class UserServiceImpl implements UserService {
             throw new CustomException("이미 존재하는 닉네임입니다.", ErrorCode.ALREADY_EXISTS_NICKNAME);
         }
 
-        // TODO : 닉네임 수정시, 화면에서도 중복 체크 버튼을 해줘야한다. 이 부분은 아직 말을 안한 거 같다. -> 에러로 처리하진 않겠다. 중복체크는 에러가 아니다.
+        // TODO : 닉네임 수정시, 화면에서도 중복 체크 버튼을 해줘야한다. 이 부분은 아직 말을 안한 거 같다. -> 에러로 처리하진 않겠다.
+        // 중복체크는 에러가 아니다.
 
         user.updateUserInfo(updateUserInfoRequestDto.getNickname(), updateUserInfoRequestDto.getDescription());
 
@@ -154,7 +157,7 @@ public class UserServiceImpl implements UserService {
 
         user.updateProfileImage(newImageUrl);
         // userRepository.save(user); -> 이 부분을 하지 않아도 된다. 배웠습니다..
-        //**이유:** `@Transactional` 안에서 Entity를 변경하면 트랜잭션 커밋 시 자동으로 UPDATE 쿼리가 날아갑니다.
+        // **이유:** `@Transactional` 안에서 Entity를 변경하면 트랜잭션 커밋 시 자동으로 UPDATE 쿼리가 날아갑니다.
 
         return UpdateUserProfileImageResponseDto.from(newImageUrl);
     }
@@ -178,7 +181,8 @@ public class UserServiceImpl implements UserService {
         }
 
         if (content.length() > SEARCH_CONTENT_LIMIT) {
-            throw new CustomException(String.format("회원 검색 길이는 %d자 이상 검색할 수 없습니다.", SEARCH_CONTENT_LIMIT), ErrorCode.SEARCH_CONTENT_LENGTH_OVER);
+            throw new CustomException(String.format("회원 검색 길이는 %d자 이상 검색할 수 없습니다.", SEARCH_CONTENT_LIMIT),
+                    ErrorCode.SEARCH_CONTENT_LENGTH_OVER);
         }
 
         if (!content.matches("^[a-zA-Z0-9가-힣@._-]+$")) {
@@ -203,8 +207,7 @@ public class UserServiceImpl implements UserService {
         redisTemplate.opsForValue().set(
                 AUTH_CODE_PREFIX + sendEmailCodeRequestDto.getEmail(),
                 code,
-                Duration.ofSeconds(CODE_LIMIT_TIME)
-        );
+                Duration.ofSeconds(CODE_LIMIT_TIME));
 
         sendEmail(sendEmailCodeRequestDto.getEmail(), code);
     }
@@ -225,16 +228,35 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void sendTempPassword(String email) {
-        User user = userRepository.findByEmail(email)
+    public void resetPassword(ResetPasswordRequestDto resetPasswordRequestDto) {
+        String savedCode = redisTemplate.opsForValue().get(AUTH_CODE_PREFIX + resetPasswordRequestDto.getEmail());
+
+        if (savedCode == null || !savedCode.equals(resetPasswordRequestDto.getCode())) {
+            throw new CustomException("인증번호가 일치하지 않거나 만료되었습니다.", ErrorCode.INVALID_PARAMETER);
+        }
+
+        User user = userRepository.findByEmail(resetPasswordRequestDto.getEmail())
                 .orElseThrow(() -> new CustomException("해당 이메일의 유저가 존재하지 않습니다.", ErrorCode.USER_NOT_FOUND));
 
-        String tempPassword = com.ssafy.algogo.common.utils.RandomPasswordGenerator.generateRandomPassword(12);
-        String encodedPassword = passwordEncoder.encode(tempPassword);
-
+        String encodedPassword = passwordEncoder.encode(resetPasswordRequestDto.getNewPassword());
         user.updatePassword(encodedPassword);
 
-        sendPasswordEmail(email, tempPassword);
+        redisTemplate.delete(AUTH_CODE_PREFIX + resetPasswordRequestDto.getEmail());
+    }
+
+    @Override
+    public void sendPasswordResetCode(SendEmailCodeRequestDto sendEmailCodeRequestDto) {
+        if (!userRepository.existsByEmail(sendEmailCodeRequestDto.getEmail())) {
+            throw new CustomException("가입되지 않은 이메일입니다.", ErrorCode.USER_NOT_FOUND);
+        }
+
+        String code = String.valueOf((int) (Math.random() * 899999) + 100000);
+        redisTemplate.opsForValue().set(
+                AUTH_CODE_PREFIX + sendEmailCodeRequestDto.getEmail(),
+                code,
+                Duration.ofSeconds(CODE_LIMIT_TIME));
+
+        sendEmail(sendEmailCodeRequestDto.getEmail(), code);
     }
 
     private void sendEmail(String toEmail, String code) {
